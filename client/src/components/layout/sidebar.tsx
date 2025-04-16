@@ -10,14 +10,17 @@ import {
   Settings,
   Store,
   CheckCircle,
-  Globe,
   Menu,
   X,
+  Globe,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useTranslation } from "react-i18next";
+import { LanguageSelector } from "./language-selector";
 
 export function Sidebar() {
+  const { t } = useTranslation();
   const { user, logoutMutation } = useAuth();
   const [location, navigate] = useLocation();
   const [isOpen, setIsOpen] = useState(false);
@@ -95,27 +98,27 @@ export function Sidebar() {
           <NavItem
             href="/"
             icon={<LayoutGrid className="h-5 w-5 mr-3" />}
-            label="Dashboard"
+            label={t('navigation.dashboard')}
           />
           <NavItem
             href="/appointments"
             icon={<CheckCircle className="h-5 w-5 mr-3" />}
-            label="Appointments"
+            label={t('navigation.appointments')}
           />
           <NavItem
             href="/rooms"
             icon={<Store className="h-5 w-5 mr-3" />}
-            label="Available Rooms"
+            label={t('navigation.rooms')}
           />
           <NavItem
             href="/new-booking"
             icon={<PlusCircle className="h-5 w-5 mr-3" />}
-            label="New Booking"
+            label={t('common.add')}
           />
           <NavItem
             href="/settings"
             icon={<Settings className="h-5 w-5 mr-3" />}
-            label="Settings"
+            label={t('navigation.settings')}
           />
         </ul>
       </nav>
