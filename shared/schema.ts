@@ -76,7 +76,8 @@ export const appointmentStatusEnum = pgEnum('appointment_status', ['pending', 'a
 export const appointments = pgTable("appointments", {
   id: serial("id").primaryKey(),
   title: text("title").notNull(), // Event Name
-  roomId: integer("room_id").notNull(),
+  roomId: integer("room_id").notNull(), // Primary room ID (kept for backwards compatibility)
+  rooms: json("rooms").notNull().default([]), // Array of rooms with their specific settings
   userId: integer("user_id").notNull(),
   startTime: timestamp("start_time").notNull(),
   endTime: timestamp("end_time").notNull(),
@@ -100,6 +101,7 @@ export const appointments = pgTable("appointments", {
 export const insertAppointmentSchema = createInsertSchema(appointments).pick({
   title: true,
   roomId: true,
+  rooms: true,
   userId: true,
   startTime: true,
   endTime: true,
@@ -174,4 +176,13 @@ export type Facility = {
   id: string;
   name: string;
   cost: number;
+};
+
+// Room booking type for storing room-specific details in appointments
+export type RoomBooking = {
+  roomId: number;
+  roomName: string;
+  requestedFacilities: string[];
+  costType: 'flat' | 'hourly' | 'per_attendee';
+  cost: number; // In cents
 };
