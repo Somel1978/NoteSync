@@ -695,7 +695,7 @@ export default function NewBookingPage() {
                               />
                               
                               {/* Room facilities - only show if room has facilities */}
-                              {facilities.length > 0 && (
+                              {Array.isArray(facilities) && facilities.length > 0 && facilities.every(f => f && typeof f.name === 'string') && (
                                 <FormField
                                   control={form.control}
                                   name={`roomSettings.${room.id}.requestedFacilities`}
@@ -707,9 +707,9 @@ export default function NewBookingPage() {
                                       </FormDescription>
                                       
                                       <div className="flex flex-wrap gap-4 mt-2">
-                                        {facilities.map((facility) => (
+                                        {facilities.map((facility, index) => (
                                           <FormItem
-                                            key={facility.id}
+                                            key={facility.id || `facility-${index}`}
                                             className="flex flex-row items-start space-x-3 space-y-0"
                                           >
                                             <FormControl>

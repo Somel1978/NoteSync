@@ -1,0 +1,29 @@
+Warning: Each child in a list should have a unique &quot;key&quot; prop.
+
+Check the render method of `Controller`. See https://reactjs.org/link/warning-keys for more information.
+    at https://298121b9-d822-4b9d-b414-368a4667cde8-00-59fg94awgjli.janeway.replit.dev/src/components/ui/form.tsx:71:6
+    at Controller (https://298121b9-d822-4b9d-b414-368a4667cde8-00-59fg94awgjli.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-YABUFNLM.js?v=ccf5ccbe:313:35)
+    at FormField (https://298121b9-d822-4b9d-b414-368a4667cde8-00-59fg94awgjli.janeway.replit.dev/src/components/ui/form.tsx:32:6)
+    at div
+    at div
+    at div
+    at div
+    at form
+    at FormProvider (https://298121b9-d822-4b9d-b414-368a4667cde8-00-59fg94awgjli.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-YABUFNLM.js?v=ccf5ccbe:102:11)
+    at div
+    at _c9 (https://298121b9-d822-4b9d-b414-368a4667cde8-00-59fg94awgjli.janeway.replit.dev/src/components/ui/card.tsx:114:12)
+    at div
+    at _c (https://298121b9-d822-4b9d-b414-368a4667cde8-00-59fg94awgjli.janeway.replit.dev/src/components/ui/card.tsx:20:11)
+    at div
+    at main
+    at div
+    at AppLayout (https://298121b9-d822-4b9d-b414-368a4667cde8-00-59fg94awgjli.janeway.replit.dev/src/components/layout/app-layout.tsx:20:29)
+    at NewBookingPage (https://298121b9-d822-4b9d-b414-368a4667cde8-00-59fg94awgjli.janeway.replit.dev/src/pages/new-booking-page.tsx:76:20)
+    at Route (https://298121b9-d822-4b9d-b414-368a4667cde8-00-59fg94awgjli.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=ccf5ccbe:323:16)
+    at ProtectedRoute (https://298121b9-d822-4b9d-b414-368a4667cde8-00-59fg94awgjli.janeway.replit.dev/src/lib/protected-route.tsx:22:3)
+    at Switch (https://298121b9-d822-4b9d-b414-368a4667cde8-00-59fg94awgjli.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=ccf5ccbe:379:17)
+    at Router (https://298121b9-d822-4b9d-b414-368a4667cde8-00-59fg94awgjli.janeway.replit.dev/src/App.tsx?v=aMBZeVGczKXoqQAZd-B7g:37:20)
+    at LanguageProvider (https://298121b9-d822-4b9d-b414-368a4667cde8-00-59fg94awgjli.janeway.replit.dev/src/hooks/use-language.tsx:22:36)
+    at AuthProvider (https://298121b9-d822-4b9d-b414-368a4667cde8-00-59fg94awgjli.janeway.replit.dev/src/hooks/use-auth.tsx:26:32)
+    at QueryClientProvider (https://298121b9-d822-4b9d-b414-368a4667cde8-00-59fg94awgjli.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@tanstack_react-query.js?v=ccf5ccbe:2805:3)
+    at App
