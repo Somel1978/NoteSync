@@ -114,6 +114,42 @@ export function AppointmentDetailsModal({
     enabled: isEditMode,
   });
   
+  // Get available facilities for a room
+  const getAvailableFacilities = (roomId: number): string[] => {
+    if (!rooms || !Array.isArray(rooms)) return [];
+    
+    const room = rooms.find(r => r.id === roomId);
+    if (!room) return [];
+    
+    // Common facilities list
+    const commonFacilities = [
+      "Projector", "Whiteboard", "Video conferencing", "WiFi", "Air conditioning",
+      "Coffee machine", "Water dispenser", "Microphones", "Sound system", "Catering service",
+      "Flip charts", "Screen", "Podium", "Stage", "Teleconference", "Tables & chairs"
+    ];
+    
+    // Try to parse the room's facilities if available
+    if (room.facilities) {
+      try {
+        // Check if facilities is a string that needs parsing
+        if (typeof room.facilities === 'string') {
+          const parsedFacilities = JSON.parse(room.facilities);
+          if (Array.isArray(parsedFacilities) && parsedFacilities.length > 0) {
+            return parsedFacilities;
+          }
+        } 
+        // Check if facilities is already an array
+        else if (Array.isArray(room.facilities) && room.facilities.length > 0) {
+          return room.facilities as string[];
+        }
+      } catch (e) {
+        console.log('Error parsing room facilities:', e);
+      }
+    }
+    
+    return commonFacilities;
+  };
+  
   const { data: auditLogs, isLoading: isLogsLoading } = useQuery({
     queryKey: ["/api/appointments", appointmentId, "audit"],
     enabled: open && appointmentId > 0 && activeTab === "history",
@@ -1062,12 +1098,62 @@ export function AppointmentDetailsModal({
                                       <Select
                                         value={roomBooking.costType || 'flat'}
                                         onValueChange={(value) => {
+                                          const costType = value as 'flat' | 'hourly' | 'per_attendee';
                                           const updatedRooms = [...(editedAppointment.rooms as RoomBooking[])];
+                                          
+                                          // Get the room data
+                                          const selectedRoom = rooms.find(r => r.id === roomBooking.roomId);
+                                          
+                                          // Calculate new cost based on selected cost type
+                                          let newCost = 0;
+                                          if (selectedRoom) {
+                                            if (costType === 'flat') {
+                                              newCost = selectedRoom.flatRate || 0;
+                                            } else if (costType === 'hourly') {
+                                              newCost = selectedRoom.hourlyRate || 0;
+                                              
+                                              if (startDate && endDate) {
+                                                const durationHours = (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60);
+                                                newCost = newCost * Math.max(1, Math.ceil(durationHours));
+                                              }
+                                            } else if (costType === 'per_attendee') {
+                                              newCost = selectedRoom.attendeeRate || 0;
+                                              const attendeesCount = editedAppointment.attendeesCount || 1;
+                                              newCost = newCost * attendeesCount;
+                                            }
+                                          }
+                                          
+                                          console.log(`Recalculated cost for room ${roomBooking.roomId} with new type ${costType}: ${newCost}`);
+                                          
+                                          // Update the room with new cost and cost type
                                           updatedRooms[index] = {
                                             ...updatedRooms[index],
-                                            costType: value as 'flat' | 'hourly' | 'per_attendee'
+                                            costType,
+                                            cost: newCost
                                           };
+                                          
+                                          // Calculate new total cost from all rooms
+                                          let totalCost = 0;
+                                          updatedRooms.forEach(room => {
+                                            totalCost += room.cost;
+                                          });
+                                          
+                                          // Update both the rooms and the total cost
                                           handleInputChange('rooms', updatedRooms);
+                                          
+                                          // Don't update global cost if custom pricing is enabled
+                                          if (!customPricing) {
+                                            handleInputChange('agreedCost', totalCost);
+                                            
+                                            // Update cost breakdown
+                                            const costBreakdown = {
+                                              ...(appointment && typeof appointment.costBreakdown === 'object' ? appointment.costBreakdown : {}),
+                                              base: totalCost,
+                                              isCustom: false,
+                                              total: totalCost
+                                            };
+                                            handleInputChange('costBreakdown', costBreakdown);
+                                          }
                                         }}
                                       >
                                         <SelectTrigger className="w-full h-8 text-xs">
@@ -1106,52 +1192,106 @@ export function AppointmentDetailsModal({
                                         ))}
                                       </div>
                                       
-                                      <div className="flex mt-2">
-                                        <Input
-                                          placeholder="Add facility"
-                                          className="h-8 text-xs"
-                                          onKeyDown={(e) => {
-                                            if (e.key === 'Enter' && e.currentTarget.value.trim()) {
-                                              e.preventDefault();
-                                              const facilityName = e.currentTarget.value.trim();
-                                              const updatedRooms = [...(editedAppointment.rooms as RoomBooking[])];
-                                              const updatedFacilities = [
-                                                ...(roomBooking.requestedFacilities || []), 
-                                                facilityName
-                                              ];
-                                              updatedRooms[index] = {
-                                                ...updatedRooms[index],
-                                                requestedFacilities: updatedFacilities
-                                              };
-                                              handleInputChange('rooms', updatedRooms);
-                                              e.currentTarget.value = '';
+                                      <div className="space-y-2">
+                                        {/* Available facilities dropdown */}
+                                        <Select
+                                          onValueChange={(value) => {
+                                            if (!value) return;
+                                            
+                                            // Don't add duplicates
+                                            if (roomBooking.requestedFacilities && 
+                                                roomBooking.requestedFacilities.includes(value)) {
+                                              return;
                                             }
-                                          }}
-                                        />
-                                        <Button 
-                                          variant="outline" 
-                                          size="sm" 
-                                          className="ml-2 h-8"
-                                          onClick={(e) => {
-                                            const input = e.currentTarget.previousSibling as HTMLInputElement;
-                                            if (input && input.value.trim()) {
-                                              const facilityName = input.value.trim();
-                                              const updatedRooms = [...(editedAppointment.rooms as RoomBooking[])];
-                                              const updatedFacilities = [
-                                                ...(roomBooking.requestedFacilities || []),
-                                                facilityName
-                                              ];
-                                              updatedRooms[index] = {
-                                                ...updatedRooms[index],
-                                                requestedFacilities: updatedFacilities
-                                              };
-                                              handleInputChange('rooms', updatedRooms);
-                                              input.value = '';
-                                            }
+                                            
+                                            const updatedRooms = [...(editedAppointment.rooms as RoomBooking[])];
+                                            const updatedFacilities = [
+                                              ...(roomBooking.requestedFacilities || []), 
+                                              value
+                                            ];
+                                            updatedRooms[index] = {
+                                              ...updatedRooms[index],
+                                              requestedFacilities: updatedFacilities
+                                            };
+                                            handleInputChange('rooms', updatedRooms);
                                           }}
                                         >
-                                          Add
-                                        </Button>
+                                          <SelectTrigger className="w-full h-8 text-xs">
+                                            <SelectValue placeholder="Select facility" />
+                                          </SelectTrigger>
+                                          <SelectContent>
+                                            {getAvailableFacilities(roomBooking.roomId).map((facility, i) => (
+                                              <SelectItem key={i} value={facility}>
+                                                {facility}
+                                              </SelectItem>
+                                            ))}
+                                          </SelectContent>
+                                        </Select>
+                                        
+                                        {/* Manual entry for custom facilities */}
+                                        <div className="flex mt-2">
+                                          <Input
+                                            placeholder="Or add custom facility"
+                                            className="h-8 text-xs"
+                                            onKeyDown={(e) => {
+                                              if (e.key === 'Enter' && e.currentTarget.value.trim()) {
+                                                e.preventDefault();
+                                                const facilityName = e.currentTarget.value.trim();
+                                                
+                                                // Don't add duplicates
+                                                if (roomBooking.requestedFacilities && 
+                                                    roomBooking.requestedFacilities.includes(facilityName)) {
+                                                  e.currentTarget.value = '';
+                                                  return;
+                                                }
+                                                
+                                                const updatedRooms = [...(editedAppointment.rooms as RoomBooking[])];
+                                                const updatedFacilities = [
+                                                  ...(roomBooking.requestedFacilities || []), 
+                                                  facilityName
+                                                ];
+                                                updatedRooms[index] = {
+                                                  ...updatedRooms[index],
+                                                  requestedFacilities: updatedFacilities
+                                                };
+                                                handleInputChange('rooms', updatedRooms);
+                                                e.currentTarget.value = '';
+                                              }
+                                            }}
+                                          />
+                                          <Button 
+                                            variant="outline" 
+                                            size="sm" 
+                                            className="ml-2 h-8"
+                                            onClick={(e) => {
+                                              const input = e.currentTarget.previousSibling as HTMLInputElement;
+                                              if (input && input.value.trim()) {
+                                                const facilityName = input.value.trim();
+                                                
+                                                // Don't add duplicates
+                                                if (roomBooking.requestedFacilities && 
+                                                    roomBooking.requestedFacilities.includes(facilityName)) {
+                                                  input.value = '';
+                                                  return;
+                                                }
+                                                
+                                                const updatedRooms = [...(editedAppointment.rooms as RoomBooking[])];
+                                                const updatedFacilities = [
+                                                  ...(roomBooking.requestedFacilities || []),
+                                                  facilityName
+                                                ];
+                                                updatedRooms[index] = {
+                                                  ...updatedRooms[index],
+                                                  requestedFacilities: updatedFacilities
+                                                };
+                                                handleInputChange('rooms', updatedRooms);
+                                                input.value = '';
+                                              }
+                                            }}
+                                          >
+                                            Add
+                                          </Button>
+                                        </div>
                                       </div>
                                     </div>
                                   </div>
