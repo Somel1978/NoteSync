@@ -576,12 +576,12 @@ export default function NewBookingPage() {
                   </div>
 
                   {/* Room-specific settings for selected rooms */}
-                  {form.watch('selectedRooms')?.length > 0 && (
+                  {form.getValues('selectedRooms')?.length > 0 && (
                     <div className="mt-6 border-t border-gray-200 pt-4">
                       <h3 className="text-md font-medium text-gray-800 mb-4">Room Settings</h3>
                       
                       <div className="space-y-6">
-                        {form.watch('selectedRooms').map(roomId => {
+                        {form.getValues('selectedRooms').map(roomId => {
                           const room = rooms?.find(r => r.id === roomId);
                           if (!room) return null;
                           
@@ -831,11 +831,11 @@ export default function NewBookingPage() {
                   />
 
                   {/* Cost Preview */}
-                  {form.watch('selectedRooms')?.length > 0 ? (
+                  {form.getValues('selectedRooms')?.length > 0 ? (
                     <div className="mt-6 bg-gray-50 p-4 rounded-lg border border-gray-200">
                       <h3 className="font-medium text-gray-700 mb-3">Cost Preview</h3>
                       
-                      {/* Show costs for each room */}
+                      {/* Show costs for each room - using getValues to prevent excessive rerenders */}
                       <div className="space-y-4">
                         {calculateCost(form.getValues()).roomCosts?.map((roomCost, index) => (
                           <div key={index} className="p-3 border border-gray-200 rounded-md bg-white">
@@ -882,7 +882,7 @@ export default function NewBookingPage() {
                           <span>Base Rate:</span>
                           <span>€{calculateCost(form.getValues(), selectedRoom).base.toFixed(2)}</span>
                         </div>
-                        {form.watch("requestedFacilities")?.length > 0 && (
+                        {form.getValues("requestedFacilities")?.length > 0 && (
                           <div>
                             <div className="text-sm font-medium">Facilities:</div>
                             {calculateCost(form.getValues(), selectedRoom).facilities.map((facility, index) => (
