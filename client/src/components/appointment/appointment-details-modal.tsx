@@ -293,7 +293,7 @@ export function AppointmentDetailsModal({
               <Button variant="ghost" size="icon" onClick={handleDelete}>
                 <Trash className="h-5 w-5 text-gray-400 hover:text-red-500" />
               </Button>
-              <DialogClose>
+              <DialogClose asChild>
                 <Button variant="ghost" size="icon">
                   <X className="h-5 w-5" />
                 </Button>
@@ -930,10 +930,7 @@ export function AppointmentDetailsModal({
                       <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">Phone</h5>
                       <p className="text-sm text-gray-900">{appointment.customerPhone || "N/A"}</p>
                     </div>
-                    <div>
-                      <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">Attendees</h5>
-                      <p className="text-sm text-gray-900">{appointment.attendeesCount}</p>
-                    </div>
+
                   </div>
                 ) : (
                   <div className="space-y-6">
@@ -963,25 +960,7 @@ export function AppointmentDetailsModal({
                         className="mt-1"
                       />
                     </div>
-                    <div>
-                      <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">Attendees</h5>
-                      <Input
-                        type="number"
-                        min="1"
-                        value={editedAppointment.attendeesCount || ''}
-                        onChange={(e) => {
-                          const value = Number(e.target.value);
-                          handleInputChange('attendeesCount', value);
-                          
-                          // If using per_attendee pricing and not custom pricing, update cost
-                          if (editedAppointment.costType === 'per_attendee' && !customPricing) {
-                            const calculatedCost = calculateCost(editedAppointment.roomId || appointment.roomId);
-                            handleInputChange('agreedCost', calculatedCost);
-                          }
-                        }}
-                        className="mt-1"
-                      />
-                    </div>
+
                   </div>
                 )}
               </TabsContent>
