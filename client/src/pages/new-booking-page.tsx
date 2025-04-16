@@ -72,7 +72,7 @@ export default function NewBookingPage() {
     defaultValues: {
       title: "",
       roomId: 0,
-      selectedRooms: [],
+      selectedRooms: [] as number[],
       purpose: "",
       customerName: "",
       customerEmail: "",
@@ -96,6 +96,43 @@ export default function NewBookingPage() {
     mutationFn: async (data: BookingFormValues) => {
       const calculatedCost = calculateCost(data, selectedRoom);
       
+      // Prepare room bookings data from selected rooms
+      const roomBookings: RoomBooking[] = data.selectedRooms?.length 
+        ? data.selectedRooms.map(roomId => {
+            const room = rooms?.find(r => r.id === roomId);
+            if (!room) return null;
+            
+            const roomSettings = data.roomSettings[roomId] || {
+              requestedFacilities: [],
+              costType: 'flat'
+            };
+            
+            const roomCost = calculateRoomCost(
+              roomId,
+              roomSettings,
+              data.startTime,
+              data.endTime,
+              data.attendeesCount
+            );
+            
+            return {
+              roomId,
+              roomName: room.name,
+              requestedFacilities: roomSettings.requestedFacilities || [],
+              costType: roomSettings.costType,
+              cost: roomCost.total * 100 // Convert to cents
+            };
+          }).filter(Boolean) as RoomBooking[]
+        : selectedRoom 
+          ? [{
+              roomId: selectedRoom.id,
+              roomName: selectedRoom.name,
+              requestedFacilities: data.requestedFacilities || [],
+              costType: data.costType,
+              cost: calculateCost(data, selectedRoom).total * 100 // Convert to cents
+            }]
+          : [];
+      
       // Prepare the appointment data
       const appointmentData = {
         ...data,
@@ -108,6 +145,7 @@ export default function NewBookingPage() {
           attendees: data.attendeesCount,
           facilities: calculatedCost.facilities,
         },
+        rooms: roomBookings
       };
       
       const res = await apiRequest("POST", "/api/appointments", appointmentData);
@@ -134,21 +172,31 @@ export default function NewBookingPage() {
     createBookingMutation.mutate(data);
   };
 
-  const calculateCost = (formData: BookingFormValues, room?: Room) => {
-    if (!room) return { base: 0, total: 0, hours: 0, facilities: [] };
+  const calculateRoomCost = (
+    roomId: number, 
+    roomSettings: {
+      requestedFacilities: string[];
+      costType: "flat" | "hourly" | "per_attendee";
+    },
+    startTime?: Date,
+    endTime?: Date,
+    attendeesCount: number = 1
+  ) => {
+    const room = rooms?.find(r => r.id === roomId);
+    if (!room) return { base: 0, total: 0, hours: 0, facilities: [], roomName: "Unknown Room" };
     
     let baseCost = 0;
     let hours = 0;
     const facilityDetails: { name: string; cost: number }[] = [];
     
     // Calculate duration in hours (rounded up)
-    if (formData.startTime && formData.endTime) {
-      const duration = formData.endTime.getTime() - formData.startTime.getTime();
+    if (startTime && endTime) {
+      const duration = endTime.getTime() - startTime.getTime();
       hours = Math.ceil(duration / (1000 * 60 * 60));
     }
     
     // Calculate base cost based on cost type
-    switch (formData.costType) {
+    switch (roomSettings.costType) {
       case "flat":
         baseCost = room.flatRate ? room.flatRate / 100 : 0;
         break;
@@ -156,15 +204,19 @@ export default function NewBookingPage() {
         baseCost = (room.hourlyRate ? room.hourlyRate / 100 : 0) * hours;
         break;
       case "per_attendee":
-        baseCost = (room.attendeeRate ? room.attendeeRate / 100 : 0) * formData.attendeesCount;
+        baseCost = (room.attendeeRate ? room.attendeeRate / 100 : 0) * attendeesCount;
         break;
     }
     
     // Add cost of requested facilities
     let facilitiesCost = 0;
-    if (room.facilities && Array.isArray(room.facilities) && formData.requestedFacilities?.length > 0) {
-      formData.requestedFacilities.forEach(facilityName => {
-        const facility = (room.facilities as unknown as Facility[]).find(f => f.name === facilityName);
+    const facilities = room.facilities && Array.isArray(room.facilities) 
+      ? (room.facilities as unknown as Facility[])
+      : [];
+      
+    if (facilities.length > 0 && roomSettings.requestedFacilities?.length > 0) {
+      roomSettings.requestedFacilities.forEach(facilityName => {
+        const facility = facilities.find(f => f.name === facilityName);
         if (facility) {
           facilitiesCost += facility.cost / 100;
           facilityDetails.push({ name: facility.name, cost: facility.cost / 100 });
@@ -177,6 +229,77 @@ export default function NewBookingPage() {
       total: baseCost + facilitiesCost,
       hours,
       facilities: facilityDetails,
+      roomName: room.name,
+    };
+  };
+
+  const calculateCost = (formData: BookingFormValues, room?: Room) => {
+    if (formData.selectedRooms?.length > 0) {
+      // Calculate cost for all selected rooms
+      const roomCosts = formData.selectedRooms.map(roomId => {
+        const roomSettings = formData.roomSettings[roomId] || { 
+          requestedFacilities: [], 
+          costType: 'flat' 
+        };
+        
+        return calculateRoomCost(
+          roomId,
+          roomSettings,
+          formData.startTime,
+          formData.endTime,
+          formData.attendeesCount
+        );
+      });
+      
+      // Calculate totals
+      const base = roomCosts.reduce((sum, cost) => sum + cost.base, 0);
+      const total = roomCosts.reduce((sum, cost) => sum + cost.total, 0);
+      const facilities = roomCosts.flatMap(cost => 
+        cost.facilities.map(f => ({
+          ...f,
+          roomName: cost.roomName
+        }))
+      );
+      
+      // Get hours from the first room (they should all be the same)
+      const hours = roomCosts[0]?.hours || 0;
+      
+      return {
+        base,
+        total,
+        hours,
+        facilities,
+        roomCosts
+      };
+    } else if (room) {
+      // Legacy single room calculation
+      const result = calculateRoomCost(
+        room.id,
+        {
+          requestedFacilities: formData.requestedFacilities || [],
+          costType: formData.costType
+        },
+        formData.startTime,
+        formData.endTime,
+        formData.attendeesCount
+      );
+      
+      return {
+        base: result.base,
+        total: result.total,
+        hours: result.hours,
+        facilities: result.facilities,
+        roomCosts: [result]
+      };
+    }
+    
+    // Default empty result
+    return { 
+      base: 0, 
+      total: 0, 
+      hours: 0, 
+      facilities: [],
+      roomCosts: []
     };
   };
 
@@ -223,10 +346,10 @@ export default function NewBookingPage() {
                           <div className="space-y-2">
                             {roomsLoading ? (
                               <div className="text-sm text-gray-500">Loading rooms...</div>
-                            ) : rooms?.length > 0 ? (
+                            ) : rooms && rooms.length > 0 ? (
                               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 {rooms.map((room) => {
-                                  const isSelected = field.value.includes(room.id);
+                                  const isSelected = field.value?.includes(room.id);
                                   return (
                                     <div 
                                       key={room.id}
@@ -452,63 +575,103 @@ export default function NewBookingPage() {
                     />
                   </div>
 
-                  {selectedRoom?.facilities && Array.isArray(selectedRoom.facilities) && (selectedRoom.facilities as unknown as Facility[]).length > 0 && (
-                    <div className="mt-4">
-                      <FormField
-                        control={form.control}
-                        name="requestedFacilities"
-                        render={() => (
-                          <FormItem>
-                            <div className="mb-2">
-                              <FormLabel>Requested Facilities</FormLabel>
-                              <FormDescription>
-                                Select the facilities you need for this booking
-                              </FormDescription>
-                            </div>
-                            <div className="flex flex-wrap gap-4">
-                              {(selectedRoom.facilities as unknown as Facility[]).map((facility) => (
+                  {/* Room-specific settings for selected rooms */}
+                  {form.watch('selectedRooms')?.length > 0 && (
+                    <div className="mt-6 border-t border-gray-200 pt-4">
+                      <h3 className="text-md font-medium text-gray-800 mb-4">Room Settings</h3>
+                      
+                      <div className="space-y-6">
+                        {form.watch('selectedRooms').map(roomId => {
+                          const room = rooms?.find(r => r.id === roomId);
+                          if (!room) return null;
+                          
+                          // Cast facilities to the correct type to handle room facilities
+                          const facilities = room.facilities && Array.isArray(room.facilities) 
+                            ? (room.facilities as unknown as Facility[]) 
+                            : [];
+                              
+                          return (
+                            <div key={room.id} className="p-4 border rounded-md bg-gray-50">
+                              <h4 className="font-medium mb-2">{room.name} Settings</h4>
+                              
+                              {/* Pricing model selector */}
+                              <FormField
+                                control={form.control}
+                                name={`roomSettings.${room.id}.costType`}
+                                render={({ field }) => (
+                                  <FormItem className="mb-4">
+                                    <FormLabel>Pricing Model</FormLabel>
+                                    <Select
+                                      onValueChange={field.onChange}
+                                      value={field.value}
+                                    >
+                                      <FormControl>
+                                        <SelectTrigger>
+                                          <SelectValue placeholder="Select pricing model" />
+                                        </SelectTrigger>
+                                      </FormControl>
+                                      <SelectContent>
+                                        <SelectItem value="flat">Flat Rate</SelectItem>
+                                        <SelectItem value="hourly">Hourly Rate</SelectItem>
+                                        <SelectItem value="per_attendee">Per Attendee</SelectItem>
+                                      </SelectContent>
+                                    </Select>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+                              
+                              {/* Room facilities */}
+                              {facilities.length > 0 && (
                                 <FormField
-                                  key={facility.id}
                                   control={form.control}
-                                  name="requestedFacilities"
-                                  render={({ field }) => {
-                                    return (
-                                      <FormItem
-                                        key={facility.id}
-                                        className="flex flex-row items-start space-x-3 space-y-0"
-                                      >
-                                        <FormControl>
-                                          <Checkbox
-                                            checked={field.value?.includes(facility.name)}
-                                            onCheckedChange={(checked) => {
-                                              return checked
-                                                ? field.onChange([...field.value, facility.name])
-                                                : field.onChange(
-                                                    field.value?.filter(
-                                                      (value) => value !== facility.name
-                                                    )
-                                                  );
-                                            }}
-                                          />
-                                        </FormControl>
-                                        <FormLabel className="font-normal">
-                                          {facility.name}
-                                          {facility.cost > 0 && (
-                                            <span className="text-sm text-gray-500 ml-1">
-                                              (+€{(facility.cost / 100).toFixed(2)})
-                                            </span>
-                                          )}
-                                        </FormLabel>
-                                      </FormItem>
-                                    );
-                                  }}
+                                  name={`roomSettings.${room.id}.requestedFacilities`}
+                                  render={({ field }) => (
+                                    <FormItem>
+                                      <FormLabel>Additional Facilities</FormLabel>
+                                      <FormDescription>
+                                        Select the facilities you need for this room
+                                      </FormDescription>
+                                      <div className="flex flex-wrap gap-4 mt-2">
+                                        {facilities.map((facility) => (
+                                          <FormItem
+                                            key={facility.id}
+                                            className="flex flex-row items-start space-x-3 space-y-0"
+                                          >
+                                            <FormControl>
+                                              <Checkbox
+                                                checked={field.value?.includes(facility.name)}
+                                                onCheckedChange={(checked) => {
+                                                  return checked
+                                                    ? field.onChange([...field.value || [], facility.name])
+                                                    : field.onChange(
+                                                        field.value?.filter(
+                                                          (value) => value !== facility.name
+                                                        ) || []
+                                                      );
+                                                }}
+                                              />
+                                            </FormControl>
+                                            <FormLabel className="font-normal">
+                                              {facility.name}
+                                              {facility.cost > 0 && (
+                                                <span className="text-sm text-gray-500 ml-1">
+                                                  (+€{(facility.cost / 100).toFixed(2)})
+                                                </span>
+                                              )}
+                                            </FormLabel>
+                                          </FormItem>
+                                        ))}
+                                      </div>
+                                      <FormMessage />
+                                    </FormItem>
+                                  )}
                                 />
-                              ))}
+                              )}
                             </div>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
+                          );
+                        })}
+                      </div>
                     </div>
                   )}
                 </div>
@@ -656,7 +819,50 @@ export default function NewBookingPage() {
                   />
 
                   {/* Cost Preview */}
-                  {selectedRoom && (
+                  {form.watch('selectedRooms')?.length > 0 ? (
+                    <div className="mt-6 bg-gray-50 p-4 rounded-lg border border-gray-200">
+                      <h3 className="font-medium text-gray-700 mb-3">Cost Preview</h3>
+                      
+                      {/* Show costs for each room */}
+                      <div className="space-y-4">
+                        {calculateCost(form.getValues()).roomCosts?.map((roomCost, index) => (
+                          <div key={index} className="p-3 border border-gray-200 rounded-md bg-white">
+                            <div className="font-medium mb-2">{roomCost.roomName}</div>
+                            
+                            <div className="space-y-1">
+                              <div className="flex justify-between text-sm">
+                                <span>Base Rate:</span>
+                                <span>€{roomCost.base.toFixed(2)}</span>
+                              </div>
+                              
+                              {roomCost.facilities.length > 0 && (
+                                <div>
+                                  <div className="text-sm font-medium mt-1">Facilities:</div>
+                                  {roomCost.facilities.map((facility, fIndex) => (
+                                    <div key={fIndex} className="flex justify-between text-sm pl-4">
+                                      <span>{facility.name}</span>
+                                      <span>€{facility.cost.toFixed(2)}</span>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                              
+                              <div className="flex justify-between text-sm font-medium mt-1">
+                                <span>Room Total:</span>
+                                <span>€{roomCost.total.toFixed(2)}</span>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                        
+                        {/* Grand total */}
+                        <div className="border-t border-gray-300 pt-3 mt-3 flex justify-between font-medium">
+                          <span>Grand Total:</span>
+                          <span>€{calculateCost(form.getValues()).total.toFixed(2)}</span>
+                        </div>
+                      </div>
+                    </div>
+                  ) : selectedRoom ? (
                     <div className="mt-6 bg-gray-50 p-4 rounded-lg border border-gray-200">
                       <h3 className="font-medium text-sm text-gray-700 mb-2">Cost Preview</h3>
                       <div className="space-y-2">
@@ -681,7 +887,7 @@ export default function NewBookingPage() {
                         </div>
                       </div>
                     </div>
-                  )}
+                  ) : null}
                 </div>
 
                 <div className="flex justify-end">
