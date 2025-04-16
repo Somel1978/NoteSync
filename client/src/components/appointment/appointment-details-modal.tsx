@@ -896,11 +896,17 @@ export function AppointmentDetailsModal({
                                 <SelectValue placeholder="Select primary room" />
                               </SelectTrigger>
                               <SelectContent>
-                                {rooms && rooms.map((room) => (
-                                  <SelectItem key={room.id} value={String(room.id)}>
-                                    {room.name}
-                                  </SelectItem>
-                                ))}
+                                {rooms && rooms.map((room) => {
+                                  // When editing, don't filter out booked rooms if they're already part of this appointment
+                                  const isAlreadyBooked = editedAppointment.rooms && Array.isArray(editedAppointment.rooms) && 
+                                    editedAppointment.rooms.some(bookedRoom => bookedRoom.roomId === room.id);
+                                    
+                                  return (
+                                    <SelectItem key={room.id} value={String(room.id)}>
+                                      {room.name}
+                                    </SelectItem>
+                                  );
+                                })}
                               </SelectContent>
                             </Select>
                             <p className="text-xs text-gray-500 mt-1">
@@ -1612,13 +1618,11 @@ export function AppointmentDetailsModal({
 
                   {!isEditMode ? (
                     <div className="space-y-6">
+                      {/* Cost type is now handled per room, not globally */}
                       <div>
-                        <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">Cost Type</h5>
+                        <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">Cost Calculation</h5>
                         <p className="text-sm text-gray-900">
-                          {appointment.costType === 'flat' ? 'Flat Rate' :
-                           appointment.costType === 'hourly' ? 'Hourly Rate' :
-                           appointment.costType === 'per_attendee' ? 'Per Attendee' : 
-                           appointment.costType}
+                          Individual room pricing ({getRoomsArray(appointment).length} room{getRoomsArray(appointment).length !== 1 ? 's' : ''})
                         </p>
                       </div>
                       <div>
