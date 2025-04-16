@@ -381,19 +381,7 @@ export function AppointmentDetailsModal({
     // If just a single room
     return editedAppointment.roomId ? calculateRoomCost(editedAppointment.roomId).totalCost : 0;
   };
-
-  if (isAppointmentLoading) {
-    return (
-      <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-          <div className="flex justify-center items-center h-40">
-            <p>Loading appointment details...</p>
-          </div>
-        </DialogContent>
-      </Dialog>
-    );
-  }
-
+  
   // Function to handle custom facility addition
   const handleAddCustomFacility = (roomIndex: number) => {
     if (!customFacilityName || customFacilityCost <= 0 || !editedAppointment.rooms) return;
@@ -442,6 +430,19 @@ export function AppointmentDetailsModal({
       description: `Added ${customFacilityName} (€${(customFacilityCost/100).toFixed(2)})`,
     });
   };
+
+  if (isAppointmentLoading) {
+    return (
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <div className="flex justify-center items-center h-40">
+            <p>Loading appointment details...</p>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
 
   return (
     <>
