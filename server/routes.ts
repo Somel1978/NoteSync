@@ -473,11 +473,42 @@ export function registerRoutes(app: Express): Server {
     }
   });
   
-  // Request account deletion
-  app.post("/api/users/request-deletion", isAuthenticated, async (req, res, next) => {
+  // User updating themselves
+  app.patch("/api/users/:id", isAuthenticated, async (req, res, next) => {
     try {
-      const userId = req.user!.id;
-      const updatedUser = await storage.updateUser(userId, { deletionRequested: true });
+      const id = parseInt(req.params.id);
+      const currentUserId = req.user!.id;
+      
+      // Check authorization - users can only update themselves unless they're admin
+      if (id !== currentUserId && req.user!.role !== 'admin') {
+        return res.status(403).json({ message: "You can only update your own account" });
+      }
+      
+      // Don't allow password or role updates through this endpoint
+      const { password, role, ...updates } = req.body;
+      
+      const updatedUser = await storage.updateUser(id, updates);
+      if (!updatedUser) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      res.json(updatedUser);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  // Request account deletion
+  app.post("/api/users/:id/request-deletion", isAuthenticated, async (req, res, next) => {
+    try {
+      const id = parseInt(req.params.id);
+      const currentUserId = req.user!.id;
+      
+      // Check if this is the user's own account
+      if (id !== currentUserId && req.user!.role !== 'admin') {
+        return res.status(403).json({ message: "You can only request deletion of your own account" });
+      }
+      
+      const updatedUser = await storage.updateUser(id, { deletionRequested: true });
       if (!updatedUser) {
         return res.status(404).json({ message: "User not found" });
       }
@@ -488,10 +519,17 @@ export function registerRoutes(app: Express): Server {
   });
   
   // Cancel deletion request
-  app.post("/api/users/cancel-deletion-request", isAuthenticated, async (req, res, next) => {
+  app.post("/api/users/:id/cancel-deletion-request", isAuthenticated, async (req, res, next) => {
     try {
-      const userId = req.user!.id;
-      const updatedUser = await storage.updateUser(userId, { deletionRequested: false });
+      const id = parseInt(req.params.id);
+      const currentUserId = req.user!.id;
+      
+      // Check if this is the user's own account or admin
+      if (id !== currentUserId && req.user!.role !== 'admin') {
+        return res.status(403).json({ message: "You can only cancel deletion of your own account" });
+      }
+      
+      const updatedUser = await storage.updateUser(id, { deletionRequested: false });
       if (!updatedUser) {
         return res.status(404).json({ message: "User not found" });
       }
@@ -502,19 +540,42 @@ export function registerRoutes(app: Express): Server {
   });
   
   // Change password (for authenticated user)
-  app.post("/api/users/change-password", isAuthenticated, async (req, res, next) => {
+  app.post("/api/users/:id/change-password", isAuthenticated, async (req, res, next) => {
     try {
-      const userId = req.user!.id;
+      const id = parseInt(req.params.id);
+      const currentUserId = req.user!.id;
+      
+      // Check if this is the user's own account or admin
+      if (id !== currentUserId && req.user!.role !== 'admin') {
+        return res.status(403).json({ message: "You can only change your own password" });
+      }
+      
       const { currentPassword, newPassword } = req.body;
       
       // Get the user
-      const user = await storage.getUser(userId);
+      const user = await storage.getUser(id);
       if (!user) {
         return res.status(404).json({ message: "User not found" });
       }
       
-      // Verify current password (this would use a comparePasswords function from auth)
-      // For now we'll just pass it through to the auth module
+      // Import comparePasswords from auth module
+      const { comparePasswords, hashPassword } = require('./auth');
+      
+      // Verify current password
+      const isPasswordValid = await comparePasswords(currentPassword, user.password);
+      if (!isPasswordValid) {
+        return res.status(400).json({ message: "Current password is incorrect" });
+      }
+      
+      // Hash the new password
+      const hashedPassword = await hashPassword(newPassword);
+      
+      // Update the user's password
+      const updatedUser = await storage.updateUser(id, { password: hashedPassword });
+      if (!updatedUser) {
+        return res.status(404).json({ message: "Failed to update password" });
+      }
+      
       res.json({ message: "Password changed successfully" });
     } catch (error) {
       next(error);

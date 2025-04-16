@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { AppLayout } from "@/components/layout/app-layout";
@@ -188,6 +188,105 @@ export default function SettingsPage() {
     },
   });
 
+  // Define mutation for updating user profile
+  const updateProfileMutation = useMutation({
+    mutationFn: async (data: { name: string; username: string; email: string }) => {
+      if (!user?.id) throw new Error("No user found");
+      const res = await apiRequest("PATCH", `/api/users/${user.id}`, data);
+      return await res.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Profile updated",
+        description: "Your profile has been successfully updated.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/user"] });
+    },
+    onError: (error) => {
+      toast({
+        title: "Failed to update profile",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Define mutation for changing password
+  const changePasswordMutation = useMutation({
+    mutationFn: async (data: ChangePasswordFormValues) => {
+      if (!user?.id) throw new Error("No user found");
+      const res = await apiRequest("POST", `/api/users/${user.id}/change-password`, {
+        currentPassword: data.currentPassword,
+        newPassword: data.newPassword,
+      });
+      return await res.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Password changed",
+        description: "Your password has been successfully changed.",
+      });
+      passwordForm.reset({
+        currentPassword: "",
+        newPassword: "",
+        confirmNewPassword: "",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Failed to change password",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Define mutation for requesting account deletion
+  const requestDeletionMutation = useMutation({
+    mutationFn: async () => {
+      if (!user?.id) throw new Error("No user found");
+      const res = await apiRequest("POST", `/api/users/${user.id}/request-deletion`);
+      return await res.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Deletion requested",
+        description: "Your account deletion request has been submitted. An administrator will review your request.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/user"] });
+    },
+    onError: (error) => {
+      toast({
+        title: "Failed to request deletion",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+  
+  // Define mutation for approving user deletion (admin only)
+  const approveUserDeletionMutation = useMutation({
+    mutationFn: async (userId: number) => {
+      const res = await apiRequest("DELETE", `/api/users/${userId}`);
+      return await res.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "User deleted",
+        description: "The user has been successfully deleted.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/users"] });
+    },
+    onError: (error) => {
+      toast({
+        title: "Failed to delete user",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Form for creating new users
   const form = useForm<NewUserFormValues>({
     resolver: zodResolver(newUserSchema),
     defaultValues: {
@@ -199,8 +298,44 @@ export default function SettingsPage() {
     },
   });
 
+  // Form for changing password
+  const passwordForm = useForm<ChangePasswordFormValues>({
+    resolver: zodResolver(changePasswordSchema),
+    defaultValues: {
+      currentPassword: "",
+      newPassword: "",
+      confirmNewPassword: "",
+    },
+  });
+
+  // Form for handling profile updates
+  const profileForm = useForm({
+    defaultValues: {
+      name: accountInfo.name,
+      username: accountInfo.username,
+      email: accountInfo.email,
+    }
+  });
+
+  // Update profile form values when user data changes
+  useEffect(() => {
+    profileForm.reset({
+      name: accountInfo.name,
+      username: accountInfo.username,
+      email: accountInfo.email,
+    });
+  }, [accountInfo, profileForm]);
+
   const onSubmit = (data: NewUserFormValues) => {
     createUserMutation.mutate(data);
+  };
+
+  const onProfileSubmit = (data: { name: string; username: string; email: string }) => {
+    updateProfileMutation.mutate(data);
+  };
+
+  const onPasswordSubmit = (data: ChangePasswordFormValues) => {
+    changePasswordMutation.mutate(data);
   };
 
   const handleEditRoom = (room: Room) => {
@@ -214,9 +349,17 @@ export default function SettingsPage() {
     }
   };
 
-  const handleDeleteUser = (userId: number) => {
-    if (confirm("Are you sure you want to delete this user? This action cannot be undone.")) {
-      deleteUserMutation.mutate(userId);
+  const handleDeleteUser = (userId: number, isDeletionRequested = false) => {
+    const message = isDeletionRequested
+      ? "This user has requested account deletion. Are you sure you want to permanently delete this account?"
+      : "Are you sure you want to delete this user? This action cannot be undone.";
+      
+    if (confirm(message)) {
+      if (isDeletionRequested) {
+        approveUserDeletionMutation.mutate(userId);
+      } else {
+        deleteUserMutation.mutate(userId);
+      }
     }
   };
 
@@ -890,6 +1033,11 @@ export default function SettingsPage() {
                               <div className="space-y-6">
                                 <div className="flex justify-between items-center">
                                   <h3 className="text-lg font-medium text-gray-900">My Account</h3>
+                                  {user?.deletionRequested && (
+                                    <Badge variant="outline" className="text-red-500 border-red-200 bg-red-50">
+                                      Deletion Requested
+                                    </Badge>
+                                  )}
                                 </div>
                                 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -900,31 +1048,69 @@ export default function SettingsPage() {
                                       <CardDescription>Update your account details</CardDescription>
                                     </CardHeader>
                                     <CardContent>
-                                      <form className="space-y-4">
-                                        <div className="grid gap-2">
-                                          <label className="text-sm font-medium">Full Name</label>
-                                          <Input value="John Doe" />
-                                        </div>
-                                        <div className="grid gap-2">
-                                          <label className="text-sm font-medium">Username</label>
-                                          <Input value="johndoe" />
-                                        </div>
-                                        <div className="grid gap-2">
-                                          <label className="text-sm font-medium">Email</label>
-                                          <Input value="john.doe@example.com" />
-                                        </div>
-                                      </form>
+                                      <Form {...profileForm}>
+                                        <form onSubmit={profileForm.handleSubmit(onProfileSubmit)} className="space-y-4">
+                                          <FormField
+                                            control={profileForm.control}
+                                            name="name"
+                                            render={({ field }) => (
+                                              <FormItem>
+                                                <FormLabel>Full Name</FormLabel>
+                                                <FormControl>
+                                                  <Input placeholder="Your name" {...field} />
+                                                </FormControl>
+                                                <FormMessage />
+                                              </FormItem>
+                                            )}
+                                          />
+                                          
+                                          <FormField
+                                            control={profileForm.control}
+                                            name="username"
+                                            render={({ field }) => (
+                                              <FormItem>
+                                                <FormLabel>Username</FormLabel>
+                                                <FormControl>
+                                                  <Input placeholder="Username" {...field} />
+                                                </FormControl>
+                                                <FormMessage />
+                                              </FormItem>
+                                            )}
+                                          />
+                                          
+                                          <FormField
+                                            control={profileForm.control}
+                                            name="email"
+                                            render={({ field }) => (
+                                              <FormItem>
+                                                <FormLabel>Email</FormLabel>
+                                                <FormControl>
+                                                  <Input placeholder="Email address" {...field} />
+                                                </FormControl>
+                                                <FormMessage />
+                                              </FormItem>
+                                            )}
+                                          />
+                                          
+                                          <div className="pt-2">
+                                            <Button
+                                              type="submit"
+                                              className="w-full"
+                                              disabled={updateProfileMutation.isPending}
+                                            >
+                                              {updateProfileMutation.isPending ? "Saving..." : "Save Changes"}
+                                            </Button>
+                                          </div>
+                                        </form>
+                                      </Form>
                                     </CardContent>
-                                    <CardFooter>
-                                      <Button>Save Changes</Button>
-                                    </CardFooter>
                                   </Card>
                                   
                                   {/* Password & Security */}
                                   <Card>
                                     <CardHeader>
                                       <CardTitle>Password & Security</CardTitle>
-                                      <CardDescription>Update your password</CardDescription>
+                                      <CardDescription>Update your password and security settings</CardDescription>
                                     </CardHeader>
                                     <CardContent>
                                       <Accordion type="single" collapsible className="w-full">
@@ -934,45 +1120,108 @@ export default function SettingsPage() {
                                             <span>Change Password</span>
                                           </AccordionTrigger>
                                           <AccordionContent>
-                                            <form className="space-y-4 mt-4">
-                                              <div className="grid gap-2">
-                                                <label className="text-sm font-medium">Current Password</label>
-                                                <Input type="password" />
-                                              </div>
-                                              <div className="grid gap-2">
-                                                <label className="text-sm font-medium">New Password</label>
-                                                <Input type="password" />
-                                              </div>
-                                              <div className="grid gap-2">
-                                                <label className="text-sm font-medium">Confirm New Password</label>
-                                                <Input type="password" />
-                                              </div>
-                                              <Button className="w-full">Update Password</Button>
-                                            </form>
+                                            <Form {...passwordForm}>
+                                              <form onSubmit={passwordForm.handleSubmit(onPasswordSubmit)} className="space-y-4 mt-4">
+                                                <FormField
+                                                  control={passwordForm.control}
+                                                  name="currentPassword"
+                                                  render={({ field }) => (
+                                                    <FormItem>
+                                                      <FormLabel>Current Password</FormLabel>
+                                                      <FormControl>
+                                                        <Input type="password" placeholder="Your current password" {...field} />
+                                                      </FormControl>
+                                                      <FormMessage />
+                                                    </FormItem>
+                                                  )}
+                                                />
+                                                
+                                                <FormField
+                                                  control={passwordForm.control}
+                                                  name="newPassword"
+                                                  render={({ field }) => (
+                                                    <FormItem>
+                                                      <FormLabel>New Password</FormLabel>
+                                                      <FormControl>
+                                                        <Input type="password" placeholder="Your new password" {...field} />
+                                                      </FormControl>
+                                                      <FormMessage />
+                                                    </FormItem>
+                                                  )}
+                                                />
+                                                
+                                                <FormField
+                                                  control={passwordForm.control}
+                                                  name="confirmNewPassword"
+                                                  render={({ field }) => (
+                                                    <FormItem>
+                                                      <FormLabel>Confirm New Password</FormLabel>
+                                                      <FormControl>
+                                                        <Input type="password" placeholder="Confirm your new password" {...field} />
+                                                      </FormControl>
+                                                      <FormMessage />
+                                                    </FormItem>
+                                                  )}
+                                                />
+                                                
+                                                <Button
+                                                  type="submit"
+                                                  className="w-full"
+                                                  disabled={changePasswordMutation.isPending}
+                                                >
+                                                  {changePasswordMutation.isPending ? "Updating..." : "Update Password"}
+                                                </Button>
+                                              </form>
+                                            </Form>
                                           </AccordionContent>
                                         </AccordionItem>
                                         
                                         <AccordionItem value="account-deletion">
                                           <AccordionTrigger className="flex items-center gap-2">
                                             <UserMinus className="h-5 w-5 text-red-500" />
-                                            <span className="text-red-500">Request Account Deletion</span>
+                                            <span className="text-red-500">
+                                              {user?.deletionRequested ? "Deletion Requested" : "Request Account Deletion"}
+                                            </span>
                                           </AccordionTrigger>
                                           <AccordionContent>
                                             <div className="bg-red-50 p-4 rounded-md mt-4">
-                                              <div className="flex items-center gap-3">
-                                                <AlertCircle className="h-6 w-6 text-red-500" />
-                                                <h4 className="font-medium text-red-700">Warning: This action cannot be undone</h4>
-                                              </div>
-                                              <p className="mt-2 text-sm text-red-600">
-                                                Requesting account deletion will mark your account for removal.
-                                                An administrator will need to approve this request.
-                                                All of your data and personal information will be permanently deleted.
-                                              </p>
-                                              <div className="mt-4 flex justify-end">
-                                                <Button variant="destructive">
-                                                  Request Account Deletion
-                                                </Button>
-                                              </div>
+                                              {user?.deletionRequested ? (
+                                                <>
+                                                  <div className="flex items-center gap-3">
+                                                    <AlertCircle className="h-6 w-6 text-orange-500" />
+                                                    <h4 className="font-medium text-orange-700">Deletion request pending</h4>
+                                                  </div>
+                                                  <p className="mt-2 text-sm text-orange-600">
+                                                    Your account deletion request has been submitted and is pending approval from an administrator.
+                                                    You can continue to use your account until the request is approved.
+                                                  </p>
+                                                </>
+                                              ) : (
+                                                <>
+                                                  <div className="flex items-center gap-3">
+                                                    <AlertCircle className="h-6 w-6 text-red-500" />
+                                                    <h4 className="font-medium text-red-700">Warning: This action cannot be undone</h4>
+                                                  </div>
+                                                  <p className="mt-2 text-sm text-red-600">
+                                                    Requesting account deletion will mark your account for removal.
+                                                    An administrator will need to approve this request.
+                                                    All of your data and personal information will be permanently deleted.
+                                                  </p>
+                                                  <div className="mt-4 flex justify-end">
+                                                    <Button 
+                                                      variant="destructive"
+                                                      onClick={() => {
+                                                        if (confirm("Are you sure you want to request account deletion? This action will mark your account for deletion.")) {
+                                                          requestDeletionMutation.mutate();
+                                                        }
+                                                      }}
+                                                      disabled={requestDeletionMutation.isPending}
+                                                    >
+                                                      {requestDeletionMutation.isPending ? "Requesting..." : "Request Account Deletion"}
+                                                    </Button>
+                                                  </div>
+                                                </>
+                                              )}
                                             </div>
                                           </AccordionContent>
                                         </AccordionItem>
