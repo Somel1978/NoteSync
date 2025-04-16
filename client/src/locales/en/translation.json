@@ -87,7 +87,8 @@
     "approveError": "Failed to approve appointment",
     "rejectSuccess": "Appointment rejected",
     "rejectError": "Failed to reject appointment",
-    "searchPlaceholder": "Search appointments..."
+    "searchPlaceholder": "Search appointments...",
+    "noData": "No appointments scheduled for this location"
   },
   "rooms": {
     "title": "Available Rooms",
@@ -134,5 +135,8 @@
     "english": "English",
     "spanish": "Spanish",
     "portuguese": "Portuguese"
+  },
+  "locations": {
+    "noLocations": "No locations available"
   }
 }
