@@ -82,6 +82,7 @@ export function AppointmentDetailsModal({
     description?: string;
     customerOrganization?: string;
     notes?: string;
+    customFacilities?: Record<string, any>;
   }
   
   // Helper functions to safely handle rooms array
@@ -195,6 +196,12 @@ export function AppointmentDetailsModal({
       } else {
         setCustomPricing(false);
       }
+      
+      // Restore custom facilities data if available
+      if (appointment.customFacilities && typeof appointment.customFacilities === 'object') {
+        window.customFacilities = { ...appointment.customFacilities };
+        console.log("Restored custom facilities:", window.customFacilities);
+      }
     }
   }, [appointment]);
 
@@ -282,8 +289,20 @@ export function AppointmentDetailsModal({
   // Handlers
   const handleToggleEditMode = () => {
     if (isEditMode) {
+      // Before saving, make sure we store the custom facilities data in a way
+      // that will be persisted with the appointment
+      const appointmentToSave = { ...editedAppointment };
+      
+      // Make sure we have a customFacilities field
+      if (!appointmentToSave.customFacilities) {
+        appointmentToSave.customFacilities = {};
+      }
+      
+      // Store window.customFacilities data in the appointment itself
+      appointmentToSave.customFacilities = window.customFacilities;
+      
       // Save changes
-      updateMutation.mutate(editedAppointment);
+      updateMutation.mutate(appointmentToSave);
     } else {
       // Enter edit mode
       setIsEditMode(true);
