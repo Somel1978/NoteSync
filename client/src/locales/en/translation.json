@@ -17,7 +17,8 @@
     "logout": "Logout",
     "noData": "No data available",
     "error": "An error occurred",
-    "notAvailable": "N/A"
+    "notAvailable": "N/A",
+    "roomBookingSystem": "Room Booking & Management System"
   },
   "navigation": {
     "dashboard": "Dashboard",
@@ -35,7 +36,18 @@
     "confirmPassword": "Confirm Password",
     "forgotPassword": "Forgot Password?",
     "loginError": "Invalid username or password",
-    "registrationError": "Registration failed"
+    "registrationError": "Registration failed",
+    "createAccount": "Create Account",
+    "systemTitle": "ACRDSC Room Booking System",
+    "systemDescription": "A comprehensive solution for managing room bookings, appointments, and facilities.",
+    "featureBooking": "Easy Booking Management",
+    "featureBookingDesc": "Approve, reject, and track appointments with ease",
+    "featureRoom": "Room Configuration",
+    "featureRoomDesc": "Manage rooms, facilities, and pricing",
+    "featureAnalytics": "Analytics Dashboard",
+    "featureAnalyticsDesc": "Track utilization and performance metrics",
+    "enterUsername": "Enter your username",
+    "enterPassword": "Enter your password"
   },
   "dashboard": {
     "title": "Dashboard",

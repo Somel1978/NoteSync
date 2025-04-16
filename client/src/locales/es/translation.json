@@ -17,7 +17,8 @@
     "logout": "Cerrar sesión",
     "noData": "No hay datos disponibles",
     "error": "Ocurrió un error",
-    "notAvailable": "N/D"
+    "notAvailable": "N/D",
+    "roomBookingSystem": "Sistema de Reserva de Salas"
   },
   "navigation": {
     "dashboard": "Panel",
@@ -35,7 +36,18 @@
     "confirmPassword": "Confirmar contraseña",
     "forgotPassword": "¿Olvidó su contraseña?",
     "loginError": "Nombre de usuario o contraseña inválidos",
-    "registrationError": "Registro fallido"
+    "registrationError": "Registro fallido",
+    "createAccount": "Crear Cuenta",
+    "systemTitle": "Sistema de Reserva de Salas ACRDSC",
+    "systemDescription": "Una solución completa para gestionar reservas de salas, citas e instalaciones.",
+    "featureBooking": "Gestión Fácil de Reservas",
+    "featureBookingDesc": "Apruebe, rechace y controle citas con facilidad",
+    "featureRoom": "Configuración de Salas",
+    "featureRoomDesc": "Gestione salas, instalaciones y precios",
+    "featureAnalytics": "Panel de Análisis",
+    "featureAnalyticsDesc": "Seguimiento de métricas de utilización y rendimiento",
+    "enterUsername": "Introduzca su nombre de usuario",
+    "enterPassword": "Introduzca su contraseña"
   },
   "dashboard": {
     "title": "Panel",
