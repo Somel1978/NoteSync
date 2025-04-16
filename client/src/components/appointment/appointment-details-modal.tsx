@@ -251,7 +251,8 @@ export function AppointmentDetailsModal({
     }
   };
   
-  const calculateCost = (roomId: number) => {
+  // Calculate cost for a single room
+  const calculateRoomCost = (roomId: number) => {
     if (!rooms || !Array.isArray(rooms)) return 0;
     
     const selectedRoom = rooms.find(r => r.id === roomId);
@@ -281,6 +282,30 @@ export function AppointmentDetailsModal({
     
     console.log(`Calculated cost for room ${roomId} with type ${costType}: ${baseCost}`);
     return baseCost;
+  };
+  
+  // Calculate cost considering all rooms in the appointment
+  const calculateCost = (roomId: number) => {
+    // In case of multi-room booking, we'll need to get costs from all rooms
+    if (appointment && Array.isArray(appointment.rooms) && appointment.rooms.length > 0) {
+      // If we are editing, we'll use the calculateRoomCost for the primary room
+      if (isEditMode) {
+        return calculateRoomCost(roomId);
+      }
+      
+      // For viewing, we use the stored costs from the rooms array
+      let totalCost = 0;
+      appointment.rooms.forEach(room => {
+        if (room.roomId === roomId) {
+          totalCost += room.cost;
+        }
+      });
+      
+      return totalCost;
+    }
+    
+    // Fall back to single room calculation
+    return calculateRoomCost(roomId);
   };
   
   const handleRoomChange = (roomId: number) => {
