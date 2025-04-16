@@ -20,7 +20,7 @@ import { Separator } from "@/components/ui/separator";
 import { format, parse } from "date-fns";
 import { Edit, Trash, Clock, Eye, X, Save, CalendarIcon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { Appointment, Room, User } from "@shared/schema";
+import { Appointment, Room, User, RoomBooking } from "@shared/schema";
 import {
   Popover,
   PopoverContent,
@@ -53,13 +53,18 @@ export function AppointmentDetailsModal({
 }: AppointmentDetailsModalProps) {
   const [activeTab, setActiveTab] = useState("details");
   const [isEditMode, setIsEditMode] = useState(false);
-  const [editedAppointment, setEditedAppointment] = useState<Partial<Appointment>>({});
+  const [editedAppointment, setEditedAppointment] = useState<Partial<AppointmentWithRooms>>({});
   const [customPricing, setCustomPricing] = useState(false);
   const [startDate, setStartDate] = useState<Date | undefined>(undefined);
   const [endDate, setEndDate] = useState<Date | undefined>(undefined);
   const { toast } = useToast();
   
-  const { data: appointment, isLoading: isAppointmentLoading } = useQuery<Appointment>({
+  // Extend the Appointment type to include rooms array
+  interface AppointmentWithRooms extends Appointment {
+    rooms?: RoomBooking[];
+  }
+  
+  const { data: appointment, isLoading: isAppointmentLoading } = useQuery<AppointmentWithRooms>({
     queryKey: ["/api/appointments", appointmentId],
     enabled: open && appointmentId > 0,
   });

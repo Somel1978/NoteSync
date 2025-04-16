@@ -329,6 +329,18 @@ export function registerRoutes(app: Express): Server {
       if (!appointment) {
         return res.status(404).json({ message: "Appointment not found" });
       }
+      
+      // Debug output to check the appointment data
+      console.log("Appointment data:", {
+        id: appointment.id,
+        title: appointment.title,
+        roomId: appointment.roomId,
+        hasRoomsArray: !!appointment.rooms,
+        isRoomsArray: Array.isArray(appointment.rooms),
+        roomsLength: Array.isArray(appointment.rooms) ? appointment.rooms.length : 0,
+        roomsData: appointment.rooms
+      });
+      
       res.json(appointment);
     } catch (error) {
       next(error);
