@@ -171,8 +171,19 @@ export function AppointmentDetailsModal({
     },
     onSuccess: () => {
       toast({ title: "Appointment updated successfully" });
+      
+      // Invalidate all potentially affected queries to ensure fresh data
       queryClient.invalidateQueries({ queryKey: ["/api/appointments"] });
-      setIsEditMode(false);
+      
+      // Specifically refetch the current appointment to ensure state is consistent
+      queryClient.invalidateQueries({ 
+        queryKey: ["/api/appointments", appointmentId] 
+      });
+      
+      // Delay before exiting edit mode to allow data to refresh
+      setTimeout(() => {
+        setIsEditMode(false);
+      }, 100);
     },
     onError: (error: Error) => {
       toast({
@@ -303,11 +314,11 @@ export function AppointmentDetailsModal({
     const targetRoom = rooms.find(r => r.id === roomId);
     if (!targetRoom || !targetRoom.facilities) return [];
     
-    let standardFacilities = [];
+    let standardFacilities: any[] = [];
     try {
       if (typeof targetRoom.facilities === 'string') {
         standardFacilities = JSON.parse(targetRoom.facilities);
-      } else {
+      } else if (Array.isArray(targetRoom.facilities)) {
         standardFacilities = targetRoom.facilities;
       }
     } catch (e) {
@@ -522,7 +533,7 @@ export function AppointmentDetailsModal({
         // If not a custom facility, check standard facilities
         if (selectedRoom.facilities) {
           try {
-            let availableFacilities = [];
+            let availableFacilities: any[] = [];
             
             if (typeof selectedRoom.facilities === 'string') {
               availableFacilities = JSON.parse(selectedRoom.facilities);
