@@ -186,7 +186,94 @@ export function AppointmentDetailsModal({
   // Initialize edited appointment when appointment data loads
   useEffect(() => {
     if (appointment) {
-      setEditedAppointment(appointment);
+      // Make a deep copy to avoid reference issues
+      const appointmentCopy = { ...appointment };
+      
+      // Initialize window.customFacilities if not already
+      if (!window.customFacilities) {
+        window.customFacilities = {};
+      }
+      
+      // Restore custom facilities data if available
+      if (appointment.customFacilities && typeof appointment.customFacilities === 'object') {
+        // Merge with any existing custom facilities data
+        window.customFacilities = { 
+          ...window.customFacilities,
+          ...appointment.customFacilities 
+        };
+        console.log("Restored custom facilities:", window.customFacilities);
+      }
+      
+      // If we have rooms array, make sure custom facilities costs are included
+      if (appointmentCopy.rooms && Array.isArray(appointmentCopy.rooms)) {
+        appointmentCopy.rooms = appointmentCopy.rooms.map((room: RoomBooking) => {
+          // Calculate all costs, including standard and custom facilities
+          let roomCost = 0;
+          
+          // Base room cost based on cost type
+          if (room.roomId && rooms) {
+            const selectedRoom = rooms.find(r => r.id === room.roomId);
+            if (selectedRoom) {
+              if (room.costType === 'flat') {
+                roomCost += selectedRoom.flatRate || 0;
+              } else if (room.costType === 'hourly' && appointmentCopy.startTime && appointmentCopy.endTime) {
+                const hours = Math.max(1, Math.ceil(
+                  (new Date(appointmentCopy.endTime).getTime() - new Date(appointmentCopy.startTime).getTime()) 
+                  / (1000 * 60 * 60)
+                ));
+                roomCost += (selectedRoom.hourlyRate || 0) * hours;
+              } else if (room.costType === 'per_attendee') {
+                roomCost += (selectedRoom.attendeeRate || 0) * (appointmentCopy.attendeesCount || 1);
+              }
+            }
+          }
+          
+          // Add facilities costs including custom facilities
+          if (room.requestedFacilities && Array.isArray(room.requestedFacilities)) {
+            room.requestedFacilities.forEach(facilityName => {
+              // Check for custom facility first
+              const cacheKey = `${room.roomId}-${facilityName}`;
+              const customFacility = window.customFacilities[cacheKey] || 
+                                    (appointment.customFacilities && appointment.customFacilities[cacheKey]);
+              
+              if (customFacility && typeof customFacility === 'object' && 'cost' in customFacility) {
+                roomCost += Number(customFacility.cost);
+              } else if (rooms) {
+                // Check standard facilities
+                const roomObj = rooms.find(r => r.id === room.roomId);
+                if (roomObj && roomObj.facilities) {
+                  try {
+                    let facilities = [];
+                    if (typeof roomObj.facilities === 'string') {
+                      facilities = JSON.parse(roomObj.facilities);
+                    } else if (Array.isArray(roomObj.facilities)) {
+                      facilities = roomObj.facilities;
+                    }
+                    
+                    const facilityObj = facilities.find((f: any) => 
+                      typeof f === 'object' && f !== null && f.name === facilityName
+                    );
+                    
+                    if (facilityObj && typeof facilityObj === 'object' && 'cost' in facilityObj) {
+                      roomCost += Number(facilityObj.cost);
+                    }
+                  } catch (e) {
+                    console.error('Error parsing facilities during initialization:', e);
+                  }
+                }
+              }
+            });
+          }
+          
+          // Preserve original cost if it exists, otherwise use calculated cost
+          return {
+            ...room,
+            cost: Number(room.cost) || roomCost
+          };
+        });
+      }
+      
+      setEditedAppointment(appointmentCopy);
       
       // Check if custom pricing is enabled
       if (appointment.costBreakdown && 
@@ -196,14 +283,8 @@ export function AppointmentDetailsModal({
       } else {
         setCustomPricing(false);
       }
-      
-      // Restore custom facilities data if available
-      if (appointment.customFacilities && typeof appointment.customFacilities === 'object') {
-        window.customFacilities = { ...appointment.customFacilities };
-        console.log("Restored custom facilities:", window.customFacilities);
-      }
     }
-  }, [appointment]);
+  }, [appointment, rooms]);
 
   // Reset state when modal closes
   useEffect(() => {
@@ -425,28 +506,42 @@ export function AppointmentDetailsModal({
     let facilitiesCost = 0;
     const facilities = requestedFacilities || [];
     
-    if (selectedRoom.facilities && facilities.length > 0) {
-      try {
-        let availableFacilities = [];
+    if (facilities.length > 0) {
+      // First check for custom facilities (which might not be in the room's standard facilities)
+      facilities.forEach(facilityName => {
+        const cacheKey = `${roomId}-${facilityName}`;
+        const customFacility = window.customFacilities?.[cacheKey] || 
+                               (editedAppointment.customFacilities && 
+                                editedAppointment.customFacilities[cacheKey]);
         
-        if (typeof selectedRoom.facilities === 'string') {
-          availableFacilities = JSON.parse(selectedRoom.facilities);
-        } else if (Array.isArray(selectedRoom.facilities)) {
-          availableFacilities = selectedRoom.facilities;
+        if (customFacility && typeof customFacility === 'object' && customFacility.cost) {
+          facilitiesCost += Number(customFacility.cost);
+          return; // Skip checking standard facilities for this one
         }
         
-        facilities.forEach(facilityName => {
-          const facility = availableFacilities.find((f: any) => 
-            (typeof f === 'object' && f !== null && f.name === facilityName)
-          );
-          
-          if (facility && typeof facility === 'object' && facility.cost) {
-            facilitiesCost += facility.cost;
+        // If not a custom facility, check standard facilities
+        if (selectedRoom.facilities) {
+          try {
+            let availableFacilities = [];
+            
+            if (typeof selectedRoom.facilities === 'string') {
+              availableFacilities = JSON.parse(selectedRoom.facilities);
+            } else if (Array.isArray(selectedRoom.facilities)) {
+              availableFacilities = selectedRoom.facilities;
+            }
+            
+            const facility = availableFacilities.find((f: any) => 
+              (typeof f === 'object' && f !== null && f.name === facilityName)
+            );
+            
+            if (facility && typeof facility === 'object' && facility.cost) {
+              facilitiesCost += Number(facility.cost);
+            }
+          } catch (e) {
+            console.error('Error calculating facilities cost:', e);
           }
-        });
-      } catch (e) {
-        console.error('Error calculating facilities cost:', e);
-      }
+        }
+      });
     }
     
     const totalCost = baseCost + facilitiesCost;
@@ -1229,11 +1324,25 @@ export function AppointmentDetailsModal({
                                       <p>Facilities:</p>
                                       <ul className="ml-2">
                                         {roomBooking.requestedFacilities.map((facility, facilityIndex) => {
-                                          // Get facility cost if available
-                                          const availableFacilities = getAvailableFacilities(roomBooking.roomId);
-                                          const facilityData = availableFacilities.find((f: any) => 
-                                            typeof f === 'object' && f !== null && f.name === facility
-                                          );
+                                          // For custom facilities, check the cache first
+                                          const cacheKey = `${roomBooking.roomId}-${facility}`;
+                                          const cachedFacility = window.customFacilities?.[cacheKey];
+                                          
+                                          // If not in cache, check standard facilities
+                                          let facilityData;
+                                          if (cachedFacility) {
+                                            facilityData = cachedFacility;
+                                          } else {
+                                            const availableFacilities = getAvailableFacilities(roomBooking.roomId, false); // Don't include custom
+                                            facilityData = availableFacilities.find((f: any) => 
+                                              typeof f === 'object' && f !== null && f.name === facility
+                                            );
+                                          }
+                                          
+                                          // Check for cost in appointment.customFacilities as well
+                                          if (!facilityData && appointment.customFacilities) {
+                                            facilityData = appointment.customFacilities[cacheKey];
+                                          }
                                           
                                           const facilityCost = facilityData && typeof facilityData === 'object' ? 
                                             facilityData.cost : 0;
