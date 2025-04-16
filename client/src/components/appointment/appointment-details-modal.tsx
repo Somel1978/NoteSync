@@ -1322,6 +1322,7 @@ export function AppointmentDetailsModal({
                 <TabsContent value="history" className="p-6">
                   <div className="mb-6">
                     <h4 className="text-sm font-medium text-gray-900">Audit Log</h4>
+                    <p className="text-xs text-gray-500 mt-1">Track all changes made to this appointment</p>
                   </div>
 
                   {isLogsLoading ? (
@@ -1332,21 +1333,44 @@ export function AppointmentDetailsModal({
                     <div className="border border-gray-200 rounded-md overflow-hidden">
                       {auditLogs.map((log: any, index) => (
                         <div key={log.id || index}>
-                          <div className="px-4 py-3 bg-gray-50 text-xs uppercase font-medium text-gray-500">
-                            {format(new Date(log.createdAt), "MMM dd, yyyy h:mm a")}
+                          <div className="px-4 py-3 bg-gray-50 text-xs uppercase font-medium text-gray-500 flex justify-between">
+                            <span>{format(new Date(log.createdAt), "MMM dd, yyyy h:mm a")}</span>
+                            <Badge variant="outline" className="text-xs uppercase">
+                              {log.action}
+                            </Badge>
                           </div>
                           <div className="p-4 border-t border-gray-200">
                             <p className="text-sm text-gray-600 mb-2">Updated by User ID: {log.userId}</p>
-                            <p className="text-sm text-gray-600 capitalize">Action: {log.action}</p>
                             
                             {(log.oldData || log.newData) && (
                               <div className="mt-4 relative">
-                                <div className="h-32 overflow-y-auto text-xs rounded-md bg-gray-50 p-2">
+                                <div className="max-h-64 overflow-y-auto text-xs rounded-md bg-gray-50 p-4">
                                   {log.oldData && (
-                                    <p className="mb-2"><span className="text-red-500">-</span> {JSON.stringify(log.oldData)}</p>
+                                    <div className="mb-3">
+                                      <h5 className="font-medium text-gray-700 mb-1">Previous Values:</h5>
+                                      <div className="pl-2 border-l-2 border-red-300">
+                                        {Object.entries(typeof log.oldData === 'object' ? log.oldData : {}).map(([key, value]: [string, any]) => (
+                                          <div key={key} className="mb-1">
+                                            <span className="font-medium">{key}:</span>{' '}
+                                            <span className="text-red-500">{typeof value === 'object' ? JSON.stringify(value) : String(value)}</span>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    </div>
                                   )}
+                                  
                                   {log.newData && (
-                                    <p><span className="text-green-500">+</span> {JSON.stringify(log.newData)}</p>
+                                    <div>
+                                      <h5 className="font-medium text-gray-700 mb-1">New Values:</h5>
+                                      <div className="pl-2 border-l-2 border-green-300">
+                                        {Object.entries(typeof log.newData === 'object' ? log.newData : {}).map(([key, value]: [string, any]) => (
+                                          <div key={key} className="mb-1">
+                                            <span className="font-medium">{key}:</span>{' '}
+                                            <span className="text-green-600">{typeof value === 'object' ? JSON.stringify(value) : String(value)}</span>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    </div>
                                   )}
                                 </div>
                               </div>
@@ -1356,8 +1380,9 @@ export function AppointmentDetailsModal({
                       ))}
                     </div>
                   ) : (
-                    <div className="text-center py-8 text-gray-500">
-                      <p>No audit logs available</p>
+                    <div className="text-center text-gray-500 py-6 border rounded-md">
+                      <p>No audit logs available for this appointment.</p>
+                      <p className="text-xs mt-2">Changes to the appointment will be tracked here</p>
                     </div>
                   )}
                 </TabsContent>
