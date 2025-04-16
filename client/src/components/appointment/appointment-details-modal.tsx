@@ -1220,11 +1220,24 @@ export function AppointmentDetailsModal({
                                             <SelectValue placeholder="Select facility" />
                                           </SelectTrigger>
                                           <SelectContent>
-                                            {getAvailableFacilities(roomBooking.roomId).map((facility, i) => (
-                                              <SelectItem key={i} value={facility}>
-                                                {facility}
-                                              </SelectItem>
-                                            ))}
+                                            {(() => {
+                                              const facilities = getAvailableFacilities(roomBooking.roomId);
+                                              console.log('Available facilities:', facilities);
+                                              return facilities.map((facility, i) => {
+                                                console.log('Facility item:', facility, typeof facility);
+                                                // Handle different types of facility values
+                                                const facilityName = typeof facility === 'object' ? 
+                                                  (facility.name || JSON.stringify(facility)) : String(facility);
+                                                const facilityValue = typeof facility === 'object' ? 
+                                                  (facility.name || JSON.stringify(facility)) : String(facility);
+                                                  
+                                                return (
+                                                  <SelectItem key={i} value={facilityValue}>
+                                                    {facilityName}
+                                                  </SelectItem>
+                                                );
+                                              });
+                                            })()}
                                           </SelectContent>
                                         </Select>
                                         
