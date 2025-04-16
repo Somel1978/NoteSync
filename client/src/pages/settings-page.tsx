@@ -19,7 +19,8 @@ import {
   KeyRound, 
   UserMinus,
   UserPlus,
-  AlertCircle
+  AlertCircle,
+  PlusCircle
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
@@ -407,16 +408,8 @@ export default function SettingsPage() {
                       </TabsTrigger>
                     )}
                     
-                    {/* Show Rooms tab for Admin */}
-                    {user?.role === 'admin' && (
-                      <TabsTrigger value="rooms">
-                        <Settings className="h-4 w-4 mr-2" />
-                        {t('settings.rooms')}
-                      </TabsTrigger>
-                    )}
-                    
-                    {/* Show Locations tab for Director */}
-                    {user?.role === 'director' && (
+                    {/* Show Locations tab for Admin and Director */}
+                    {(user?.role === 'admin' || user?.role === 'director') && (
                       <TabsTrigger value="locations">
                         <Settings className="h-4 w-4 mr-2" />
                         {t('settings.locations')}
@@ -806,30 +799,85 @@ export default function SettingsPage() {
                     </TabsContent>
                   )}
                   
-                  {/* Rooms tab - Admin only */}
-                  {user?.role === 'admin' && (
-                    <TabsContent value="rooms">
-                      <div className="space-y-6">
-                        <h2 className="text-lg leading-6 font-medium text-gray-900">
-                          {t('settings.manageRooms')}
-                        </h2>
-                        
-                        {/* Room management content */}
-                        {/* This would be similar to the RoomListPage */}
-                      </div>
-                    </TabsContent>
-                  )}
-                  
-                  {/* Locations tab - Director only */}
-                  {user?.role === 'director' && (
+                  {/* Locations tab - Admin and Director */}
+                  {(user?.role === 'admin' || user?.role === 'director') && (
                     <TabsContent value="locations">
                       <div className="space-y-6">
-                        <h2 className="text-lg leading-6 font-medium text-gray-900">
-                          {t('settings.manageLocations')}
-                        </h2>
+                        <div className="flex justify-between items-center">
+                          <h2 className="text-lg leading-6 font-medium text-gray-900">
+                            {t('settings.manageLocations')}
+                          </h2>
+                          
+                          <Button onClick={() => alert('Add location functionality will be implemented here')}>
+                            <PlusCircle className="h-4 w-4 mr-2" />
+                            {t('common.add')} {t('settings.locations')}
+                          </Button>
+                        </div>
                         
-                        {/* Locations management content */}
-                        {/* This would include a simplified view of locations */}
+                        {/* Locations List */}
+                        <div className="grid gap-4">
+                          {locations.map((location) => (
+                            <Card key={location.id} className="overflow-hidden">
+                              <CardContent className="p-6">
+                                <div className="flex items-start justify-between">
+                                  <div>
+                                    <h3 className="font-medium text-lg">{location.name}</h3>
+                                    <p className="text-gray-500 mt-1">{location.description || t('common.notAvailable')}</p>
+                                    
+                                    <div className="mt-2">
+                                      <p className="text-sm">
+                                        <span className="font-medium">{t('rooms.rooms')}:</span> {
+                                          rooms.filter(room => room.locationId === location.id).length
+                                        }
+                                      </p>
+                                    </div>
+                                  </div>
+                                  
+                                  <div className="flex space-x-2">
+                                    <Button variant="outline" size="sm" className="text-xs">
+                                      <Pencil className="h-3 w-3 mr-1" />
+                                      {t('common.edit')}
+                                    </Button>
+                                    
+                                    <Button 
+                                      variant="outline" 
+                                      size="sm" 
+                                      className="text-xs text-red-600"
+                                      onClick={() => {
+                                        if (confirm(`${t('common.delete')} ${location.name}?`)) {
+                                          alert('Delete functionality will be implemented here');
+                                        }
+                                      }}
+                                    >
+                                      <Trash className="h-3 w-3 mr-1" />
+                                      {t('common.delete')}
+                                    </Button>
+                                  </div>
+                                </div>
+                              </CardContent>
+                            </Card>
+                          ))}
+                          
+                          {locations.length === 0 && (
+                            <div className="text-center py-12 bg-gray-50 rounded-md">
+                              <div className="mx-auto h-12 w-12 text-gray-400">
+                                <Settings className="h-10 w-10" />
+                              </div>
+                              <h3 className="mt-2 text-sm font-medium text-gray-900">
+                                {t('locations.noLocations')}
+                              </h3>
+                              <p className="mt-1 text-sm text-gray-500">
+                                Get started by creating a new location.
+                              </p>
+                              <div className="mt-6">
+                                <Button onClick={() => alert('Add location functionality will be implemented here')}>
+                                  <PlusCircle className="h-4 w-4 mr-2" />
+                                  {t('common.add')} {t('settings.locations')}
+                                </Button>
+                              </div>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </TabsContent>
                   )}

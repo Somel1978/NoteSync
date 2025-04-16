@@ -1,4 +1,4 @@
-import { Switch, Route } from "wouter";
+import { Switch, Route, useLocation } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -12,10 +12,25 @@ import SettingsPage from "@/pages/settings-page";
 import LandingPage from "@/pages/landing-page";
 import PublicRoomPage from "@/pages/public-room-page";
 import { ProtectedRoute } from "./lib/protected-route";
-import { AuthProvider } from "./hooks/use-auth";
+import { AuthProvider, useAuth } from "./hooks/use-auth";
 import { LanguageProvider } from "./hooks/use-language";
+import { useEffect } from "react";
 
 function Router() {
+  const { user } = useAuth();
+  const [, setLocation] = useLocation();
+  
+  // Redirect users based on their role when they log in
+  useEffect(() => {
+    if (user) {
+      if (user.role === 'guest') {
+        setLocation("/new-booking");
+      } else {
+        setLocation("/dashboard");
+      }
+    }
+  }, [user, setLocation]);
+  
   return (
     <Switch>
       <Route path="/" component={LandingPage} />
