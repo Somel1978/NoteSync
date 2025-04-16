@@ -26,7 +26,8 @@
     "rooms": "Salas",
     "settings": "Configurações",
     "language": "Idioma",
-    "selectLanguage": "Selecionar Idioma"
+    "selectLanguage": "Selecionar Idioma",
+    "returnHome": "Voltar ao Início"
   },
   "auth": {
     "login": "Entrar",
@@ -129,6 +130,7 @@
     "billing": "Faturamento",
     "users": "Usuários",
     "addUser": "Adicionar Usuário",
+    "addLocationDesc": "Adicionar uma nova localização à sua organização",
     "myAccount": "Minha Conta",
     "personalInfo": "Informações Pessoais",
     "updateAccountDetails": "Atualize os detalhes da sua conta",

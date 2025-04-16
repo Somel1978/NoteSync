@@ -141,6 +141,7 @@
     "billing": "Facturación",
     "users": "Usuarios",
     "addUser": "Añadir Usuario",
+    "addLocationDesc": "Agregar una nueva ubicación a tu organización",
     "addNewUser": "Añadir Nuevo Usuario",
     "addNewUserDesc": "Crear una nueva cuenta de usuario en el sistema",
     "fullName": "Nombre Completo",

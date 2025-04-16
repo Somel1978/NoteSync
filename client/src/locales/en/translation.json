@@ -32,7 +32,8 @@
     "rooms": "Rooms",
     "settings": "Settings",
     "language": "Language",
-    "selectLanguage": "Select Language"
+    "selectLanguage": "Select Language",
+    "returnHome": "Return Home"
   },
   "auth": {
     "login": "Login",
@@ -139,6 +140,7 @@
     "billing": "Billing",
     "users": "Users",
     "addUser": "Add User",
+    "addLocationDesc": "Add a new location to your organization",
     "myAccount": "My Account",
     "personalInfo": "Personal Information",
     "updateAccountDetails": "Update your account details",
