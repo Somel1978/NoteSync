@@ -77,12 +77,12 @@ export default function LandingPage() {
     }
   };
 
-  const formatDateTime = (dateString: string) => {
+  const formatDateTime = (dateString: string | Date) => {
     try {
-      const date = new Date(dateString);
+      const date = typeof dateString === 'string' ? new Date(dateString) : dateString;
       return format(date, "MMM d, h:mm a");
     } catch {
-      return dateString;
+      return String(dateString);
     }
   };
 

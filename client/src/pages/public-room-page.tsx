@@ -90,9 +90,9 @@ export default function PublicRoomPage() {
                             <div>
                               <span className="font-medium">{t("rooms.facilities")}:</span>
                               <div className="flex flex-wrap gap-1 mt-1">
-                                {(room.facilities as string[]).map((facility, index) => (
+                                {room.facilities.map((facility: any, index: number) => (
                                   <Badge key={index} variant="outline" className="text-xs">
-                                    {facility}
+                                    {typeof facility === 'object' && facility.name ? facility.name : String(facility)}
                                   </Badge>
                                 ))}
                               </div>
