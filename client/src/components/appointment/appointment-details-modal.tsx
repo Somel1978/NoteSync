@@ -259,9 +259,11 @@ export function AppointmentDetailsModal({
     
     // Determine which rate to use based on the cost type
     let baseCost = 0;
-    if (editedAppointment.costType === 'flat') {
+    const costType = editedAppointment.costType || appointment?.costType || 'flat';
+    
+    if (costType === 'flat') {
       baseCost = selectedRoom.flatRate || 0;
-    } else if (editedAppointment.costType === 'hourly') {
+    } else if (costType === 'hourly') {
       baseCost = selectedRoom.hourlyRate || 0;
       
       // Apply duration calculation for hourly rate
@@ -269,15 +271,15 @@ export function AppointmentDetailsModal({
         const durationHours = (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60);
         baseCost = baseCost * Math.max(1, Math.ceil(durationHours));
       }
-    } else if (editedAppointment.costType === 'per_attendee') {
+    } else if (costType === 'per_attendee') {
       baseCost = selectedRoom.attendeeRate || 0;
       
       // Apply attendee count for per-attendee rate
-      if (editedAppointment.attendeesCount) {
-        baseCost = baseCost * editedAppointment.attendeesCount;
-      }
+      const attendeesCount = editedAppointment.attendeesCount || appointment?.attendeesCount || 1;
+      baseCost = baseCost * attendeesCount;
     }
     
+    console.log(`Calculated cost for room ${roomId} with type ${costType}: ${baseCost}`);
     return baseCost;
   };
   
@@ -298,14 +300,28 @@ export function AppointmentDetailsModal({
       const roomId = editedAppointment.roomId || appointment.roomId;
       const calculatedCost = calculateCost(roomId);
       
+      console.log('Toggle off custom pricing, new calculated cost:', calculatedCost);
+      
       // Update cost breakdown to reflect automatic calculation
       const costBreakdown = {
         ...(typeof editedAppointment.costBreakdown === 'object' ? editedAppointment.costBreakdown : {}),
         base: calculatedCost,
-        isCustom: false
+        isCustom: false,
+        total: calculatedCost
       };
       
       handleInputChange('agreedCost', calculatedCost);
+      handleInputChange('costBreakdown', costBreakdown);
+    } else if (enabled) {
+      // Just mark as custom but keep current price
+      const currentCost = editedAppointment.agreedCost || appointment?.agreedCost || 0;
+      const costBreakdown = {
+        ...(typeof editedAppointment.costBreakdown === 'object' ? editedAppointment.costBreakdown : {}),
+        base: currentCost,
+        isCustom: true,
+        total: currentCost
+      };
+      
       handleInputChange('costBreakdown', costBreakdown);
     }
   };
@@ -332,6 +348,17 @@ export function AppointmentDetailsModal({
                 </DialogClose>
               </div>
             </div>
+            
+            {appointment && appointment.status === 'pending' && !isEditMode && (
+              <div className="mt-4 flex justify-end space-x-3">
+                <Button variant="outline" onClick={handleReject}>
+                  Reject
+                </Button>
+                <Button onClick={handleApprove}>
+                  Approve
+                </Button>
+              </div>
+            )}
           </DialogHeader>
 
           <Tabs defaultValue="details" value={activeTab} onValueChange={setActiveTab}>
@@ -344,6 +371,17 @@ export function AppointmentDetailsModal({
                   <div className="flex items-center">
                     <Eye className="h-5 w-5 mr-2" />
                     Details
+                  </div>
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="rooms" 
+                  className="data-[state=active]:bg-black data-[state=active]:text-white px-6 py-3 rounded-none"
+                >
+                  <div className="flex items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                    </svg>
+                    Rooms
                   </div>
                 </TabsTrigger>
                 <TabsTrigger 
@@ -420,7 +458,7 @@ export function AppointmentDetailsModal({
                   
                   {!isEditMode ? (
                     <>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-8">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-6">
                         <div>
                           <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">Title</h5>
                           <p className="text-sm text-gray-900">{appointment.title}</p>
@@ -460,94 +498,10 @@ export function AppointmentDetailsModal({
                       </div>
 
                       <Separator className="my-6" />
-
-                      <div>
-                        <h4 className="text-sm font-medium text-gray-900 mb-4">Room Details</h4>
-
-                        {getRoomsArray(appointment).length > 0 ? (
-                          <div className="space-y-4 max-h-[350px] overflow-y-auto pr-1">
-                            {getRoomsArray(appointment).map((roomBooking: RoomBooking, index: number) => (
-                              <div key={index} className="border rounded-lg p-3">
-                                <div className="flex justify-between items-center mb-2">
-                                  <h5 className="font-medium text-sm">{roomBooking.roomName}</h5>
-                                  <Badge variant="outline" className="ml-2">
-                                    €{(roomBooking.cost / 100).toFixed(2)}
-                                  </Badge>
-                                </div>
-                                
-                                <div className="grid grid-cols-2 gap-3 text-sm">
-                                  <div>
-                                    <h6 className="text-xs font-medium text-gray-500 uppercase mb-1">Cost Type</h6>
-                                    <p className="text-gray-700 text-xs">
-                                      {roomBooking.costType === 'flat' ? 'Flat Rate' : 
-                                       roomBooking.costType === 'hourly' ? 'Hourly Rate' : 
-                                       roomBooking.costType === 'per_attendee' ? 'Per Attendee' : 
-                                       roomBooking.costType}
-                                    </p>
-                                  </div>
-                                  
-                                  <div>
-                                    <h6 className="text-xs font-medium text-gray-500 uppercase mb-1">Facilities</h6>
-                                    <div className="flex flex-wrap gap-1">
-                                      {roomBooking.requestedFacilities && roomBooking.requestedFacilities.length > 0 ? (
-                                        roomBooking.requestedFacilities.map((facility: string, i: number) => (
-                                          <Badge key={i} variant="secondary" className="text-xs">
-                                            {facility}
-                                          </Badge>
-                                        ))
-                                      ) : (
-                                        <p className="text-gray-500 text-xs">None</p>
-                                      )}
-                                    </div>
-                                  </div>
-                                </div>
-                              </div>
-                            ))}
-                            
-                            <div className="mt-4 pt-4 border-t">
-                              <div className="flex justify-between items-center">
-                                <span className="text-sm font-medium">Total for all rooms:</span>
-                                <span className="text-sm font-medium">
-                                  €{(appointment.agreedCost / 100).toFixed(2)}
-                                </span>
-                              </div>
-                            </div>
-                          </div>
-                        ) : (
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                            <div>
-                              <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">Room Name</h5>
-                              <p className="text-sm text-gray-900">{room?.name || "Loading..."}</p>
-                            </div>
-                            <div>
-                              <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">Location</h5>
-                              <p className="text-sm text-gray-900">{room?.locationId ? `Location ID: ${room.locationId}` : "N/A"}</p>
-                            </div>
-                            <div>
-                              <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">Requested Facilities</h5>
-                              <div className="flex flex-wrap gap-2 mt-1">
-                                {appointment.requestedFacilities && Array.isArray(appointment.requestedFacilities) && appointment.requestedFacilities.length > 0 ? (
-                                  appointment.requestedFacilities.map((facility: string, index) => (
-                                    <Badge key={index} variant="secondary">
-                                      {facility}
-                                    </Badge>
-                                  ))
-                                ) : (
-                                  <p className="text-sm text-gray-500">None requested</p>
-                                )}
-                              </div>
-                            </div>
-                            <div>
-                              <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">Purpose</h5>
-                              <p className="text-sm text-gray-900">{appointment.purpose || "N/A"}</p>
-                            </div>
-                          </div>
-                        )}
-                        
-                        <div className="mt-4">
-                          <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">Purpose</h5>
-                          <p className="text-sm text-gray-900">{appointment.purpose || "N/A"}</p>
-                        </div>
+                      
+                      <div className="mt-4">
+                        <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">Purpose</h5>
+                        <p className="text-sm text-gray-900">{appointment.purpose || "N/A"}</p>
                       </div>
                     </>
                   ) : (
@@ -840,18 +794,273 @@ export function AppointmentDetailsModal({
                     </>
                   )}
 
-                  {appointment.status === 'pending' && !isEditMode && (
-                    <div className="mt-6 flex justify-end space-x-3">
-                      <Button variant="outline" onClick={handleReject}>
-                        Reject
-                      </Button>
-                      <Button onClick={handleApprove}>
-                        Approve
-                      </Button>
+                  
+                </TabsContent>
+
+                <TabsContent value="rooms" className="p-6">
+                  <div className="flex items-start justify-between mb-6">
+                    <div className="flex items-start">
+                      <div className="flex-shrink-0 bg-blue-100 rounded-full p-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                        </svg>
+                      </div>
+                      <div className="ml-4">
+                        <h4 className="text-sm font-medium text-gray-900">Room Information</h4>
+                      </div>
+                    </div>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={handleToggleEditMode}
+                      className="text-xs"
+                    >
+                      {isEditMode ? (
+                        <>
+                          <Save className="h-4 w-4 mr-2" />
+                          Save
+                        </>
+                      ) : (
+                        <>
+                          <Edit className="h-4 w-4 mr-2" />
+                          Edit
+                        </>
+                      )}
+                    </Button>
+                  </div>
+
+                  {!isEditMode ? (
+                    <div>
+                      <h4 className="text-sm font-medium text-gray-900 mb-4">Booked Rooms</h4>
+
+                      {getRoomsArray(appointment).length > 0 ? (
+                        <div className="space-y-4 overflow-y-auto pr-1">
+                          {getRoomsArray(appointment).map((roomBooking: RoomBooking, index: number) => (
+                            <div key={index} className="border rounded-lg p-4">
+                              <div className="flex justify-between items-center mb-3">
+                                <h5 className="font-medium">{roomBooking.roomName}</h5>
+                                <Badge variant="outline" className="ml-2">
+                                  €{(roomBooking.cost / 100).toFixed(2)}
+                                </Badge>
+                              </div>
+                              
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                  <h6 className="text-xs font-medium text-gray-500 uppercase mb-1">Cost Type</h6>
+                                  <p className="text-sm text-gray-700">
+                                    {roomBooking.costType === 'flat' ? 'Flat Rate' : 
+                                     roomBooking.costType === 'hourly' ? 'Hourly Rate' : 
+                                     roomBooking.costType === 'per_attendee' ? 'Per Attendee' : 
+                                     roomBooking.costType}
+                                  </p>
+                                </div>
+                                
+                                <div>
+                                  <h6 className="text-xs font-medium text-gray-500 uppercase mb-1">Facilities</h6>
+                                  <div className="flex flex-wrap gap-1">
+                                    {roomBooking.requestedFacilities && roomBooking.requestedFacilities.length > 0 ? (
+                                      roomBooking.requestedFacilities.map((facility: string, i: number) => (
+                                        <Badge key={i} variant="secondary" className="text-xs">
+                                          {facility}
+                                        </Badge>
+                                      ))
+                                    ) : (
+                                      <p className="text-sm text-gray-500">None</p>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                          
+                          <div className="mt-4 pt-4 border-t">
+                            <div className="flex justify-between items-center">
+                              <span className="text-sm font-medium">Total for all rooms:</span>
+                              <span className="text-sm font-medium">
+                                €{(appointment.agreedCost / 100).toFixed(2)}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                          <div>
+                            <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">Room Name</h5>
+                            <p className="text-sm text-gray-900">{room?.name || "Loading..."}</p>
+                          </div>
+                          <div>
+                            <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">Location</h5>
+                            <p className="text-sm text-gray-900">{room?.locationId ? `Location ID: ${room.locationId}` : "N/A"}</p>
+                          </div>
+                          <div>
+                            <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">Requested Facilities</h5>
+                            <div className="flex flex-wrap gap-2 mt-1">
+                              {appointment.requestedFacilities && Array.isArray(appointment.requestedFacilities) && appointment.requestedFacilities.length > 0 ? (
+                                appointment.requestedFacilities.map((facility: string, index) => (
+                                  <Badge key={index} variant="secondary">
+                                    {facility}
+                                  </Badge>
+                                ))
+                              ) : (
+                                <p className="text-sm text-gray-500">None requested</p>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="space-y-6">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                        <div>
+                          <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">Primary Room</h5>
+                          <Select
+                            value={String(editedAppointment.roomId || '')}
+                            onValueChange={(value) => handleRoomChange(Number(value))}
+                          >
+                            <SelectTrigger className="w-full mt-1">
+                              <SelectValue placeholder="Select primary room" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {rooms && rooms.map((room) => (
+                                <SelectItem key={room.id} value={String(room.id)}>
+                                  {room.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <p className="text-xs text-gray-500 mt-1">
+                            To book multiple rooms, use the New Booking page
+                          </p>
+                        </div>
+                      </div>
+                      
+                      {/* Display room editing interface when multiple rooms exist */}
+                      {editedAppointment.rooms && 
+                       Array.isArray(editedAppointment.rooms) && 
+                       (editedAppointment.rooms as RoomBooking[]).length > 0 && (
+                        <>
+                          <div className="mt-4 mb-4">
+                            <h5 className="text-xs font-medium text-gray-500 uppercase mb-3">Booked Rooms</h5>
+                            <div className="space-y-4 max-h-[400px] overflow-y-auto pr-1 border rounded-md p-4">
+                              {(editedAppointment.rooms as RoomBooking[]).map((roomBooking, index) => (
+                                <div key={index} className="border rounded-lg p-4">
+                                  <div className="flex justify-between items-center mb-2">
+                                    <h5 className="font-medium text-sm">{roomBooking.roomName}</h5>
+                                    <Badge variant="outline" className="ml-2">
+                                      €{(roomBooking.cost / 100).toFixed(2)}
+                                    </Badge>
+                                  </div>
+                                  
+                                  <div className="space-y-4">
+                                    <div>
+                                      <h6 className="text-xs font-medium text-gray-500 uppercase mb-1">Cost Type</h6>
+                                      <Select
+                                        value={roomBooking.costType || 'flat'}
+                                        onValueChange={(value) => {
+                                          const updatedRooms = [...(editedAppointment.rooms as RoomBooking[])];
+                                          updatedRooms[index] = {
+                                            ...updatedRooms[index],
+                                            costType: value as 'flat' | 'hourly' | 'per_attendee'
+                                          };
+                                          handleInputChange('rooms', updatedRooms);
+                                        }}
+                                      >
+                                        <SelectTrigger className="w-full h-8 text-xs">
+                                          <SelectValue placeholder="Select cost type" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                          <SelectItem value="flat">Flat Rate</SelectItem>
+                                          <SelectItem value="hourly">Hourly Rate</SelectItem>
+                                          <SelectItem value="per_attendee">Per Attendee</SelectItem>
+                                        </SelectContent>
+                                      </Select>
+                                    </div>
+                                    
+                                    <div>
+                                      <h6 className="text-xs font-medium text-gray-500 uppercase mb-1">Facilities</h6>
+                                      <div className="flex flex-wrap gap-1 mb-2">
+                                        {roomBooking.requestedFacilities && roomBooking.requestedFacilities.map((facility, i) => (
+                                          <Badge key={i} variant="secondary" className="text-xs">
+                                            {facility}
+                                            <button 
+                                              className="ml-1 text-gray-500 hover:text-red-500"
+                                              onClick={() => {
+                                                const updatedRooms = [...(editedAppointment.rooms as RoomBooking[])];
+                                                const updatedFacilities = [...roomBooking.requestedFacilities];
+                                                updatedFacilities.splice(i, 1);
+                                                updatedRooms[index] = {
+                                                  ...updatedRooms[index],
+                                                  requestedFacilities: updatedFacilities
+                                                };
+                                                handleInputChange('rooms', updatedRooms);
+                                              }}
+                                            >
+                                              <X className="h-3 w-3" />
+                                            </button>
+                                          </Badge>
+                                        ))}
+                                      </div>
+                                      
+                                      <div className="flex mt-2">
+                                        <Input
+                                          placeholder="Add facility"
+                                          className="h-8 text-xs"
+                                          onKeyDown={(e) => {
+                                            if (e.key === 'Enter' && e.currentTarget.value.trim()) {
+                                              e.preventDefault();
+                                              const facilityName = e.currentTarget.value.trim();
+                                              const updatedRooms = [...(editedAppointment.rooms as RoomBooking[])];
+                                              const updatedFacilities = [
+                                                ...(roomBooking.requestedFacilities || []), 
+                                                facilityName
+                                              ];
+                                              updatedRooms[index] = {
+                                                ...updatedRooms[index],
+                                                requestedFacilities: updatedFacilities
+                                              };
+                                              handleInputChange('rooms', updatedRooms);
+                                              e.currentTarget.value = '';
+                                            }
+                                          }}
+                                        />
+                                        <Button 
+                                          variant="outline" 
+                                          size="sm" 
+                                          className="ml-2 h-8"
+                                          onClick={(e) => {
+                                            const input = e.currentTarget.previousSibling as HTMLInputElement;
+                                            if (input && input.value.trim()) {
+                                              const facilityName = input.value.trim();
+                                              const updatedRooms = [...(editedAppointment.rooms as RoomBooking[])];
+                                              const updatedFacilities = [
+                                                ...(roomBooking.requestedFacilities || []),
+                                                facilityName
+                                              ];
+                                              updatedRooms[index] = {
+                                                ...updatedRooms[index],
+                                                requestedFacilities: updatedFacilities
+                                              };
+                                              handleInputChange('rooms', updatedRooms);
+                                              input.value = '';
+                                            }
+                                          }}
+                                        >
+                                          Add
+                                        </Button>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        </>
+                      )}
                     </div>
                   )}
                 </TabsContent>
-
+                
                 <TabsContent value="costs" className="p-6">
                   <div className="flex items-start justify-between mb-6">
                     <div className="flex items-start">
