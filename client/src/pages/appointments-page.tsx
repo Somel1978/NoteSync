@@ -81,7 +81,7 @@ export default function AppointmentsPage() {
   });
 
   const getRoomName = (roomId: number) => {
-    if (!rooms) return "Loading...";
+    if (!rooms || !Array.isArray(rooms)) return "Loading...";
     const room = rooms.find((r: any) => r.id === roomId);
     return room ? room.name : `Room #${roomId}`;
   };
@@ -128,7 +128,7 @@ export default function AppointmentsPage() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
             </svg>
-            {rooms?.find((r: any) => r.id === row.original.roomId)?.locationId || "Location"}
+            {Array.isArray(rooms) && rooms.find((r: any) => r.id === row.original.roomId)?.locationId || "Location"}
           </div>
           <div className="text-sm text-gray-500">
             Purpose: {row.original.purpose || "N/A"}
@@ -199,10 +199,10 @@ export default function AppointmentsPage() {
 
   return (
     <AppLayout>
-      <div className="p-8">
-        <header className="mb-8">
-          <h1 className="text-2xl font-semibold text-gray-800">Approve Appointments</h1>
-          <p className="text-gray-600 text-sm">Review and manage appointment requests</p>
+      <div className="p-4 pt-10 sm:p-8">
+        <header className="mb-6 sm:mb-8">
+          <h1 className="text-xl sm:text-2xl font-semibold text-gray-800 pl-8 sm:pl-0">Approve Appointments</h1>
+          <p className="text-gray-600 text-sm pl-8 sm:pl-0">Review and manage appointment requests</p>
         </header>
 
         <Card className="mb-8">
