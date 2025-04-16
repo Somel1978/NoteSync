@@ -22,6 +22,16 @@ import { Edit, Trash, Clock, Eye, X, Save, CalendarIcon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Appointment, Room, User, RoomBooking } from "@shared/schema";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   Popover,
   PopoverContent,
   PopoverTrigger,
@@ -57,6 +67,8 @@ export function AppointmentDetailsModal({
   const [customPricing, setCustomPricing] = useState(false);
   const [startDate, setStartDate] = useState<Date | undefined>(undefined);
   const [endDate, setEndDate] = useState<Date | undefined>(undefined);
+  const [isRejectDialogOpen, setIsRejectDialogOpen] = useState(false);
+  const [rejectionReason, setRejectionReason] = useState("");
   const { toast } = useToast();
   
   // Define a type that includes the appointment with properly typed rooms
@@ -181,7 +193,16 @@ export function AppointmentDetailsModal({
   };
 
   const handleReject = () => {
-    updateAppointmentMutation.mutate({ status: "rejected" });
+    setIsRejectDialogOpen(true);
+  };
+
+  const handleConfirmReject = () => {
+    updateAppointmentMutation.mutate({ 
+      status: "rejected",
+      rejectionReason: rejectionReason 
+    });
+    setIsRejectDialogOpen(false);
+    setRejectionReason("");
     if (onReject) onReject(appointmentId);
   };
 
@@ -284,23 +305,24 @@ export function AppointmentDetailsModal({
   if (!open) return null;
   
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-2xl">
-        <DialogHeader>
-          <div className="flex justify-between items-center">
-            <DialogTitle>Appointment Details</DialogTitle>
-            <div className="flex items-center space-x-2">
-              <Button variant="ghost" size="icon" onClick={handleDelete}>
-                <Trash className="h-5 w-5 text-gray-400 hover:text-red-500" />
-              </Button>
-              <DialogClose asChild>
-                <Button variant="ghost" size="icon">
-                  <X className="h-5 w-5" />
+    <>
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="sm:max-w-2xl">
+          <DialogHeader>
+            <div className="flex justify-between items-center">
+              <DialogTitle>Appointment Details</DialogTitle>
+              <div className="flex items-center space-x-2">
+                <Button variant="ghost" size="icon" onClick={handleDelete}>
+                  <Trash className="h-5 w-5 text-gray-400 hover:text-red-500" />
                 </Button>
-              </DialogClose>
+                <DialogClose asChild>
+                  <Button variant="ghost" size="icon">
+                    <X className="h-5 w-5" />
+                  </Button>
+                </DialogClose>
+              </div>
             </div>
-          </div>
-        </DialogHeader>
+          </DialogHeader>
 
         <Tabs defaultValue="details" value={activeTab} onValueChange={setActiveTab}>
           <div className="border-b border-gray-200">
@@ -662,22 +684,79 @@ export function AppointmentDetailsModal({
                           </div>
                         </div>
                         
+                        {/* Display room editing interface when multiple rooms exist */}
                         {editedAppointment.rooms && 
                          Array.isArray(editedAppointment.rooms) && 
-                         (editedAppointment.rooms as any[]).length > 1 && (
-                          <div className="mt-4 bg-blue-50 p-4 rounded-md">
-                            <div className="flex items-start">
-                              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-blue-500 mr-2 mt-0.5" viewBox="0 0 20 20" fill="currentColor">
-                                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-                              </svg>
-                              <div>
-                                <h6 className="text-sm font-medium text-blue-800">Multiple Rooms Selected</h6>
-                                <p className="text-xs text-blue-700 mt-1">
-                                  This booking includes {(editedAppointment.rooms as any[]).length} rooms. Room changes can be made on the New Booking page.
-                                </p>
+                         (editedAppointment.rooms as RoomBooking[]).length > 0 && (
+                          <>
+                            <div className="mt-4 mb-4">
+                              <h5 className="text-xs font-medium text-gray-500 uppercase mb-3">Booked Rooms</h5>
+                              <div className="space-y-4 max-h-[350px] overflow-y-auto pr-1 border rounded-md p-4">
+                                {(editedAppointment.rooms as RoomBooking[]).map((roomBooking, index) => (
+                                  <div key={index} className="border rounded-lg p-3">
+                                    <div className="flex justify-between items-center mb-2">
+                                      <h5 className="font-medium text-sm">{roomBooking.roomName}</h5>
+                                      <Badge variant="outline" className="ml-2">
+                                        €{(roomBooking.cost / 100).toFixed(2)}
+                                      </Badge>
+                                    </div>
+                                    
+                                    <div className="space-y-3">
+                                      <div>
+                                        <h6 className="text-xs font-medium text-gray-500 uppercase mb-1">Cost Type</h6>
+                                        <Select
+                                          value={roomBooking.costType || 'flat'}
+                                          onValueChange={(value) => {
+                                            const updatedRooms = [...(editedAppointment.rooms as RoomBooking[])];
+                                            updatedRooms[index] = {
+                                              ...updatedRooms[index],
+                                              costType: value as 'flat' | 'hourly' | 'per_attendee'
+                                            };
+                                            handleInputChange('rooms', updatedRooms);
+                                          }}
+                                        >
+                                          <SelectTrigger className="w-full h-8 text-xs">
+                                            <SelectValue placeholder="Select cost type" />
+                                          </SelectTrigger>
+                                          <SelectContent>
+                                            <SelectItem value="flat">Flat Rate</SelectItem>
+                                            <SelectItem value="hourly">Hourly Rate</SelectItem>
+                                            <SelectItem value="per_attendee">Per Attendee</SelectItem>
+                                          </SelectContent>
+                                        </Select>
+                                      </div>
+                                      
+                                      <div>
+                                        <h6 className="text-xs font-medium text-gray-500 uppercase mb-1">Facilities</h6>
+                                        <div className="flex flex-wrap gap-1 mb-2">
+                                          {roomBooking.requestedFacilities && roomBooking.requestedFacilities.map((facility, i) => (
+                                            <Badge key={i} variant="secondary" className="text-xs">
+                                              {facility}
+                                              <button 
+                                                className="ml-1 text-gray-500 hover:text-red-500"
+                                                onClick={() => {
+                                                  const updatedRooms = [...(editedAppointment.rooms as RoomBooking[])];
+                                                  const updatedFacilities = [...roomBooking.requestedFacilities];
+                                                  updatedFacilities.splice(i, 1);
+                                                  updatedRooms[index] = {
+                                                    ...updatedRooms[index],
+                                                    requestedFacilities: updatedFacilities
+                                                  };
+                                                  handleInputChange('rooms', updatedRooms);
+                                                }}
+                                              >
+                                                <X className="h-3 w-3" />
+                                              </button>
+                                            </Badge>
+                                          ))}
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+                                ))}
                               </div>
                             </div>
-                          </div>
+                          </>
                         )}
                         
                         <div className="sm:col-span-2">
@@ -1016,5 +1095,29 @@ export function AppointmentDetailsModal({
         </Tabs>
       </DialogContent>
     </Dialog>
+
+      <AlertDialog open={isRejectDialogOpen} onOpenChange={setIsRejectDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Reject Appointment</AlertDialogTitle>
+            <AlertDialogDescription>
+              Please provide a reason for rejecting this appointment. This will be recorded in the audit log.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="my-4">
+            <Textarea
+              value={rejectionReason}
+              onChange={(e) => setRejectionReason(e.target.value)}
+              placeholder="Enter rejection reason"
+              className="min-h-[100px]"
+            />
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setRejectionReason("")}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmReject}>Submit</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }
