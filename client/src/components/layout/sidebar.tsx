@@ -134,7 +134,11 @@ export function Sidebar() {
           <span>{t('common.logout')}</span>
         </Button>
         <div className="mt-4">
-          <LanguageSelector />
+          {/* Language Selector with enhanced visibility */}
+          <div className="bg-white bg-opacity-10 rounded-md p-2 mb-2">
+            <div className="text-xs text-white mb-1 font-medium px-2">{t('navigation.selectLanguage', 'Select Language')}</div>
+            <LanguageSelector />
+          </div>
         </div>
       </div>
     </>

@@ -30,10 +30,13 @@ export function LanguageSelector() {
       <DropdownMenuTrigger asChild>
         <Button 
           variant="outline" 
-          className="w-full justify-start px-4 bg-primary/10 hover:bg-primary/20 border-primary/20 text-primary font-medium"
+          className="w-full justify-between px-4 bg-white hover:bg-white/90 border-white/20 text-primary font-medium"
         >
-          <Globe className="h-5 w-5 mr-2" />
-          <span>{t('navigation.language')}</span>
+          <div className="flex items-center">
+            <Globe className="h-5 w-5 mr-2" />
+            <span>{currentLanguage?.name || t('navigation.language')}</span>
+          </div>
+          <span className="ml-2">{flagIcons[language]}</span>
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-56" align="start">
