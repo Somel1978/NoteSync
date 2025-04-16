@@ -143,9 +143,16 @@ export default function NewBookingPage() {
             }]
           : [];
       
+      // Format dates as ISO strings for backend processing
+      // The server will convert these ISO strings back to Date objects
+      const startTimeStr = data.startTime.toISOString();
+      const endTimeStr = data.endTime.toISOString();
+      
       // Prepare the appointment data
       const appointmentData = {
         ...data,
+        startTime: startTimeStr,
+        endTime: endTimeStr,
         userId: user?.id,
         agreedCost: calculatedCost.total * 100, // Convert to cents
         costBreakdown: {
@@ -158,8 +165,15 @@ export default function NewBookingPage() {
         rooms: roomBookings
       };
       
-      const res = await apiRequest("POST", "/api/appointments", appointmentData);
-      return await res.json();
+      console.log("Submitting appointment data:", appointmentData);
+      
+      try {
+        const res = await apiRequest("POST", "/api/appointments", appointmentData);
+        return await res.json();
+      } catch (error) {
+        console.error("Error creating appointment:", error);
+        throw error;
+      }
     },
     onSuccess: () => {
       toast({

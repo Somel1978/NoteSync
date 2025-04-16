@@ -286,15 +286,28 @@ export function registerRoutes(app: Express): Server {
     try {
       const userId = req.user!.id;
       
+      // Ensure we have startTime and endTime
+      if (!req.body.startTime || !req.body.endTime) {
+        return res.status(400).json({
+          message: "Start time and end time are required"
+        });
+      }
+      
       // Parse dates from ISO strings to Date objects
       const data = {
         ...req.body,
         userId,
-        // Convert string dates to Date objects
+        // Convert string dates to Date objects - ensure we handle both string and Date inputs
         startTime: new Date(req.body.startTime),
         endTime: new Date(req.body.endTime),
         orderNumber: await storage.getNextAppointmentOrderNumber()
       };
+      
+      console.log("Creating appointment with data:", {
+        startTime: data.startTime,
+        endTime: data.endTime,
+        orderNumber: data.orderNumber
+      });
       
       // Now validate the data with the schema
       const validatedData = insertAppointmentSchema.parse(data);
@@ -304,6 +317,7 @@ export function registerRoutes(app: Express): Server {
       
       res.status(201).json(appointment);
     } catch (error) {
+      console.error("Error creating appointment:", error);
       next(error);
     }
   });
