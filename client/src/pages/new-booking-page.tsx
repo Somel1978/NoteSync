@@ -25,10 +25,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Room, Facility } from "@shared/schema";
+import { Room, Facility, RoomBooking } from "@shared/schema";
 import { format, addHours, parse } from "date-fns";
 import { z } from "zod";
-import { Save, CalendarIcon } from "lucide-react";
+import { Check, CalendarIcon, Save } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
@@ -389,11 +389,9 @@ export default function NewBookingPage() {
                                             Capacity: {room.capacity} people
                                           </p>
                                         </div>
-                                        <Checkbox 
-                                          checked={isSelected}
-                                          onCheckedChange={() => {}}
-                                          className="mt-1"
-                                        />
+                                        <div className="h-5 w-5 mt-1 flex items-center justify-center">
+                                          {isSelected && <Check className="h-4 w-4 text-primary" />}
+                                        </div>
                                       </div>
                                     </div>
                                   );
