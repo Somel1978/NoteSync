@@ -369,13 +369,15 @@ export default function NewBookingPage() {
                                         if (newSelectedRooms.length > 0) {
                                           form.setValue('roomId', newSelectedRooms[0]);
                                           
-                                          // Initialize room settings if not already set
-                                          const roomSettings = form.getValues('roomSettings');
-                                          if (!roomSettings[room.id] && !isSelected) {
-                                            form.setValue(`roomSettings.${room.id}`, {
-                                              requestedFacilities: [],
-                                              costType: 'flat'
-                                            });
+                                          // Always ensure room settings exist for selected rooms
+                                          if (!isSelected) {
+                                            // Safe way to update room settings without causing state issues
+                                            setTimeout(() => {
+                                              form.setValue(`roomSettings.${room.id}`, {
+                                                requestedFacilities: [],
+                                                costType: 'flat'
+                                              });
+                                            }, 0);
                                           }
                                         } else {
                                           form.setValue('roomId', 0);
@@ -640,13 +642,22 @@ export default function NewBookingPage() {
                                               <Checkbox
                                                 checked={field.value?.includes(facility.name)}
                                                 onCheckedChange={(checked) => {
-                                                  return checked
-                                                    ? field.onChange([...field.value || [], facility.name])
-                                                    : field.onChange(
-                                                        field.value?.filter(
+                                                  // Prevent rapid rerendering and potential infinite loops
+                                                  setTimeout(() => {
+                                                    if (checked) {
+                                                      const currentValues = field.value || [];
+                                                      // Only add if not already included
+                                                      if (!currentValues.includes(facility.name)) {
+                                                        field.onChange([...currentValues, facility.name]);
+                                                      }
+                                                    } else {
+                                                      field.onChange(
+                                                        (field.value || []).filter(
                                                           (value) => value !== facility.name
-                                                        ) || []
+                                                        )
                                                       );
+                                                    }
+                                                  }, 0);
                                                 }}
                                               />
                                             </FormControl>
@@ -765,7 +776,10 @@ export default function NewBookingPage() {
                           <FormControl>
                             <Checkbox
                               checked={field.value}
-                              onCheckedChange={field.onChange}
+                              onCheckedChange={(checked) => {
+                                // Prevent rapid rerendering by using setTimeout
+                                setTimeout(() => field.onChange(checked), 0);
+                              }}
                             />
                           </FormControl>
                           <div className="space-y-1 leading-none">
