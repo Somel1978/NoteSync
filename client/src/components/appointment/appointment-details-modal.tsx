@@ -1717,27 +1717,12 @@ export function AppointmentDetailsModal({
                     </div>
                   ) : (
                     <div className="space-y-6">
-                      <div>
-                        <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">Cost Type</h5>
-                        <Select
-                          value={editedAppointment.costType || 'flat'}
-                          onValueChange={(value) => {
-                            handleInputChange('costType', value);
-                            if (!customPricing) {
-                              const calculatedCost = calculateCost(editedAppointment.roomId || appointment.roomId);
-                              handleInputChange('agreedCost', calculatedCost);
-                            }
-                          }}
-                        >
-                          <SelectTrigger className="w-full mt-1">
-                            <SelectValue placeholder="Select cost type" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="flat">Flat Rate</SelectItem>
-                            <SelectItem value="hourly">Hourly Rate</SelectItem>
-                            <SelectItem value="per_attendee">Per Attendee</SelectItem>
-                          </SelectContent>
-                        </Select>
+                      {/* Cost type selection is now per room, handled on the room tab */}
+                      <div className="bg-blue-50 p-4 rounded-md mb-4">
+                        <h5 className="text-xs font-medium text-blue-800 mb-1">Room-Based Pricing</h5>
+                        <p className="text-xs text-blue-700">
+                          Cost types are now managed per room. Please go to the Rooms tab to modify cost types for each room.
+                        </p>
                       </div>
                       
                       <div className="flex items-center space-x-2 p-3 bg-gray-50 rounded-md">
