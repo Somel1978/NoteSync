@@ -5,6 +5,16 @@ import connectPg from "connect-pg-simple";
 import session from "express-session";
 import { pool } from "./db";
 
+// Define the SessionStore type
+declare module 'express-session' {
+  interface SessionData {
+    // Add any custom session properties here
+    passport?: {
+      user: number;
+    };
+  }
+}
+
 const PostgresSessionStore = connectPg(session);
 
 export interface IStorage {
@@ -36,7 +46,7 @@ export interface IStorage {
   getAppointment(id: number): Promise<Appointment | undefined>;
   createAppointment(appointment: InsertAppointment): Promise<Appointment>;
   updateAppointment(id: number, updates: Partial<Appointment>): Promise<Appointment | undefined>;
-  deleteAppointment(id: number): Promise<boolean>;
+  deleteAppointment(id: number, userId?: number): Promise<boolean>;
   getAppointmentsByUser(userId: number): Promise<Appointment[]>;
   getAppointmentsByRoom(roomId: number): Promise<Appointment[]>;
   getAppointmentsByDateRange(startDate: Date, endDate: Date): Promise<Appointment[]>;
@@ -59,11 +69,11 @@ export interface IStorage {
   getOverallUtilization(startDate: Date, endDate: Date): Promise<{roomId: number, utilization: number}[]>;
   
   // Session Store
-  sessionStore: session.SessionStore;
+  sessionStore: any;
 }
 
 export class DatabaseStorage implements IStorage {
-  sessionStore: session.SessionStore;
+  sessionStore: any;
 
   constructor() {
     this.sessionStore = new PostgresSessionStore({ 
@@ -198,27 +208,76 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createAppointment(insertAppointment: InsertAppointment): Promise<Appointment> {
+    // Get next order number if not provided
+    if (!insertAppointment.orderNumber) {
+      insertAppointment.orderNumber = await this.getNextAppointmentOrderNumber();
+    }
+
     const [appointment] = await db
       .insert(appointments)
       .values(insertAppointment)
       .returning();
+    
+    // Create audit log for creation
+    if (appointment && insertAppointment.userId) {
+      await this.createAuditLog({
+        appointmentId: appointment.id,
+        userId: insertAppointment.userId,
+        action: 'create',
+        oldData: null,
+        newData: appointment
+      });
+    }
+    
     return appointment;
   }
 
   async updateAppointment(id: number, updates: Partial<Appointment>): Promise<Appointment | undefined> {
+    // Get the original appointment for audit purposes
+    const originalAppointment = await this.getAppointment(id);
+    if (!originalAppointment) return undefined;
+    
     const [updatedAppointment] = await db
       .update(appointments)
       .set({ ...updates, updatedAt: new Date() })
       .where(eq(appointments.id, id))
       .returning();
+    
+    // Create audit log for update
+    if (updatedAppointment && updates.userId) {
+      await this.createAuditLog({
+        appointmentId: updatedAppointment.id,
+        userId: updates.userId,
+        action: 'update',
+        oldData: originalAppointment,
+        newData: updatedAppointment
+      });
+    }
+    
     return updatedAppointment;
   }
 
-  async deleteAppointment(id: number): Promise<boolean> {
+  async deleteAppointment(id: number, userId?: number): Promise<boolean> {
+    // Get the original appointment for audit purposes
+    const originalAppointment = await this.getAppointment(id);
+    if (!originalAppointment) return false;
+
     const result = await db
       .delete(appointments)
       .where(eq(appointments.id, id))
       .returning({ id: appointments.id });
+    
+    // Create audit log for deletion if user ID is provided
+    if (result.length > 0 && userId) {
+      await this.createAuditLog({
+        appointmentId: id,
+        userId: userId,
+        action: 'delete',
+        oldData: originalAppointment,
+        newData: null
+      });
+    }
+
     return result.length > 0;
   }
 
