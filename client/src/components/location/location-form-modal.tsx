@@ -83,6 +83,7 @@ export function LocationFormModal({
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/locations'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/public/locations'] });
       toast({
         title: t('locations.addLocation'),
         description: t('common.success'),
@@ -107,6 +108,7 @@ export function LocationFormModal({
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/locations'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/public/locations'] });
       toast({
         title: t('locations.editLocation'),
         description: t('common.success'),

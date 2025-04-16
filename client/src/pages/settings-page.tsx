@@ -418,6 +418,7 @@ export default function SettingsPage() {
     },
     onSuccess: (locationId) => {
       queryClient.invalidateQueries({ queryKey: ['/api/locations'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/public/locations'] });
       toast({
         title: t('locations.deleteSuccess'),
         description: t('locations.deleteSuccessDetail'),
