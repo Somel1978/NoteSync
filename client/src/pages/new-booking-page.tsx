@@ -844,7 +844,16 @@ export default function NewBookingPage() {
                               placeholder={`Maximum ${selectedRoom?.capacity || 50} attendees allowed`}
                               min="1"
                               max={selectedRoom?.capacity || 50}
-                              {...field}
+                              // Use onChange to capture value changes and update cost preview
+                              onChange={(e) => {
+                                field.onChange(e);
+                                // Force cost preview update after value changes
+                                setTimeout(() => {
+                                  form.trigger('attendeesCount');
+                                  form.trigger('roomSettings');
+                                }, 50);
+                              }}
+                              value={field.value}
                             />
                           </FormControl>
                           <FormMessage />
