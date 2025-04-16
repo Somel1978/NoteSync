@@ -668,7 +668,14 @@ export default function NewBookingPage() {
                                   <FormItem className="mb-4">
                                     <FormLabel>Pricing Model</FormLabel>
                                     <Select
-                                      onValueChange={field.onChange}
+                                      onValueChange={(value) => {
+                                        field.onChange(value);
+                                        
+                                        // Force cost preview update
+                                        setTimeout(() => {
+                                          form.trigger('roomSettings');
+                                        }, 50);
+                                      }}
                                       value={field.value}
                                     >
                                       <FormControl>
@@ -687,18 +694,18 @@ export default function NewBookingPage() {
                                 )}
                               />
                               
-                              {/* Room facilities */}
-                              <FormField
-                                control={form.control}
-                                name={`roomSettings.${room.id}.requestedFacilities`}
-                                render={({ field }) => (
-                                  <FormItem>
-                                    <FormLabel>Additional Facilities</FormLabel>
-                                    <FormDescription>
-                                      Select the facilities you need for this room
-                                    </FormDescription>
-                                    
-                                    {facilities.length > 0 ? (
+                              {/* Room facilities - only show if room has facilities */}
+                              {facilities.length > 0 && (
+                                <FormField
+                                  control={form.control}
+                                  name={`roomSettings.${room.id}.requestedFacilities`}
+                                  render={({ field }) => (
+                                    <FormItem>
+                                      <FormLabel>Additional Facilities</FormLabel>
+                                      <FormDescription>
+                                        Select the facilities you need for this room
+                                      </FormDescription>
+                                      
                                       <div className="flex flex-wrap gap-4 mt-2">
                                         {facilities.map((facility) => (
                                           <FormItem
@@ -751,15 +758,11 @@ export default function NewBookingPage() {
                                           </FormItem>
                                         ))}
                                       </div>
-                                    ) : (
-                                      <div className="text-sm text-gray-500 mt-2">
-                                        No additional facilities available for this room.
-                                      </div>
-                                    )}
-                                    <FormMessage />
-                                  </FormItem>
-                                )}
-                              />
+                                      <FormMessage />
+                                    </FormItem>
+                                  )}
+                                />
+                              )}
                             </div>
                           );
                         })}
