@@ -366,9 +366,11 @@ export class DatabaseStorage implements IStorage {
       id: auditLogs.id,
       appointmentId: auditLogs.appointmentId,
       userId: auditLogs.userId,
-      actionType: auditLogs.actionType,
-      details: auditLogs.details,
-      timestamp: auditLogs.createdAt,
+      action: auditLogs.action,
+      oldData: auditLogs.oldData,
+      newData: auditLogs.newData,
+      changedFields: auditLogs.changedFields,
+      createdAt: auditLogs.createdAt,
       username: users.username
     })
     .from(auditLogs)
@@ -376,7 +378,15 @@ export class DatabaseStorage implements IStorage {
     .where(eq(auditLogs.appointmentId, appointmentId))
     .orderBy(desc(auditLogs.createdAt));
     
-    return result;
+    // Transform the result for the frontend
+    const transformedResult = result.map(log => ({
+      ...log,
+      actionType: log.action, // For compatibility with frontend
+      timestamp: log.createdAt, // For compatibility with frontend
+      details: log.oldData ? { old: log.oldData, new: log.newData } : undefined
+    }));
+    
+    return transformedResult as unknown as AuditLog[];
   }
 
   // Settings Operations

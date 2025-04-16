@@ -390,6 +390,9 @@ export function AppointmentDetailsModal({
   const handleAddCustomFacility = (roomIndex: number) => {
     if (!customFacilityName || customFacilityCost <= 0 || !editedAppointment.rooms) return;
     
+    // Log values to debug
+    console.log("Adding custom facility:", customFacilityName, "with cost:", customFacilityCost);
+    
     // Create the custom facility object - cost is already in cents
     const customFacility = {
       id: `custom-${Date.now()}`,
@@ -405,8 +408,15 @@ export function AppointmentDetailsModal({
     requestedFacilities.push(customFacilityName);
     
     // Update the room with new cost including the facility
-    // The room.cost is stored in cents, and customFacilityCost is also in cents
-    const newCost = (updatedRooms[roomIndex].cost || 0) + customFacilityCost;
+    // Get existing cost, default to 0 if undefined
+    const existingCost = parseInt(String(updatedRooms[roomIndex].cost || 0), 10);
+    console.log("Existing cost:", existingCost, "Type:", typeof existingCost);
+    console.log("Custom facility cost:", customFacilityCost, "Type:", typeof customFacilityCost);
+    
+    // Use parseInt to ensure we're working with numbers
+    const newCost = existingCost + parseInt(String(customFacilityCost), 10);
+    console.log("Calculated new cost:", newCost);
+    
     updatedRooms[roomIndex] = {
       ...updatedRooms[roomIndex],
       cost: newCost,
@@ -1420,7 +1430,7 @@ export function AppointmentDetailsModal({
                               <h6 className="text-xs font-medium text-gray-700 mb-1">Changes:</h6>
                               {log.changedFields && Array.isArray(log.changedFields) ? (
                                 <div className="grid grid-cols-1 gap-1">
-                                  {log.changedFields.map((field, i) => (
+                                  {(log.changedFields as string[]).map((field: string, i: number) => (
                                     <div key={i} className="bg-white p-2 rounded border text-xs">
                                       <span className="font-medium">{field.charAt(0).toUpperCase() + field.slice(1).replace(/([A-Z])/g, ' $1')}</span> was updated
                                     </div>
