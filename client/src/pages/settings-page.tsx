@@ -5,14 +5,28 @@ import { AppLayout } from "@/components/layout/app-layout";
 import { RoomFormModal } from "@/components/room/room-form-modal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Pencil, Trash, UserCircle, ShieldCheck, CheckCircle } from "lucide-react";
+import { 
+  Pencil, 
+  Trash, 
+  UserCircle, 
+  ShieldCheck, 
+  CheckCircle,
+  UserCog, 
+  Settings,
+  KeyRound, 
+  UserMinus,
+  UserPlus,
+  AlertCircle
+} from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/use-auth";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { useTranslation } from "react-i18next";
 import {
   Form,
   FormControl,
@@ -20,7 +34,23 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+  FormDescription,
 } from "@/components/ui/form";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import {
   Select,
   SelectContent,
@@ -50,12 +80,33 @@ const changePasswordSchema = z.object({
 });
 
 type NewUserFormValues = z.infer<typeof newUserSchema>;
+type ChangePasswordFormValues = z.infer<typeof changePasswordSchema>;
 
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState("rooms");
   const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
   const [roomModalOpen, setRoomModalOpen] = useState(false);
   const { toast } = useToast();
+  const { t } = useTranslation();
+  const { user } = useAuth();
+  
+  // States for My Account tab
+  const [accountInfo, setAccountInfo] = useState({
+    name: "",
+    username: "",
+    email: ""
+  });
+  
+  // Keep account info updated when the user data is loaded
+  useEffect(() => {
+    if (user) {
+      setAccountInfo({
+        name: user.name || "",
+        username: user.username || "",
+        email: user.email || ""
+      });
+    }
+  }, [user]);
 
   const { data: rooms, isLoading: roomsLoading } = useQuery<Room[]>({
     queryKey: ["/api/rooms"],
@@ -125,7 +176,7 @@ export default function SettingsPage() {
         username: "",
         email: "",
         password: "",
-        role: "user",
+        role: "guest",
       });
     },
     onError: (error) => {
@@ -372,158 +423,683 @@ export default function SettingsPage() {
                   </TabsContent>
                   
                   <TabsContent value="users">
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                      <div>
-                        <h2 className="text-lg leading-6 font-medium text-gray-900 mb-4">Users</h2>
-                        
-                        {usersLoading ? (
-                          <div className="flex justify-center items-center h-24">
-                            <p className="text-gray-500">Loading users...</p>
-                          </div>
-                        ) : users && users.length > 0 ? (
-                          <div className="space-y-4">
-                            {users.map((user) => (
-                              <div key={user.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200">
-                                <div className="flex items-center">
-                                  <div className="mr-3">
-                                    {user.role === "admin" ? (
-                                      <ShieldCheck className="h-8 w-8 text-purple-500" />
-                                    ) : user.role === "approver" ? (
-                                      <CheckCircle className="h-8 w-8 text-green-500" />
-                                    ) : (
-                                      <UserCircle className="h-8 w-8 text-blue-500" />
-                                    )}
-                                  </div>
-                                  <div>
-                                    <p className="font-medium">{user.name}</p>
-                                    <p className="text-sm text-gray-500">{user.email}</p>
-                                    <div className="flex gap-2 mt-1">
-                                      <Badge variant={
-                                        user.role === "admin" ? "destructive" :
-                                        user.role === "approver" ? "success" :
-                                        "secondary"
-                                      }>
-                                        {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
-                                      </Badge>
-                                    </div>
-                                  </div>
-                                </div>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={() => handleDeleteUser(user.id)}
-                                >
-                                  <Trash className="h-5 w-5 text-gray-400 hover:text-red-500" />
-                                </Button>
-                              </div>
-                            ))}
-                          </div>
-                        ) : (
-                          <div className="text-center py-8 bg-gray-50 rounded-lg border border-dashed border-gray-300">
-                            <p className="text-gray-500">No users found</p>
-                          </div>
-                        )}
-                      </div>
+                    <div className="space-y-6">
+                      <h2 className="text-xl leading-6 font-semibold text-gray-900">User Management</h2>
                       
-                      <div>
-                        <h2 className="text-lg leading-6 font-medium text-gray-900 mb-4">Add New User</h2>
-                        
-                        <Form {...form}>
-                          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                            <FormField
-                              control={form.control}
-                              name="email"
-                              render={({ field }) => (
-                                <FormItem>
-                                  <FormLabel>Email</FormLabel>
-                                  <FormControl>
-                                    <Input placeholder="Email address" {...field} />
-                                  </FormControl>
-                                  <FormMessage />
-                                </FormItem>
-                              )}
-                            />
+                      {usersLoading ? (
+                        <div className="flex justify-center items-center h-24">
+                          <p className="text-gray-500">Loading users...</p>
+                        </div>
+                      ) : users && users.length > 0 ? (
+                        <div>
+                          <Tabs defaultValue="admins" className="w-full">
+                            <TabsList className="mb-4">
+                              <TabsTrigger value="admins">Administrators</TabsTrigger>
+                              <TabsTrigger value="directors">Directors</TabsTrigger>
+                              <TabsTrigger value="guests">Guests</TabsTrigger>
+                              <TabsTrigger value="account">My Account</TabsTrigger>
+                            </TabsList>
                             
-                            <FormField
-                              control={form.control}
-                              name="name"
-                              render={({ field }) => (
-                                <FormItem>
-                                  <FormLabel>Full Name</FormLabel>
-                                  <FormControl>
-                                    <Input placeholder="Full name" {...field} />
-                                  </FormControl>
-                                  <FormMessage />
-                                </FormItem>
-                              )}
-                            />
+                            {/* Admin Users Tab */}
+                            <TabsContent value="admins">
+                              <div className="space-y-4">
+                                <div className="flex justify-between items-center">
+                                  <h3 className="text-lg font-medium text-gray-900">Administrators</h3>
+                                  {/* Only show Add User button if current user is an admin */}
+                                  <Dialog>
+                                    <DialogTrigger asChild>
+                                      <Button size="sm" className="flex items-center gap-1">
+                                        <UserPlus className="h-4 w-4" />
+                                        <span>Add Admin</span>
+                                      </Button>
+                                    </DialogTrigger>
+                                    <DialogContent>
+                                      <DialogHeader>
+                                        <DialogTitle>Add New Administrator</DialogTitle>
+                                        <DialogDescription>
+                                          Create a new administrator user with full system access.
+                                        </DialogDescription>
+                                      </DialogHeader>
+                                      
+                                      <Form {...form}>
+                                        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                                          <FormField
+                                            control={form.control}
+                                            name="email"
+                                            render={({ field }) => (
+                                              <FormItem>
+                                                <FormLabel>Email</FormLabel>
+                                                <FormControl>
+                                                  <Input placeholder="Email address" {...field} />
+                                                </FormControl>
+                                                <FormMessage />
+                                              </FormItem>
+                                            )}
+                                          />
+                                          
+                                          <FormField
+                                            control={form.control}
+                                            name="name"
+                                            render={({ field }) => (
+                                              <FormItem>
+                                                <FormLabel>Full Name</FormLabel>
+                                                <FormControl>
+                                                  <Input placeholder="Full name" {...field} />
+                                                </FormControl>
+                                                <FormMessage />
+                                              </FormItem>
+                                            )}
+                                          />
+                                          
+                                          <FormField
+                                            control={form.control}
+                                            name="username"
+                                            render={({ field }) => (
+                                              <FormItem>
+                                                <FormLabel>Username</FormLabel>
+                                                <FormControl>
+                                                  <Input placeholder="Username" {...field} />
+                                                </FormControl>
+                                                <FormMessage />
+                                              </FormItem>
+                                            )}
+                                          />
+                                          
+                                          <FormField
+                                            control={form.control}
+                                            name="password"
+                                            render={({ field }) => (
+                                              <FormItem>
+                                                <FormLabel>Password</FormLabel>
+                                                <FormControl>
+                                                  <Input type="password" placeholder="Password" {...field} />
+                                                </FormControl>
+                                                <FormMessage />
+                                              </FormItem>
+                                            )}
+                                          />
+                                          
+                                          <FormField
+                                            control={form.control}
+                                            name="role"
+                                            render={({ field }) => (
+                                              <FormItem className="hidden">
+                                                <FormControl>
+                                                  <Input type="hidden" {...field} value="admin" />
+                                                </FormControl>
+                                              </FormItem>
+                                            )}
+                                          />
+                                          
+                                          <DialogFooter>
+                                            <Button
+                                              type="submit"
+                                              disabled={createUserMutation.isPending}
+                                            >
+                                              {createUserMutation.isPending ? "Creating..." : "Create Admin"}
+                                            </Button>
+                                          </DialogFooter>
+                                        </form>
+                                      </Form>
+                                    </DialogContent>
+                                  </Dialog>
+                                </div>
+                                
+                                <div className="space-y-3">
+                                {users.filter(user => user.role === "admin").map((user) => (
+                                  <Card key={user.id} className="overflow-hidden">
+                                    <div className="flex items-center justify-between p-4">
+                                      <div className="flex items-center gap-3">
+                                        <div className="bg-purple-100 p-2 rounded-full">
+                                          <ShieldCheck className="h-6 w-6 text-purple-600" />
+                                        </div>
+                                        <div>
+                                          <h4 className="font-medium">{user.name}</h4>
+                                          <p className="text-sm text-gray-500">{user.email}</p>
+                                          <div className="flex gap-2 mt-1">
+                                            <Badge variant="destructive">
+                                              Administrator
+                                            </Badge>
+                                            {user.deletionRequested && (
+                                              <Badge variant="outline" className="text-red-500 border-red-200 bg-red-50">
+                                                Deletion Requested
+                                              </Badge>
+                                            )}
+                                          </div>
+                                        </div>
+                                      </div>
+                                      <div className="flex gap-1">
+                                        <Button 
+                                          variant="ghost" 
+                                          size="icon"
+                                          onClick={() => handleDeleteUser(user.id)}
+                                        >
+                                          <Trash className="h-5 w-5 text-gray-400 hover:text-red-500" />
+                                        </Button>
+                                      </div>
+                                    </div>
+                                  </Card>
+                                ))}
+                                {users.filter(user => user.role === "admin").length === 0 && (
+                                  <div className="text-center py-8 bg-gray-50 rounded-lg border border-dashed border-gray-300">
+                                    <p className="text-gray-500">No administrators found</p>
+                                  </div>
+                                )}
+                                </div>
+                              </div>
+                            </TabsContent>
                             
-                            <FormField
-                              control={form.control}
-                              name="username"
-                              render={({ field }) => (
-                                <FormItem>
-                                  <FormLabel>Username</FormLabel>
-                                  <FormControl>
-                                    <Input placeholder="Username" {...field} />
-                                  </FormControl>
-                                  <FormMessage />
-                                </FormItem>
-                              )}
-                            />
+                            {/* Director Users Tab */}
+                            <TabsContent value="directors">
+                              <div className="space-y-4">
+                                <div className="flex justify-between items-center">
+                                  <h3 className="text-lg font-medium text-gray-900">Directors</h3>
+                                  <Dialog>
+                                    <DialogTrigger asChild>
+                                      <Button size="sm" className="flex items-center gap-1">
+                                        <UserPlus className="h-4 w-4" />
+                                        <span>Add Director</span>
+                                      </Button>
+                                    </DialogTrigger>
+                                    <DialogContent>
+                                      <DialogHeader>
+                                        <DialogTitle>Add New Director</DialogTitle>
+                                        <DialogDescription>
+                                          Create a new director user with ability to manage rooms, locations, and approve bookings.
+                                        </DialogDescription>
+                                      </DialogHeader>
+                                      
+                                      <Form {...form}>
+                                        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                                          <FormField
+                                            control={form.control}
+                                            name="email"
+                                            render={({ field }) => (
+                                              <FormItem>
+                                                <FormLabel>Email</FormLabel>
+                                                <FormControl>
+                                                  <Input placeholder="Email address" {...field} />
+                                                </FormControl>
+                                                <FormMessage />
+                                              </FormItem>
+                                            )}
+                                          />
+                                          
+                                          <FormField
+                                            control={form.control}
+                                            name="name"
+                                            render={({ field }) => (
+                                              <FormItem>
+                                                <FormLabel>Full Name</FormLabel>
+                                                <FormControl>
+                                                  <Input placeholder="Full name" {...field} />
+                                                </FormControl>
+                                                <FormMessage />
+                                              </FormItem>
+                                            )}
+                                          />
+                                          
+                                          <FormField
+                                            control={form.control}
+                                            name="username"
+                                            render={({ field }) => (
+                                              <FormItem>
+                                                <FormLabel>Username</FormLabel>
+                                                <FormControl>
+                                                  <Input placeholder="Username" {...field} />
+                                                </FormControl>
+                                                <FormMessage />
+                                              </FormItem>
+                                            )}
+                                          />
+                                          
+                                          <FormField
+                                            control={form.control}
+                                            name="password"
+                                            render={({ field }) => (
+                                              <FormItem>
+                                                <FormLabel>Password</FormLabel>
+                                                <FormControl>
+                                                  <Input type="password" placeholder="Password" {...field} />
+                                                </FormControl>
+                                                <FormMessage />
+                                              </FormItem>
+                                            )}
+                                          />
+                                          
+                                          <FormField
+                                            control={form.control}
+                                            name="role"
+                                            render={({ field }) => (
+                                              <FormItem className="hidden">
+                                                <FormControl>
+                                                  <Input type="hidden" {...field} value="director" />
+                                                </FormControl>
+                                              </FormItem>
+                                            )}
+                                          />
+                                          
+                                          <DialogFooter>
+                                            <Button
+                                              type="submit"
+                                              disabled={createUserMutation.isPending}
+                                            >
+                                              {createUserMutation.isPending ? "Creating..." : "Create Director"}
+                                            </Button>
+                                          </DialogFooter>
+                                        </form>
+                                      </Form>
+                                    </DialogContent>
+                                  </Dialog>
+                                </div>
+                                
+                                <div className="space-y-3">
+                                {users.filter(user => user.role === "director").map((user) => (
+                                  <Card key={user.id} className="overflow-hidden">
+                                    <div className="flex items-center justify-between p-4">
+                                      <div className="flex items-center gap-3">
+                                        <div className="bg-green-100 p-2 rounded-full">
+                                          <CheckCircle className="h-6 w-6 text-green-600" />
+                                        </div>
+                                        <div>
+                                          <h4 className="font-medium">{user.name}</h4>
+                                          <p className="text-sm text-gray-500">{user.email}</p>
+                                          <div className="flex gap-2 mt-1">
+                                            <Badge variant="success">
+                                              Director
+                                            </Badge>
+                                            {user.deletionRequested && (
+                                              <Badge variant="outline" className="text-red-500 border-red-200 bg-red-50">
+                                                Deletion Requested
+                                              </Badge>
+                                            )}
+                                          </div>
+                                        </div>
+                                      </div>
+                                      <div className="flex gap-1">
+                                        <Button 
+                                          variant="ghost" 
+                                          size="icon"
+                                          onClick={() => handleDeleteUser(user.id)}
+                                        >
+                                          <Trash className="h-5 w-5 text-gray-400 hover:text-red-500" />
+                                        </Button>
+                                      </div>
+                                    </div>
+                                  </Card>
+                                ))}
+                                {users.filter(user => user.role === "director").length === 0 && (
+                                  <div className="text-center py-8 bg-gray-50 rounded-lg border border-dashed border-gray-300">
+                                    <p className="text-gray-500">No directors found</p>
+                                  </div>
+                                )}
+                                </div>
+                              </div>
+                            </TabsContent>
                             
-                            <FormField
-                              control={form.control}
-                              name="password"
-                              render={({ field }) => (
-                                <FormItem>
-                                  <FormLabel>Password</FormLabel>
-                                  <FormControl>
-                                    <Input type="password" placeholder="Password" {...field} />
-                                  </FormControl>
-                                  <FormMessage />
-                                </FormItem>
-                              )}
-                            />
+                            {/* Guest Users Tab */}
+                            <TabsContent value="guests">
+                              <div className="space-y-4">
+                                <div className="flex justify-between items-center">
+                                  <h3 className="text-lg font-medium text-gray-900">Guests</h3>
+                                  <Dialog>
+                                    <DialogTrigger asChild>
+                                      <Button size="sm" className="flex items-center gap-1">
+                                        <UserPlus className="h-4 w-4" />
+                                        <span>Add Guest</span>
+                                      </Button>
+                                    </DialogTrigger>
+                                    <DialogContent>
+                                      <DialogHeader>
+                                        <DialogTitle>Add New Guest</DialogTitle>
+                                        <DialogDescription>
+                                          Create a new guest user with ability to make bookings.
+                                        </DialogDescription>
+                                      </DialogHeader>
+                                      
+                                      <Form {...form}>
+                                        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                                          <FormField
+                                            control={form.control}
+                                            name="email"
+                                            render={({ field }) => (
+                                              <FormItem>
+                                                <FormLabel>Email</FormLabel>
+                                                <FormControl>
+                                                  <Input placeholder="Email address" {...field} />
+                                                </FormControl>
+                                                <FormMessage />
+                                              </FormItem>
+                                            )}
+                                          />
+                                          
+                                          <FormField
+                                            control={form.control}
+                                            name="name"
+                                            render={({ field }) => (
+                                              <FormItem>
+                                                <FormLabel>Full Name</FormLabel>
+                                                <FormControl>
+                                                  <Input placeholder="Full name" {...field} />
+                                                </FormControl>
+                                                <FormMessage />
+                                              </FormItem>
+                                            )}
+                                          />
+                                          
+                                          <FormField
+                                            control={form.control}
+                                            name="username"
+                                            render={({ field }) => (
+                                              <FormItem>
+                                                <FormLabel>Username</FormLabel>
+                                                <FormControl>
+                                                  <Input placeholder="Username" {...field} />
+                                                </FormControl>
+                                                <FormMessage />
+                                              </FormItem>
+                                            )}
+                                          />
+                                          
+                                          <FormField
+                                            control={form.control}
+                                            name="password"
+                                            render={({ field }) => (
+                                              <FormItem>
+                                                <FormLabel>Password</FormLabel>
+                                                <FormControl>
+                                                  <Input type="password" placeholder="Password" {...field} />
+                                                </FormControl>
+                                                <FormMessage />
+                                              </FormItem>
+                                            )}
+                                          />
+                                          
+                                          <FormField
+                                            control={form.control}
+                                            name="role"
+                                            render={({ field }) => (
+                                              <FormItem className="hidden">
+                                                <FormControl>
+                                                  <Input type="hidden" {...field} value="guest" />
+                                                </FormControl>
+                                              </FormItem>
+                                            )}
+                                          />
+                                          
+                                          <DialogFooter>
+                                            <Button
+                                              type="submit"
+                                              disabled={createUserMutation.isPending}
+                                            >
+                                              {createUserMutation.isPending ? "Creating..." : "Create Guest"}
+                                            </Button>
+                                          </DialogFooter>
+                                        </form>
+                                      </Form>
+                                    </DialogContent>
+                                  </Dialog>
+                                </div>
+                                
+                                <div className="space-y-3">
+                                {users.filter(user => user.role === "guest").map((user) => (
+                                  <Card key={user.id} className="overflow-hidden">
+                                    <div className="flex items-center justify-between p-4">
+                                      <div className="flex items-center gap-3">
+                                        <div className="bg-blue-100 p-2 rounded-full">
+                                          <UserCircle className="h-6 w-6 text-blue-600" />
+                                        </div>
+                                        <div>
+                                          <h4 className="font-medium">{user.name}</h4>
+                                          <p className="text-sm text-gray-500">{user.email}</p>
+                                          <div className="flex gap-2 mt-1">
+                                            <Badge variant="secondary">
+                                              Guest
+                                            </Badge>
+                                            {user.deletionRequested && (
+                                              <Badge variant="outline" className="text-red-500 border-red-200 bg-red-50">
+                                                Deletion Requested
+                                              </Badge>
+                                            )}
+                                          </div>
+                                        </div>
+                                      </div>
+                                      <div className="flex gap-1">
+                                        <Button 
+                                          variant="ghost" 
+                                          size="icon"
+                                          onClick={() => handleDeleteUser(user.id)}
+                                        >
+                                          <Trash className="h-5 w-5 text-gray-400 hover:text-red-500" />
+                                        </Button>
+                                      </div>
+                                    </div>
+                                  </Card>
+                                ))}
+                                {users.filter(user => user.role === "guest").length === 0 && (
+                                  <div className="text-center py-8 bg-gray-50 rounded-lg border border-dashed border-gray-300">
+                                    <p className="text-gray-500">No guests found</p>
+                                  </div>
+                                )}
+                                </div>
+                              </div>
+                            </TabsContent>
                             
-                            <FormField
-                              control={form.control}
-                              name="role"
-                              render={({ field }) => (
-                                <FormItem>
-                                  <FormLabel>Role</FormLabel>
-                                  <Select
-                                    onValueChange={field.onChange}
-                                    defaultValue={field.value}
-                                  >
-                                    <FormControl>
-                                      <SelectTrigger>
-                                        <SelectValue placeholder="Select a role" />
-                                      </SelectTrigger>
-                                    </FormControl>
-                                    <SelectContent>
-                                      <SelectItem value="user">User</SelectItem>
-                                      <SelectItem value="approver">Approver</SelectItem>
-                                      <SelectItem value="admin">Admin</SelectItem>
-                                    </SelectContent>
-                                  </Select>
-                                  <FormMessage />
-                                </FormItem>
-                              )}
-                            />
-                            
-                            <div className="pt-2">
-                              <Button
-                                type="submit"
-                                className="w-full"
-                                disabled={createUserMutation.isPending}
-                              >
-                                {createUserMutation.isPending ? "Creating..." : "Create User"}
+                            {/* My Account Tab */}
+                            <TabsContent value="account">
+                              <div className="space-y-6">
+                                <div className="flex justify-between items-center">
+                                  <h3 className="text-lg font-medium text-gray-900">My Account</h3>
+                                </div>
+                                
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                  {/* Personal Information */}
+                                  <Card>
+                                    <CardHeader>
+                                      <CardTitle>Personal Information</CardTitle>
+                                      <CardDescription>Update your account details</CardDescription>
+                                    </CardHeader>
+                                    <CardContent>
+                                      <form className="space-y-4">
+                                        <div className="grid gap-2">
+                                          <label className="text-sm font-medium">Full Name</label>
+                                          <Input value="John Doe" />
+                                        </div>
+                                        <div className="grid gap-2">
+                                          <label className="text-sm font-medium">Username</label>
+                                          <Input value="johndoe" />
+                                        </div>
+                                        <div className="grid gap-2">
+                                          <label className="text-sm font-medium">Email</label>
+                                          <Input value="john.doe@example.com" />
+                                        </div>
+                                      </form>
+                                    </CardContent>
+                                    <CardFooter>
+                                      <Button>Save Changes</Button>
+                                    </CardFooter>
+                                  </Card>
+                                  
+                                  {/* Password & Security */}
+                                  <Card>
+                                    <CardHeader>
+                                      <CardTitle>Password & Security</CardTitle>
+                                      <CardDescription>Update your password</CardDescription>
+                                    </CardHeader>
+                                    <CardContent>
+                                      <Accordion type="single" collapsible className="w-full">
+                                        <AccordionItem value="password">
+                                          <AccordionTrigger className="flex items-center gap-2">
+                                            <KeyRound className="h-5 w-5 text-gray-500" />
+                                            <span>Change Password</span>
+                                          </AccordionTrigger>
+                                          <AccordionContent>
+                                            <form className="space-y-4 mt-4">
+                                              <div className="grid gap-2">
+                                                <label className="text-sm font-medium">Current Password</label>
+                                                <Input type="password" />
+                                              </div>
+                                              <div className="grid gap-2">
+                                                <label className="text-sm font-medium">New Password</label>
+                                                <Input type="password" />
+                                              </div>
+                                              <div className="grid gap-2">
+                                                <label className="text-sm font-medium">Confirm New Password</label>
+                                                <Input type="password" />
+                                              </div>
+                                              <Button className="w-full">Update Password</Button>
+                                            </form>
+                                          </AccordionContent>
+                                        </AccordionItem>
+                                        
+                                        <AccordionItem value="account-deletion">
+                                          <AccordionTrigger className="flex items-center gap-2">
+                                            <UserMinus className="h-5 w-5 text-red-500" />
+                                            <span className="text-red-500">Request Account Deletion</span>
+                                          </AccordionTrigger>
+                                          <AccordionContent>
+                                            <div className="bg-red-50 p-4 rounded-md mt-4">
+                                              <div className="flex items-center gap-3">
+                                                <AlertCircle className="h-6 w-6 text-red-500" />
+                                                <h4 className="font-medium text-red-700">Warning: This action cannot be undone</h4>
+                                              </div>
+                                              <p className="mt-2 text-sm text-red-600">
+                                                Requesting account deletion will mark your account for removal.
+                                                An administrator will need to approve this request.
+                                                All of your data and personal information will be permanently deleted.
+                                              </p>
+                                              <div className="mt-4 flex justify-end">
+                                                <Button variant="destructive">
+                                                  Request Account Deletion
+                                                </Button>
+                                              </div>
+                                            </div>
+                                          </AccordionContent>
+                                        </AccordionItem>
+                                      </Accordion>
+                                    </CardContent>
+                                  </Card>
+                                </div>
+                              </div>
+                            </TabsContent>
+                          </Tabs>
+                        </div>
+                      ) : (
+                        <div className="text-center py-8 bg-gray-50 rounded-lg border border-dashed border-gray-300">
+                          <p className="text-gray-500 mb-4">No users found</p>
+                          
+                          <Dialog>
+                            <DialogTrigger asChild>
+                              <Button>
+                                Add Your First User
                               </Button>
-                            </div>
-                          </form>
-                        </Form>
-                      </div>
+                            </DialogTrigger>
+                            <DialogContent>
+                              <DialogHeader>
+                                <DialogTitle>Add New User</DialogTitle>
+                                <DialogDescription>
+                                  Create a new user account.
+                                </DialogDescription>
+                              </DialogHeader>
+                              
+                              <Form {...form}>
+                                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                                  <FormField
+                                    control={form.control}
+                                    name="email"
+                                    render={({ field }) => (
+                                      <FormItem>
+                                        <FormLabel>Email</FormLabel>
+                                        <FormControl>
+                                          <Input placeholder="Email address" {...field} />
+                                        </FormControl>
+                                        <FormMessage />
+                                      </FormItem>
+                                    )}
+                                  />
+                                  
+                                  <FormField
+                                    control={form.control}
+                                    name="name"
+                                    render={({ field }) => (
+                                      <FormItem>
+                                        <FormLabel>Full Name</FormLabel>
+                                        <FormControl>
+                                          <Input placeholder="Full name" {...field} />
+                                        </FormControl>
+                                        <FormMessage />
+                                      </FormItem>
+                                    )}
+                                  />
+                                  
+                                  <FormField
+                                    control={form.control}
+                                    name="username"
+                                    render={({ field }) => (
+                                      <FormItem>
+                                        <FormLabel>Username</FormLabel>
+                                        <FormControl>
+                                          <Input placeholder="Username" {...field} />
+                                        </FormControl>
+                                        <FormMessage />
+                                      </FormItem>
+                                    )}
+                                  />
+                                  
+                                  <FormField
+                                    control={form.control}
+                                    name="password"
+                                    render={({ field }) => (
+                                      <FormItem>
+                                        <FormLabel>Password</FormLabel>
+                                        <FormControl>
+                                          <Input type="password" placeholder="Password" {...field} />
+                                        </FormControl>
+                                        <FormMessage />
+                                      </FormItem>
+                                    )}
+                                  />
+                                  
+                                  <FormField
+                                    control={form.control}
+                                    name="role"
+                                    render={({ field }) => (
+                                      <FormItem>
+                                        <FormLabel>Role</FormLabel>
+                                        <Select
+                                          onValueChange={field.onChange}
+                                          defaultValue={field.value}
+                                        >
+                                          <FormControl>
+                                            <SelectTrigger>
+                                              <SelectValue placeholder="Select a role" />
+                                            </SelectTrigger>
+                                          </FormControl>
+                                          <SelectContent>
+                                            <SelectItem value="guest">Guest</SelectItem>
+                                            <SelectItem value="director">Director</SelectItem>
+                                            <SelectItem value="admin">Admin</SelectItem>
+                                          </SelectContent>
+                                        </Select>
+                                        <FormMessage />
+                                      </FormItem>
+                                    )}
+                                  />
+                                  
+                                  <DialogFooter>
+                                    <Button
+                                      type="submit"
+                                      disabled={createUserMutation.isPending}
+                                    >
+                                      {createUserMutation.isPending ? "Creating..." : "Create User"}
+                                    </Button>
+                                  </DialogFooter>
+                                </form>
+                              </Form>
+                            </DialogContent>
+                          </Dialog>
+                        </div>
+                      )}
                     </div>
                   </TabsContent>
                 </Tabs>
