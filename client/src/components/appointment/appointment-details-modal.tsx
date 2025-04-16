@@ -1408,18 +1408,31 @@ export function AppointmentDetailsModal({
                               </p>
                             </div>
                             <div className="text-right">
-                              <p className="text-xs text-gray-500">
+                              <p className="text-xs font-medium text-gray-700">
                                 {log.username || (log.userId ? `User ${log.userId}` : "System")}
                               </p>
                             </div>
                           </div>
                           
-                          {log.details && (
+                          {/* Format details to show what changed */}
+                          {(log.changedFields || log.details) && (
                             <div className="mt-3">
                               <h6 className="text-xs font-medium text-gray-700 mb-1">Changes:</h6>
-                              <div className="text-xs text-gray-600 whitespace-pre-line bg-white p-2 rounded border">
-                                {typeof log.details === 'string' ? log.details : JSON.stringify(log.details, null, 2)}
-                              </div>
+                              {log.changedFields && Array.isArray(log.changedFields) ? (
+                                <div className="grid grid-cols-1 gap-1">
+                                  {log.changedFields.map((field, i) => (
+                                    <div key={i} className="bg-white p-2 rounded border text-xs">
+                                      <span className="font-medium">{field.charAt(0).toUpperCase() + field.slice(1).replace(/([A-Z])/g, ' $1')}</span> was updated
+                                    </div>
+                                  ))}
+                                </div>
+                              ) : (
+                                <div className="text-xs text-gray-600 whitespace-pre-line bg-white p-2 rounded border">
+                                  {typeof log.details === 'string' ? log.details : 
+                                   typeof log.details === 'object' ? JSON.stringify(log.details, null, 2) : 
+                                   "Changes not available"}
+                                </div>
+                              )}
                             </div>
                           )}
                         </div>
