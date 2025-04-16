@@ -21,6 +21,13 @@ async function migrateSchema() {
     `);
     console.log('Updated appointments table with membership_number');
     
+    // Add rooms column to appointments table for multi-room bookings
+    await db.execute(sql`
+      ALTER TABLE IF EXISTS appointments 
+      ADD COLUMN IF NOT EXISTS rooms jsonb NOT NULL DEFAULT '[]'::jsonb;
+    `);
+    console.log('Updated appointments table with rooms column');
+    
     console.log('Schema migration completed successfully');
   } catch (error) {
     console.error('Error during schema migration:', error);

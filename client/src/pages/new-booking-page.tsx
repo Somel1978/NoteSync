@@ -37,7 +37,8 @@ import { cn } from "@/lib/utils";
 // Form schema using zod
 const bookingFormSchema = z.object({
   title: z.string().min(1, "Event name is required"),
-  roomId: z.coerce.number().min(1, "Room is required"),
+  roomId: z.coerce.number().min(1, "At least one room is required"),
+  selectedRooms: z.array(z.coerce.number()).min(1, "At least one room is required"),
   startTime: z.date({ required_error: "Start time is required" }),
   endTime: z.date({ required_error: "End time is required" }),
   purpose: z.string().optional(),
@@ -47,6 +48,11 @@ const bookingFormSchema = z.object({
   membershipNumber: z.string().optional(),
   attendeesCount: z.coerce.number().min(1, "Must have at least 1 attendee"),
   sendConfirmation: z.boolean().default(false),
+  roomSettings: z.record(z.object({
+    requestedFacilities: z.array(z.string()).default([]),
+    costType: z.enum(["flat", "hourly", "per_attendee"]),
+  })).default({}),
+  // Keep for backward compatibility
   requestedFacilities: z.array(z.string()).default([]),
   costType: z.enum(["flat", "hourly", "per_attendee"]),
 });
@@ -66,6 +72,7 @@ export default function NewBookingPage() {
     defaultValues: {
       title: "",
       roomId: 0,
+      selectedRooms: [],
       purpose: "",
       customerName: "",
       customerEmail: "",
@@ -73,6 +80,7 @@ export default function NewBookingPage() {
       membershipNumber: "",
       attendeesCount: 1,
       sendConfirmation: false,
+      roomSettings: {},
       requestedFacilities: [],
       costType: "flat",
     },
@@ -205,37 +213,73 @@ export default function NewBookingPage() {
 
                     <FormField
                       control={form.control}
-                      name="roomId"
+                      name="selectedRooms"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Room</FormLabel>
-                          <Select
-                            onValueChange={(value) => field.onChange(parseInt(value))}
-                            value={field.value ? field.value.toString() : undefined}
-                          >
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select a room" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              {roomsLoading ? (
-                                <SelectItem value="loading" disabled>
-                                  Loading rooms...
-                                </SelectItem>
-                              ) : rooms?.length ? (
-                                rooms.map((room) => (
-                                  <SelectItem key={room.id} value={room.id.toString()}>
-                                    {room.name}
-                                  </SelectItem>
-                                ))
-                              ) : (
-                                <SelectItem value="empty" disabled>
-                                  No rooms available
-                                </SelectItem>
-                              )}
-                            </SelectContent>
-                          </Select>
+                          <FormLabel>Rooms</FormLabel>
+                          <FormDescription>
+                            Select one or more rooms for your booking
+                          </FormDescription>
+                          <div className="space-y-2">
+                            {roomsLoading ? (
+                              <div className="text-sm text-gray-500">Loading rooms...</div>
+                            ) : rooms?.length > 0 ? (
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                {rooms.map((room) => {
+                                  const isSelected = field.value.includes(room.id);
+                                  return (
+                                    <div 
+                                      key={room.id}
+                                      className={`p-4 border rounded-md cursor-pointer transition-colors ${
+                                        isSelected 
+                                          ? "border-primary bg-primary/5" 
+                                          : "border-gray-200 hover:border-gray-300"
+                                      }`}
+                                      onClick={() => {
+                                        const newSelectedRooms = isSelected
+                                          ? field.value.filter(id => id !== room.id)
+                                          : [...field.value, room.id];
+                                        
+                                        field.onChange(newSelectedRooms);
+                                        
+                                        // Set the primary room (roomId) to the first selected room
+                                        if (newSelectedRooms.length > 0) {
+                                          form.setValue('roomId', newSelectedRooms[0]);
+                                          
+                                          // Initialize room settings if not already set
+                                          const roomSettings = form.getValues('roomSettings');
+                                          if (!roomSettings[room.id] && !isSelected) {
+                                            form.setValue(`roomSettings.${room.id}`, {
+                                              requestedFacilities: [],
+                                              costType: 'flat'
+                                            });
+                                          }
+                                        } else {
+                                          form.setValue('roomId', 0);
+                                        }
+                                      }}
+                                    >
+                                      <div className="flex justify-between items-start">
+                                        <div>
+                                          <h3 className="font-medium">{room.name}</h3>
+                                          <p className="text-sm text-gray-500">
+                                            Capacity: {room.capacity} people
+                                          </p>
+                                        </div>
+                                        <Checkbox 
+                                          checked={isSelected}
+                                          onCheckedChange={() => {}}
+                                          className="mt-1"
+                                        />
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            ) : (
+                              <div className="text-sm text-gray-500">No rooms available</div>
+                            )}
+                          </div>
                           <FormMessage />
                         </FormItem>
                       )}
