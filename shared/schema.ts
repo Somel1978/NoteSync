@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp, json, pgEnum } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, json, pgEnum, doublePrecision } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -30,12 +30,16 @@ export const locations = pgTable("locations", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
   description: text("description"),
+  latitude: doublePrecision("latitude"),
+  longitude: doublePrecision("longitude"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
 export const insertLocationSchema = createInsertSchema(locations).pick({
   name: true,
   description: true,
+  latitude: true,
+  longitude: true,
 });
 
 // Rooms
@@ -71,7 +75,7 @@ export const appointmentStatusEnum = pgEnum('appointment_status', ['pending', 'a
 // Appointments/Bookings
 export const appointments = pgTable("appointments", {
   id: serial("id").primaryKey(),
-  title: text("title").notNull(),
+  title: text("title").notNull(), // Event Name
   roomId: integer("room_id").notNull(),
   userId: integer("user_id").notNull(),
   startTime: timestamp("start_time").notNull(),
@@ -81,6 +85,7 @@ export const appointments = pgTable("appointments", {
   customerName: text("customer_name").notNull(),
   customerEmail: text("customer_email").notNull(),
   customerPhone: text("customer_phone"),
+  membershipNumber: text("membership_number"), // Added membership number
   attendeesCount: integer("attendees_count").notNull(),
   requestedFacilities: json("requested_facilities").notNull().default([]),
   costType: text("cost_type").notNull(), // flat, hourly, or per_attendee
@@ -103,6 +108,7 @@ export const insertAppointmentSchema = createInsertSchema(appointments).pick({
   customerName: true,
   customerEmail: true,
   customerPhone: true,
+  membershipNumber: true,
   attendeesCount: true,
   requestedFacilities: true,
   costType: true,

@@ -31,6 +31,8 @@ import { InsertLocation, Location } from "@shared/schema";
 const locationSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
   description: z.string().optional(),
+  latitude: z.number().optional().nullable(),
+  longitude: z.number().optional().nullable(),
 });
 
 type LocationFormValues = z.infer<typeof locationSchema>;
