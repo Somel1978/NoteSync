@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { PencilIcon, TrashIcon, UserIcon, DollarSignIcon, ClockIcon } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
+import { ReactNode } from "react";
 
 interface RoomCardProps {
   room: Room;
@@ -21,6 +22,29 @@ export function RoomCard({ room, onEdit, onDelete }: RoomCardProps) {
   const formatCurrency = (value?: number | null) => {
     if (value === undefined || value === null) return t('common.notAvailable', 'N/A');
     return `€${(value / 100).toFixed(2)}`;
+  };
+
+  const renderFacilities = () => {
+    if (!room.facilities || !Array.isArray(room.facilities) || room.facilities.length === 0) {
+      return null;
+    }
+    
+    return (
+      <div className="mt-4">
+        <h4 className="text-sm font-medium text-gray-700">{t('rooms.facilities', 'Facilities')}</h4>
+        <div className="mt-2 flex flex-wrap gap-2">
+          {room.facilities.map((facility: any) => (
+            <Badge
+              key={facility.id}
+              variant="secondary"
+              className="flex items-center"
+            >
+              {facility.name} {facility.cost > 0 && `- ${formatCurrency(facility.cost)}`}
+            </Badge>
+          ))}
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -76,22 +100,7 @@ export function RoomCard({ room, onEdit, onDelete }: RoomCardProps) {
           </div>
         )}
 
-        {room.facilities && Array.isArray(room.facilities) && room.facilities.length > 0 && (
-          <div className="mt-4">
-            <h4 className="text-sm font-medium text-gray-700">{t('rooms.facilities', 'Facilities')}</h4>
-            <div className="mt-2 flex flex-wrap gap-2">
-              {(room.facilities as unknown as Facility[]).map((facility) => (
-                <Badge
-                  key={facility.id}
-                  variant="secondary"
-                  className="flex items-center"
-                >
-                  {facility.name} {facility.cost > 0 && `- ${formatCurrency(facility.cost)}`}
-                </Badge>
-              ))}
-            </div>
-          </div>
-        )}
+        {renderFacilities()}
 
         <div className="mt-4 flex items-center">
           <div className="flex h-5 items-center">

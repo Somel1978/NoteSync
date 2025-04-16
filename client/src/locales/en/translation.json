@@ -16,7 +16,8 @@
     "settings": "Settings",
     "logout": "Logout",
     "noData": "No data available",
-    "error": "An error occurred"
+    "error": "An error occurred",
+    "notAvailable": "N/A"
   },
   "navigation": {
     "dashboard": "Dashboard",
@@ -90,12 +91,20 @@
     "of": "of",
     "rooms": "rooms",
     "noRooms": "No rooms found",
+    "noRoomsFound": "No rooms found",
     "addFirstRoom": "Add your first room",
     "capacity": "Capacity",
     "price": "Price",
     "facilities": "Facilities",
     "bookNow": "Book Now",
-    "confirmDelete": "Are you sure you want to delete this room?"
+    "confirmDelete": "Are you sure you want to delete this room?",
+    "active": "Active",
+    "inactive": "Inactive",
+    "flatRate": "Flat Rate",
+    "hourlyRate": "Hourly Rate",
+    "deleteSuccess": "Room deleted",
+    "deleteSuccessDetail": "The room has been successfully deleted.",
+    "deleteError": "Failed to delete room"
   },
   "settings": {
     "title": "Settings",
