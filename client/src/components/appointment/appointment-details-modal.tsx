@@ -294,9 +294,19 @@ export function AppointmentDetailsModal({
     setCustomPricing(enabled);
     
     if (!enabled && appointment) {
-      // Reset to calculated price
-      const calculatedCost = calculateCost(editedAppointment.roomId || appointment.roomId);
+      // Reset to calculated price based on current settings
+      const roomId = editedAppointment.roomId || appointment.roomId;
+      const calculatedCost = calculateCost(roomId);
+      
+      // Update cost breakdown to reflect automatic calculation
+      const costBreakdown = {
+        ...(typeof editedAppointment.costBreakdown === 'object' ? editedAppointment.costBreakdown : {}),
+        base: calculatedCost,
+        isCustom: false
+      };
+      
       handleInputChange('agreedCost', calculatedCost);
+      handleInputChange('costBreakdown', costBreakdown);
     }
   };
 
@@ -442,6 +452,10 @@ export function AppointmentDetailsModal({
                                 )}`
                               : "N/A"}
                           </p>
+                        </div>
+                        <div>
+                          <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">Attendees</h5>
+                          <p className="text-sm text-gray-900">{appointment.attendeesCount || "N/A"}</p>
                         </div>
                       </div>
 
@@ -757,6 +771,54 @@ export function AppointmentDetailsModal({
                                             </Badge>
                                           ))}
                                         </div>
+                                        
+                                        <div className="flex mt-2">
+                                          <Input
+                                            placeholder="Add facility"
+                                            className="h-8 text-xs"
+                                            onKeyDown={(e) => {
+                                              if (e.key === 'Enter' && e.currentTarget.value.trim()) {
+                                                e.preventDefault();
+                                                const facilityName = e.currentTarget.value.trim();
+                                                const updatedRooms = [...(editedAppointment.rooms as RoomBooking[])];
+                                                const updatedFacilities = [
+                                                  ...(roomBooking.requestedFacilities || []), 
+                                                  facilityName
+                                                ];
+                                                updatedRooms[index] = {
+                                                  ...updatedRooms[index],
+                                                  requestedFacilities: updatedFacilities
+                                                };
+                                                handleInputChange('rooms', updatedRooms);
+                                                e.currentTarget.value = '';
+                                              }
+                                            }}
+                                          />
+                                          <Button 
+                                            variant="outline" 
+                                            size="sm" 
+                                            className="ml-2 h-8"
+                                            onClick={(e) => {
+                                              const input = e.currentTarget.previousSibling as HTMLInputElement;
+                                              if (input && input.value.trim()) {
+                                                const facilityName = input.value.trim();
+                                                const updatedRooms = [...(editedAppointment.rooms as RoomBooking[])];
+                                                const updatedFacilities = [
+                                                  ...(roomBooking.requestedFacilities || []),
+                                                  facilityName
+                                                ];
+                                                updatedRooms[index] = {
+                                                  ...updatedRooms[index],
+                                                  requestedFacilities: updatedFacilities
+                                                };
+                                                handleInputChange('rooms', updatedRooms);
+                                                input.value = '';
+                                              }
+                                            }}
+                                          >
+                                            Add
+                                          </Button>
+                                        </div>
                                       </div>
                                     </div>
                                   </div>
@@ -1014,10 +1076,6 @@ export function AppointmentDetailsModal({
                       <div>
                         <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">Contact Phone</h5>
                         <p className="text-sm text-gray-900">{appointment.customerPhone || "N/A"}</p>
-                      </div>
-                      <div>
-                        <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">Attendees</h5>
-                        <p className="text-sm text-gray-900">{appointment.attendeesCount || "N/A"}</p>
                       </div>
                     </div>
                   ) : (
