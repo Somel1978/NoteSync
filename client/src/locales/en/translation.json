@@ -23,7 +23,8 @@
     "appointments": "Appointments",
     "rooms": "Rooms",
     "settings": "Settings",
-    "language": "Language"
+    "language": "Language",
+    "selectLanguage": "Select Language"
   },
   "auth": {
     "login": "Login",
@@ -106,7 +107,9 @@
     "security": "Security",
     "billing": "Billing",
     "users": "Users",
-    "addUser": "Add User",
+    "addUser": "Add User"
+  },
+  "languages": {
     "english": "English",
     "spanish": "Spanish",
     "portuguese": "Portuguese"

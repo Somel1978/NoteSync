@@ -15,21 +15,14 @@ interface LanguageContextType {
 
 const LanguageContext = createContext<LanguageContextType | null>(null);
 
-// Define language names outside the component
-const languageNames = {
-  en: 'English',
-  es: 'Spanish',
-  pt: 'Portuguese'
-};
-
 export function LanguageProvider({ children }: { children: ReactNode }) {
   const { t } = useTranslation();
   const [language, setLanguage] = useState<Language>((i18n.language || 'en').split('-')[0] as Language);
-
+  
   const languages = [
-    { code: 'en' as Language, name: languageNames.en },
-    { code: 'es' as Language, name: languageNames.es },
-    { code: 'pt' as Language, name: languageNames.pt }
+    { code: 'en' as Language, name: t('languages.english', 'English') },
+    { code: 'es' as Language, name: t('languages.spanish', 'Spanish') },
+    { code: 'pt' as Language, name: t('languages.portuguese', 'Portuguese') }
   ];
 
   const changeLanguage = (lang: Language) => {

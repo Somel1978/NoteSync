@@ -34,7 +34,7 @@ export function LanguageSelector() {
         >
           <div className="flex items-center">
             <Globe className="h-5 w-5 mr-2" />
-            <span>{currentLanguage?.name || t('navigation.language')}</span>
+            <span>{currentLanguage?.name || t('navigation.selectLanguage', 'Select Language')}</span>
           </div>
           <span className="ml-2">{flagIcons[language]}</span>
         </Button>
