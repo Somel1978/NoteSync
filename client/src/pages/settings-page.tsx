@@ -58,236 +58,131 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Room, Location, User, InsertUser } from "@shared/schema";
+import { Room, User, Location } from "@shared/schema";
 
-// Form for creating new users
-const newUserSchema = z.object({
-  name: z.string().min(1, "Name is required"),
+// Form schemas
+const profileSchema = z.object({
+  name: z.string().min(2, "Name must be at least 2 characters"),
   username: z.string().min(3, "Username must be at least 3 characters"),
-  email: z.string().email("Invalid email format"),
-  password: z.string().min(6, "Password must be at least 6 characters"),
-  role: z.enum(["admin", "director", "guest"]),
+  email: z.string().email("Please enter a valid email address"),
 });
 
-// Form for changing password
 const changePasswordSchema = z.object({
-  currentPassword: z.string().min(1, "Current password is required"),
+  currentPassword: z.string().min(6, "Password must be at least 6 characters"),
   newPassword: z.string().min(6, "Password must be at least 6 characters"),
-  confirmNewPassword: z.string().min(6, "Password confirmation is required"),
-}).refine((data) => data.newPassword === data.confirmNewPassword, {
+  confirmNewPassword: z.string(),
+}).refine(data => data.newPassword === data.confirmNewPassword, {
   message: "Passwords do not match",
   path: ["confirmNewPassword"],
 });
 
-type NewUserFormValues = z.infer<typeof newUserSchema>;
+const newUserSchema = z.object({
+  name: z.string().min(2, "Name must be at least 2 characters"),
+  username: z.string().min(3, "Username must be at least 3 characters"),
+  email: z.string().email("Please enter a valid email address"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
+  role: z.enum(["admin", "director", "guest"])
+});
+
+type ProfileFormValues = z.infer<typeof profileSchema>;
 type ChangePasswordFormValues = z.infer<typeof changePasswordSchema>;
+type NewUserFormValues = z.infer<typeof newUserSchema>;
+
+// UserProfileCard component
+const UserProfileCard = ({ user }: { user: User }) => {
+  const { t } = useTranslation();
+  
+  return (
+    <Card key={user.id} className="overflow-hidden">
+      <CardContent className="p-6">
+        <div className="flex items-start justify-between">
+          <div className="flex items-center">
+            <div className="bg-primary/10 p-2 rounded-full">
+              <UserCircle className="h-10 w-10 text-primary" />
+            </div>
+            <div className="ml-4">
+              <h3 className="font-medium">{user.name}</h3>
+              <p className="text-sm text-muted-foreground">@{user.username}</p>
+              <p className="text-sm text-muted-foreground">{user.email}</p>
+            </div>
+          </div>
+          
+          <div className="flex items-center space-x-2">
+            {user.role === 'admin' && (
+              <Badge variant="default" className="ml-2 bg-red-500">
+                <ShieldCheck className="h-3 w-3 mr-1" /> {t('roles.admin')}
+              </Badge>
+            )}
+            {user.role === 'director' && (
+              <Badge variant="default" className="ml-2 bg-blue-500">
+                <UserCog className="h-3 w-3 mr-1" /> {t('roles.director')}
+              </Badge>
+            )}
+            {user.role === 'guest' && (
+              <Badge variant="outline" className="ml-2">
+                <UserCircle className="h-3 w-3 mr-1" /> {t('roles.guest')}
+              </Badge>
+            )}
+            
+            {user.deletionRequested && (
+              <Badge variant="outline" className="ml-2 text-red-500 border-red-200 bg-red-50">
+                {t('settings.deletionRequested')}
+              </Badge>
+            )}
+          </div>
+        </div>
+        
+        <div className="mt-4 flex justify-end space-x-2">
+          <Button variant="outline" size="sm" className="text-xs">
+            <Pencil className="h-3 w-3 mr-1" />
+            {t('common.edit')}
+          </Button>
+          
+          {user.deletionRequested ? (
+            <Button variant="outline" size="sm" className="text-xs text-green-600">
+              <CheckCircle className="h-3 w-3 mr-1" />
+              {t('settings.approveDeleteRequest')}
+            </Button>
+          ) : (
+            <Button variant="outline" size="sm" className="text-xs text-red-600">
+              <Trash className="h-3 w-3 mr-1" />
+              {t('common.delete')}
+            </Button>
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
 
 export default function SettingsPage() {
-  const [activeTab, setActiveTab] = useState("rooms");
+  const { t } = useTranslation();
+  const { toast } = useToast();
+  const { user } = useAuth();
   const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
   const [roomModalOpen, setRoomModalOpen] = useState(false);
-  const { toast } = useToast();
-  const { t } = useTranslation();
-  const { user } = useAuth();
+  const [activeTab, setActiveTab] = useState("account");
   
-  // States for My Account tab
-  const [accountInfo, setAccountInfo] = useState({
-    name: "",
-    username: "",
-    email: ""
-  });
-  
-  // Keep account info updated when the user data is loaded
-  useEffect(() => {
-    if (user) {
-      setAccountInfo({
-        name: user.name || "",
-        username: user.username || "",
-        email: user.email || ""
-      });
+  // Initialize forms
+  const profileForm = useForm<ProfileFormValues>({
+    resolver: zodResolver(profileSchema),
+    defaultValues: {
+      name: user?.name || "",
+      username: user?.username || "",
+      email: user?.email || "",
     }
-  }, [user]);
-
-  const { data: rooms, isLoading: roomsLoading } = useQuery<Room[]>({
-    queryKey: ["/api/rooms"],
-  });
-
-  const { data: locations, isLoading: locationsLoading } = useQuery<Location[]>({
-    queryKey: ["/api/locations"],
-  });
-
-  const { data: users, isLoading: usersLoading } = useQuery<User[]>({
-    queryKey: ["/api/users"],
-  });
-
-  const deleteRoomMutation = useMutation({
-    mutationFn: async (id: number) => {
-      await apiRequest("DELETE", `/api/rooms/${id}`);
-    },
-    onSuccess: () => {
-      toast({
-        title: "Room deleted",
-        description: "The room has been successfully deleted.",
-      });
-      queryClient.invalidateQueries({ queryKey: ["/api/rooms"] });
-    },
-    onError: (error) => {
-      toast({
-        title: "Failed to delete room",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
-
-  const deleteUserMutation = useMutation({
-    mutationFn: async (id: number) => {
-      await apiRequest("DELETE", `/api/users/${id}`);
-    },
-    onSuccess: () => {
-      toast({
-        title: "User deleted",
-        description: "The user has been successfully deleted.",
-      });
-      queryClient.invalidateQueries({ queryKey: ["/api/users"] });
-    },
-    onError: (error) => {
-      toast({
-        title: "Failed to delete user",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
-
-  const createUserMutation = useMutation({
-    mutationFn: async (data: NewUserFormValues) => {
-      const res = await apiRequest("POST", "/api/register", data);
-      return await res.json();
-    },
-    onSuccess: () => {
-      toast({
-        title: "User created",
-        description: "The user has been successfully created.",
-      });
-      queryClient.invalidateQueries({ queryKey: ["/api/users"] });
-      form.reset({
-        name: "",
-        username: "",
-        email: "",
-        password: "",
-        role: "guest",
-      });
-    },
-    onError: (error) => {
-      toast({
-        title: "Failed to create user",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
-
-  // Define mutation for updating user profile
-  const updateProfileMutation = useMutation({
-    mutationFn: async (data: { name: string; username: string; email: string }) => {
-      if (!user?.id) throw new Error("No user found");
-      const res = await apiRequest("PATCH", `/api/users/${user.id}`, data);
-      return await res.json();
-    },
-    onSuccess: () => {
-      toast({
-        title: "Profile updated",
-        description: "Your profile has been successfully updated.",
-      });
-      queryClient.invalidateQueries({ queryKey: ["/api/user"] });
-    },
-    onError: (error) => {
-      toast({
-        title: "Failed to update profile",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
-
-  // Define mutation for changing password
-  const changePasswordMutation = useMutation({
-    mutationFn: async (data: ChangePasswordFormValues) => {
-      if (!user?.id) throw new Error("No user found");
-      const res = await apiRequest("POST", `/api/users/${user.id}/change-password`, {
-        currentPassword: data.currentPassword,
-        newPassword: data.newPassword,
-      });
-      return await res.json();
-    },
-    onSuccess: () => {
-      toast({
-        title: "Password changed",
-        description: "Your password has been successfully changed.",
-      });
-      passwordForm.reset({
-        currentPassword: "",
-        newPassword: "",
-        confirmNewPassword: "",
-      });
-    },
-    onError: (error) => {
-      toast({
-        title: "Failed to change password",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
-
-  // Define mutation for requesting account deletion
-  const requestDeletionMutation = useMutation({
-    mutationFn: async () => {
-      if (!user?.id) throw new Error("No user found");
-      const res = await apiRequest("POST", `/api/users/${user.id}/request-deletion`);
-      return await res.json();
-    },
-    onSuccess: () => {
-      toast({
-        title: "Deletion requested",
-        description: "Your account deletion request has been submitted. An administrator will review your request.",
-      });
-      queryClient.invalidateQueries({ queryKey: ["/api/user"] });
-    },
-    onError: (error) => {
-      toast({
-        title: "Failed to request deletion",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
   });
   
-  // Define mutation for approving user deletion (admin only)
-  const approveUserDeletionMutation = useMutation({
-    mutationFn: async (userId: number) => {
-      const res = await apiRequest("DELETE", `/api/users/${userId}`);
-      return await res.json();
-    },
-    onSuccess: () => {
-      toast({
-        title: "User deleted",
-        description: "The user has been successfully deleted.",
-      });
-      queryClient.invalidateQueries({ queryKey: ["/api/users"] });
-    },
-    onError: (error) => {
-      toast({
-        title: "Failed to delete user",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
+  const passwordForm = useForm<ChangePasswordFormValues>({
+    resolver: zodResolver(changePasswordSchema),
+    defaultValues: {
+      currentPassword: "",
+      newPassword: "",
+      confirmNewPassword: "",
+    }
   });
-
-  // Form for creating new users
-  const form = useForm<NewUserFormValues>({
+  
+  const newUserForm = useForm<NewUserFormValues>({
     resolver: zodResolver(newUserSchema),
     defaultValues: {
       name: "",
@@ -295,957 +190,484 @@ export default function SettingsPage() {
       email: "",
       password: "",
       role: "guest",
-    },
-  });
-
-  // Form for changing password
-  const passwordForm = useForm<ChangePasswordFormValues>({
-    resolver: zodResolver(changePasswordSchema),
-    defaultValues: {
-      currentPassword: "",
-      newPassword: "",
-      confirmNewPassword: "",
-    },
-  });
-
-  // Form for handling profile updates
-  const profileForm = useForm({
-    defaultValues: {
-      name: accountInfo.name,
-      username: accountInfo.username,
-      email: accountInfo.email,
     }
   });
-
-  // Update profile form values when user data changes
+  
+  // Update form when user data changes
   useEffect(() => {
-    profileForm.reset({
-      name: accountInfo.name,
-      username: accountInfo.username,
-      email: accountInfo.email,
-    });
-  }, [accountInfo, profileForm]);
-
-  const onSubmit = (data: NewUserFormValues) => {
-    createUserMutation.mutate(data);
-  };
-
-  const onProfileSubmit = (data: { name: string; username: string; email: string }) => {
+    if (user) {
+      profileForm.reset({
+        name: user.name || "",
+        username: user.username || "",
+        email: user.email || "",
+      });
+    }
+  }, [user, profileForm]);
+  
+  // Fetch data
+  const { data: users = [] } = useQuery({
+    queryKey: ['/api/users'],
+    enabled: user?.role === 'admin'
+  });
+  
+  const { data: rooms = [] } = useQuery({
+    queryKey: ['/api/rooms'],
+    enabled: user?.role === 'admin' || user?.role === 'director'
+  });
+  
+  const { data: locations = [] } = useQuery({
+    queryKey: ['/api/locations'],
+    enabled: user?.role === 'admin' || user?.role === 'director'
+  });
+  
+  // Mutations
+  const updateProfileMutation = useMutation({
+    mutationFn: async (data: ProfileFormValues) => {
+      const res = await apiRequest("PATCH", `/api/users/${user?.id}`, data);
+      if (!res.ok) throw new Error("Failed to update profile");
+      return await res.json();
+    },
+    onSuccess: (updatedUser) => {
+      queryClient.setQueryData(['/api/user'], updatedUser);
+      toast({
+        title: t('settings.profileUpdated'),
+        description: t('settings.profileUpdateSuccess'),
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: t('settings.profileUpdateFailed'),
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+  
+  const changePasswordMutation = useMutation({
+    mutationFn: async (data: ChangePasswordFormValues) => {
+      const res = await apiRequest("POST", `/api/users/${user?.id}/change-password`, {
+        currentPassword: data.currentPassword,
+        newPassword: data.newPassword,
+      });
+      if (!res.ok) throw new Error("Failed to update password");
+      return await res.json();
+    },
+    onSuccess: () => {
+      passwordForm.reset();
+      toast({
+        title: t('settings.passwordChanged'),
+        description: t('settings.passwordChangeSuccess'),
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: t('settings.passwordChangeFailed'),
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+  
+  const addUserMutation = useMutation({
+    mutationFn: async (data: NewUserFormValues) => {
+      const res = await apiRequest("POST", "/api/register", data);
+      if (!res.ok) throw new Error("Failed to create user");
+      return await res.json();
+    },
+    onSuccess: () => {
+      newUserForm.reset();
+      queryClient.invalidateQueries({ queryKey: ['/api/users'] });
+      toast({
+        title: t('settings.userCreated'),
+        description: t('settings.userCreateSuccess'),
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: t('settings.userCreateFailed'),
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+  
+  const deleteUserMutation = useMutation({
+    mutationFn: async (userId: number) => {
+      const res = await apiRequest("DELETE", `/api/users/${userId}`);
+      if (!res.ok) throw new Error("Failed to delete user");
+      return userId;
+    },
+    onSuccess: (userId) => {
+      queryClient.invalidateQueries({ queryKey: ['/api/users'] });
+      toast({
+        title: t('settings.userDeleted'),
+        description: t('settings.userDeleteSuccess'),
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: t('settings.userDeleteFailed'),
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+  
+  const requestDeletionMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("POST", `/api/users/${user?.id}/request-deletion`);
+      if (!res.ok) throw new Error("Failed to request account deletion");
+      return await res.json();
+    },
+    onSuccess: (updatedUser) => {
+      queryClient.setQueryData(['/api/user'], updatedUser);
+      toast({
+        title: t('settings.deletionRequested'),
+        description: t('settings.deletionRequestSuccess'),
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: t('settings.deletionRequestFailed'),
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+  
+  const approveDeleteMutation = useMutation({
+    mutationFn: async (userId: number) => {
+      const res = await apiRequest("POST", `/api/users/${userId}/approve-deletion`);
+      if (!res.ok) throw new Error("Failed to approve deletion");
+      return userId;
+    },
+    onSuccess: (userId) => {
+      queryClient.invalidateQueries({ queryKey: ['/api/users'] });
+      toast({
+        title: t('settings.deletionApproved'),
+        description: t('settings.deletionApproveSuccess'),
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: t('settings.deletionApproveFailed'),
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+  
+  // Form submission handlers
+  const onProfileSubmit = (data: ProfileFormValues) => {
     updateProfileMutation.mutate(data);
   };
-
+  
   const onPasswordSubmit = (data: ChangePasswordFormValues) => {
     changePasswordMutation.mutate(data);
   };
-
+  
+  const onAddUserSubmit = (data: NewUserFormValues) => {
+    addUserMutation.mutate(data);
+  };
+  
+  // Room handlers
   const handleEditRoom = (room: Room) => {
     setSelectedRoom(room);
     setRoomModalOpen(true);
   };
-
-  const handleDeleteRoom = (roomId: number) => {
-    if (confirm("Are you sure you want to delete this room? This action cannot be undone.")) {
-      deleteRoomMutation.mutate(roomId);
-    }
-  };
-
-  const handleDeleteUser = (userId: number, isDeletionRequested = false) => {
-    const message = isDeletionRequested
-      ? "This user has requested account deletion. Are you sure you want to permanently delete this account?"
-      : "Are you sure you want to delete this user? This action cannot be undone.";
-      
-    if (confirm(message)) {
-      if (isDeletionRequested) {
-        approveUserDeletionMutation.mutate(userId);
-      } else {
-        deleteUserMutation.mutate(userId);
-      }
-    }
-  };
-
-  const getLocationName = (locationId: number) => {
-    if (!locations) return `Location #${locationId}`;
-    const location = locations.find(loc => loc.id === locationId);
-    return location ? location.name : `Location #${locationId}`;
-  };
   
-  // Helper component for user profile cards
-  const UserProfileCard = ({ user }: { user: User }) => {
-    const roleLabels: Record<string, string> = {
-      admin: "Administrator",
-      director: "Director",
-      guest: "Guest"
-    };
-    
-    const roleBadgeColors: Record<string, string> = {
-      admin: "destructive",
-      director: "default",
-      guest: "secondary"
-    };
-    
-    return (
-      <Card key={user.id} className="overflow-hidden">
-        <div className="p-4">
-          <div className="flex justify-between items-start">
-            <div className="flex items-center gap-3">
-              <div className="bg-gray-100 rounded-full p-2">
-                <UserCircle className="h-8 w-8 text-gray-500" />
-              </div>
-              <div>
-                <h4 className="font-medium">{user.name}</h4>
-                <p className="text-sm text-gray-500">{user.email}</p>
-                <div className="flex gap-2 mt-1">
-                  <Badge key="role-badge" variant={roleBadgeColors[user.role] as any}>
-                    {roleLabels[user.role]}
-                  </Badge>
-                  {user.deletionRequested && (
-                    <Badge key="deletion-badge" variant="outline" className="text-red-500 border-red-200 bg-red-50">
-                      Deletion Requested
-                    </Badge>
-                  )}
-                </div>
-              </div>
-            </div>
-            <div className="flex gap-1">
-              {user.deletionRequested ? (
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  className="text-red-500 border-red-200 hover:bg-red-50"
-                  onClick={() => handleDeleteUser(user.id, true)}
-                >
-                  <CheckCircle className="h-4 w-4 mr-1" />
-                  Approve Deletion
-                </Button>
-              ) : (
-                <Button 
-                  variant="ghost" 
-                  size="icon"
-                  onClick={() => handleDeleteUser(user.id)}
-                >
-                  <Trash className="h-5 w-5 text-gray-400 hover:text-red-500" />
-                </Button>
-              )}
-            </div>
-          </div>
-        </div>
-      </Card>
-    );
-  };
-
+  // Filter and group users by role for the admin view
+  const adminUsers = users.filter((u: User) => u.role === 'admin');
+  const directorUsers = users.filter((u: User) => u.role === 'director');
+  const guestUsers = users.filter((u: User) => u.role === 'guest');
+  
   return (
     <AppLayout>
-      <div className="p-8">
-        <header className="mb-8">
-          <h1 className="text-2xl font-semibold text-gray-800">Settings</h1>
-          <p className="text-gray-600 text-sm">Manage application settings and preferences</p>
-        </header>
-
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-          {/* Settings Navigation */}
-          <div className="md:col-span-1">
-            <nav className="space-y-1">
-              <a
-                href="#general-settings"
-                className={`flex items-center px-3 py-2 text-sm font-medium rounded-md ${
-                  activeTab === "general" ? "bg-gray-100 text-gray-900" : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-                }`}
-                onClick={() => setActiveTab("general")}
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" className="text-gray-500 mr-3 h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
-                General Settings
-              </a>
-
-              <a
-                href="#localization"
-                className={`flex items-center px-3 py-2 text-sm font-medium rounded-md ${
-                  activeTab === "localization" ? "bg-gray-100 text-gray-900" : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-                }`}
-                onClick={() => setActiveTab("localization")}
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" className="text-gray-400 group-hover:text-gray-500 mr-3 h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" />
-                </svg>
-                Localization
-              </a>
-
-              <a
-                href="#rooms"
-                className={`flex items-center px-3 py-2 text-sm font-medium rounded-md ${
-                  activeTab === "rooms" ? "bg-gray-100 text-gray-900" : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-                }`}
-                onClick={() => setActiveTab("rooms")}
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" className="text-gray-400 group-hover:text-gray-500 mr-3 h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                </svg>
-                Rooms
-              </a>
-
-              <a
-                href="#users"
-                className={`flex items-center px-3 py-2 text-sm font-medium rounded-md ${
-                  activeTab === "users" ? "bg-gray-100 text-gray-900" : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-                }`}
-                onClick={() => setActiveTab("users")}
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" className="text-gray-400 group-hover:text-gray-500 mr-3 h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-                </svg>
-                Users
-              </a>
-            </nav>
+      <div className="container mx-auto py-6 px-4 sm:px-6 lg:px-8">
+        <div className="flex flex-col space-y-8">
+          <div className="flex justify-between items-center">
+            <h1 className="text-2xl font-bold">{t('navigation.settings')}</h1>
           </div>
-
-          {/* Settings Content */}
-          <div className="md:col-span-3">
+          
+          <div className="bg-card rounded-lg shadow">
             <Card>
               <CardContent className="p-6">
-                <Tabs defaultValue="rooms" value={activeTab} onValueChange={setActiveTab}>
-                  <TabsContent value="general">
-                    <h2 className="text-lg leading-6 font-medium text-gray-900 mb-4">General Settings</h2>
-                    <p className="text-gray-500">General application settings will appear here.</p>
-                  </TabsContent>
-                  
-                  <TabsContent value="localization">
-                    <h2 className="text-lg leading-6 font-medium text-gray-900 mb-4">Localization</h2>
-                    <p className="text-gray-500">Language and localization settings will appear here.</p>
-                  </TabsContent>
-                  
-                  <TabsContent value="rooms">
-                    <div className="flex justify-between items-center mb-4">
-                      <h2 className="text-lg leading-6 font-medium text-gray-900">Rooms</h2>
-                      <Button
-                        onClick={() => {
-                          setSelectedRoom(null);
-                          setRoomModalOpen(true);
-                        }}
-                      >
-                        Add Room
-                      </Button>
-                    </div>
+                <Tabs value={activeTab} onValueChange={setActiveTab}>
+                  <TabsList className="mb-6">
+                    <TabsTrigger value="account">
+                      <UserCircle className="h-4 w-4 mr-2" />
+                      {t('settings.myAccount')}
+                    </TabsTrigger>
 
-                    {roomsLoading ? (
-                      <div className="flex justify-center items-center h-24">
-                        <p className="text-gray-500">Loading rooms...</p>
-                      </div>
-                    ) : rooms && rooms.length > 0 ? (
-                      <div className="space-y-6">
-                        {rooms.map((room) => (
-                          <div key={room.id} className="bg-gray-50 p-4 rounded-lg border border-gray-200">
-                            <div className="flex justify-between items-start">
-                              <div>
-                                <h3 className="text-lg font-medium text-gray-900">{room.name}</h3>
-                                <p className="text-sm text-gray-500">{getLocationName(room.locationId)}</p>
-                              </div>
-                              <div className="flex space-x-2">
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={() => handleEditRoom(room)}
-                                >
-                                  <Pencil className="h-5 w-5 text-gray-400 hover:text-gray-500" />
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={() => handleDeleteRoom(room.id)}
-                                >
-                                  <Trash className="h-5 w-5 text-gray-400 hover:text-red-500" />
-                                </Button>
-                              </div>
-                            </div>
-
-                            <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-4">
-                              <div className="flex items-center">
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                                </svg>
-                                <span className="text-sm text-gray-700">Capacity: {room.capacity}</span>
-                              </div>
-                              <div className="flex items-center">
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                </svg>
-                                <span className="text-sm text-gray-700">
-                                  Flat Rate: {room.flatRate ? `€${(room.flatRate / 100).toFixed(2)}` : "N/A"}
-                                </span>
-                              </div>
-                              <div className="flex items-center">
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                </svg>
-                                <span className="text-sm text-gray-700">
-                                  Hourly Rate: {room.hourlyRate ? `€${(room.hourlyRate / 100).toFixed(2)}` : "N/A"}
-                                </span>
-                              </div>
-                            </div>
-
-                            {room.description && (
-                              <div className="mt-4">
-                                <p className="text-sm text-gray-700">{room.description}</p>
-                              </div>
-                            )}
-
-                            {room.facilities && Array.isArray(room.facilities) && (room.facilities as Array<{id: string, name: string}>).length > 0 && (
-                              <div className="mt-4">
-                                <h4 className="text-sm font-medium text-gray-700">Facilities</h4>
-                                <div className="mt-2 flex flex-wrap gap-2">
-                                  {(room.facilities as Array<{id: string, name: string}>).map((facility) => (
-                                    <Badge key={facility.id} variant="secondary">
-                                      {facility.name}
-                                    </Badge>
-                                  ))}
-                                </div>
-                              </div>
-                            )}
-
-                            <div className="mt-4 flex items-center">
-                              <div className="flex h-5 items-center">
-                                <div className={`h-2.5 w-2.5 rounded-full mr-2 ${room.active ? "bg-green-500" : "bg-gray-400"}`}></div>
-                              </div>
-                              <div className="text-sm">
-                                <p className="font-medium text-gray-700">{room.active ? "Active" : "Inactive"}</p>
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="text-center py-8 bg-gray-50 rounded-lg border border-dashed border-gray-300">
-                        <p className="text-gray-500 mb-4">No rooms found</p>
-                        <Button
-                          onClick={() => {
-                            setSelectedRoom(null);
-                            setRoomModalOpen(true);
-                          }}
-                        >
-                          Add Your First Room
-                        </Button>
-                      </div>
+                    {/* Show Users tab only for Admin */}
+                    {user?.role === 'admin' && (
+                      <TabsTrigger value="users">
+                        <UserPlus className="h-4 w-4 mr-2" />
+                        {t('settings.users')}
+                      </TabsTrigger>
                     )}
+                    
+                    {/* Show Rooms tab for Admin */}
+                    {user?.role === 'admin' && (
+                      <TabsTrigger value="rooms">
+                        <Settings className="h-4 w-4 mr-2" />
+                        {t('settings.rooms')}
+                      </TabsTrigger>
+                    )}
+                    
+                    {/* Show Locations tab for Director */}
+                    {user?.role === 'director' && (
+                      <TabsTrigger value="locations">
+                        <Settings className="h-4 w-4 mr-2" />
+                        {t('settings.locations')}
+                      </TabsTrigger>
+                    )}
+                  </TabsList>
+                  
+                  {/* My Account Tab - For All Users */}
+                  <TabsContent value="account">
+                    <div className="space-y-6">
+                      <h2 className="text-lg leading-6 font-medium text-gray-900 mb-4">
+                        {t('settings.myAccount')}
+                      </h2>
+                      
+                      {user?.deletionRequested && (
+                        <Badge variant="outline" className="text-red-500 border-red-200 bg-red-50 mb-4">
+                          {t('settings.deletionRequested')}
+                        </Badge>
+                      )}
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {/* Personal Information */}
+                        <Card>
+                          <CardHeader>
+                            <CardTitle>{t('settings.personalInfo')}</CardTitle>
+                            <CardDescription>{t('settings.updateAccountDetails')}</CardDescription>
+                          </CardHeader>
+                          <CardContent>
+                            <Form {...profileForm}>
+                              <form onSubmit={profileForm.handleSubmit(onProfileSubmit)} className="space-y-4">
+                                <FormField
+                                  control={profileForm.control}
+                                  name="name"
+                                  render={({ field }) => (
+                                    <FormItem>
+                                      <FormLabel>{t('settings.fullName')}</FormLabel>
+                                      <FormControl>
+                                        <Input placeholder={t('settings.yourName')} {...field} />
+                                      </FormControl>
+                                      <FormMessage />
+                                    </FormItem>
+                                  )}
+                                />
+                                
+                                <FormField
+                                  control={profileForm.control}
+                                  name="username"
+                                  render={({ field }) => (
+                                    <FormItem>
+                                      <FormLabel>{t('settings.username')}</FormLabel>
+                                      <FormControl>
+                                        <Input placeholder={t('settings.username')} {...field} />
+                                      </FormControl>
+                                      <FormMessage />
+                                    </FormItem>
+                                  )}
+                                />
+                                
+                                <FormField
+                                  control={profileForm.control}
+                                  name="email"
+                                  render={({ field }) => (
+                                    <FormItem>
+                                      <FormLabel>{t('settings.email')}</FormLabel>
+                                      <FormControl>
+                                        <Input placeholder={t('settings.emailAddress')} {...field} />
+                                      </FormControl>
+                                      <FormMessage />
+                                    </FormItem>
+                                  )}
+                                />
+                                
+                                <div className="pt-2">
+                                  <Button
+                                    type="submit"
+                                    className="w-full"
+                                    disabled={updateProfileMutation.isPending}
+                                  >
+                                    {updateProfileMutation.isPending 
+                                      ? t('common.saving') 
+                                      : t('common.saveChanges')}
+                                  </Button>
+                                </div>
+                              </form>
+                            </Form>
+                          </CardContent>
+                        </Card>
+                        
+                        {/* Change Password */}
+                        <Card>
+                          <CardHeader>
+                            <CardTitle>{t('settings.passwordSecurity')}</CardTitle>
+                            <CardDescription>{t('settings.updatePasswordSecurity')}</CardDescription>
+                          </CardHeader>
+                          <CardContent>
+                            <Accordion type="single" collapsible className="w-full">
+                              <AccordionItem value="password">
+                                <AccordionTrigger className="flex items-center gap-2">
+                                  <KeyRound className="h-5 w-5 text-gray-500" />
+                                  <span>{t('settings.changePassword')}</span>
+                                </AccordionTrigger>
+                                <AccordionContent>
+                                  <Form {...passwordForm}>
+                                    <form onSubmit={passwordForm.handleSubmit(onPasswordSubmit)} className="space-y-4 mt-4">
+                                      <FormField
+                                        control={passwordForm.control}
+                                        name="currentPassword"
+                                        render={({ field }) => (
+                                          <FormItem>
+                                            <FormLabel>{t('settings.currentPassword')}</FormLabel>
+                                            <FormControl>
+                                              <Input type="password" placeholder={t('settings.currentPasswordPlaceholder')} {...field} />
+                                            </FormControl>
+                                            <FormMessage />
+                                          </FormItem>
+                                        )}
+                                      />
+                                      
+                                      <FormField
+                                        control={passwordForm.control}
+                                        name="newPassword"
+                                        render={({ field }) => (
+                                          <FormItem>
+                                            <FormLabel>{t('settings.newPassword')}</FormLabel>
+                                            <FormControl>
+                                              <Input type="password" placeholder={t('settings.newPasswordPlaceholder')} {...field} />
+                                            </FormControl>
+                                            <FormMessage />
+                                          </FormItem>
+                                        )}
+                                      />
+                                      
+                                      <FormField
+                                        control={passwordForm.control}
+                                        name="confirmNewPassword"
+                                        render={({ field }) => (
+                                          <FormItem>
+                                            <FormLabel>{t('settings.confirmNewPassword')}</FormLabel>
+                                            <FormControl>
+                                              <Input type="password" placeholder={t('settings.confirmPasswordPlaceholder')} {...field} />
+                                            </FormControl>
+                                            <FormMessage />
+                                          </FormItem>
+                                        )}
+                                      />
+                                      
+                                      <Button
+                                        type="submit"
+                                        className="w-full"
+                                        disabled={changePasswordMutation.isPending}
+                                      >
+                                        {changePasswordMutation.isPending 
+                                          ? t('common.updating') 
+                                          : t('settings.updatePassword')}
+                                      </Button>
+                                    </form>
+                                  </Form>
+                                </AccordionContent>
+                              </AccordionItem>
+                              
+                              <AccordionItem value="account-deletion">
+                                <AccordionTrigger className="flex items-center gap-2">
+                                  <UserMinus className="h-5 w-5 text-red-500" />
+                                  <span className="text-red-500">
+                                    {user?.deletionRequested 
+                                      ? t('settings.deletionRequested') 
+                                      : t('settings.requestAccountDeletion')}
+                                  </span>
+                                </AccordionTrigger>
+                                <AccordionContent>
+                                  <div className="bg-red-50 p-4 rounded-md mt-4">
+                                    {user?.deletionRequested ? (
+                                      <>
+                                        <div className="flex items-center gap-3">
+                                          <AlertCircle className="h-6 w-6 text-orange-500" />
+                                          <h4 className="font-medium text-orange-700">{t('settings.deletionRequestPending')}</h4>
+                                        </div>
+                                        <p className="mt-2 text-sm text-orange-600">
+                                          {t('settings.deletionRequestPendingDesc')}
+                                        </p>
+                                      </>
+                                    ) : (
+                                      <>
+                                        <div className="flex items-center gap-3">
+                                          <AlertCircle className="h-6 w-6 text-red-500" />
+                                          <h4 className="font-medium text-red-700">{t('settings.deletionWarning')}</h4>
+                                        </div>
+                                        <p className="mt-2 text-sm text-red-600">
+                                          {t('settings.deletionWarningDesc')}
+                                        </p>
+                                        <div className="mt-4 flex justify-end">
+                                          <Button 
+                                            variant="destructive"
+                                            onClick={() => {
+                                              if (confirm(t('settings.confirmDeletionRequest'))) {
+                                                requestDeletionMutation.mutate();
+                                              }
+                                            }}
+                                            disabled={requestDeletionMutation.isPending}
+                                          >
+                                            {requestDeletionMutation.isPending 
+                                              ? t('common.requesting') 
+                                              : t('settings.requestAccountDeletion')}
+                                          </Button>
+                                        </div>
+                                      </>
+                                    )}
+                                  </div>
+                                </AccordionContent>
+                              </AccordionItem>
+                            </Accordion>
+                          </CardContent>
+                        </Card>
+                      </div>
+                    </div>
                   </TabsContent>
                   
-                  <TabsContent value="users">
-                    <div className="space-y-6">
-                      <h2 className="text-xl leading-6 font-semibold text-gray-900">User Management</h2>
-                      
-                      {usersLoading ? (
-                        <div className="flex justify-center items-center h-24">
-                          <p className="text-gray-500">Loading users...</p>
-                        </div>
-                      ) : users && users.length > 0 ? (
-                        <div>
-                          <Tabs defaultValue="admins" className="w-full">
-                            <TabsList className="mb-4">
-                              <TabsTrigger value="admins">Administrators</TabsTrigger>
-                              <TabsTrigger value="directors">Directors</TabsTrigger>
-                              <TabsTrigger value="guests">Guests</TabsTrigger>
-                              <TabsTrigger value="account">My Account</TabsTrigger>
-                            </TabsList>
-                            
-                            {/* Admin Users Tab */}
-                            <TabsContent value="admins">
-                              <div className="space-y-4">
-                                <div className="flex justify-between items-center">
-                                  <h3 className="text-lg font-medium text-gray-900">Administrators</h3>
-                                  {/* Only show Add User button if current user is an admin */}
-                                  <Dialog>
-                                    <DialogTrigger asChild>
-                                      <Button size="sm" className="flex items-center gap-1">
-                                        <UserPlus className="h-4 w-4" />
-                                        <span>Add Admin</span>
-                                      </Button>
-                                    </DialogTrigger>
-                                    <DialogContent>
-                                      <DialogHeader>
-                                        <DialogTitle>Add New Administrator</DialogTitle>
-                                        <DialogDescription>
-                                          Create a new administrator user with full system access.
-                                        </DialogDescription>
-                                      </DialogHeader>
-                                      
-                                      <Form {...form}>
-                                        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                                          <FormField
-                                            control={form.control}
-                                            name="email"
-                                            render={({ field }) => (
-                                              <FormItem>
-                                                <FormLabel>Email</FormLabel>
-                                                <FormControl>
-                                                  <Input placeholder="Email address" {...field} />
-                                                </FormControl>
-                                                <FormMessage />
-                                              </FormItem>
-                                            )}
-                                          />
-                                          
-                                          <FormField
-                                            control={form.control}
-                                            name="name"
-                                            render={({ field }) => (
-                                              <FormItem>
-                                                <FormLabel>Full Name</FormLabel>
-                                                <FormControl>
-                                                  <Input placeholder="Full name" {...field} />
-                                                </FormControl>
-                                                <FormMessage />
-                                              </FormItem>
-                                            )}
-                                          />
-                                          
-                                          <FormField
-                                            control={form.control}
-                                            name="username"
-                                            render={({ field }) => (
-                                              <FormItem>
-                                                <FormLabel>Username</FormLabel>
-                                                <FormControl>
-                                                  <Input placeholder="Username" {...field} />
-                                                </FormControl>
-                                                <FormMessage />
-                                              </FormItem>
-                                            )}
-                                          />
-                                          
-                                          <FormField
-                                            control={form.control}
-                                            name="password"
-                                            render={({ field }) => (
-                                              <FormItem>
-                                                <FormLabel>Password</FormLabel>
-                                                <FormControl>
-                                                  <Input type="password" placeholder="Password" {...field} />
-                                                </FormControl>
-                                                <FormMessage />
-                                              </FormItem>
-                                            )}
-                                          />
-                                          
-                                          <FormField
-                                            control={form.control}
-                                            name="role"
-                                            render={({ field }) => (
-                                              <FormItem className="hidden">
-                                                <FormControl>
-                                                  <Input type="hidden" {...field} value="admin" />
-                                                </FormControl>
-                                              </FormItem>
-                                            )}
-                                          />
-                                          
-                                          <DialogFooter>
-                                            <Button
-                                              type="submit"
-                                              disabled={createUserMutation.isPending}
-                                            >
-                                              {createUserMutation.isPending ? "Creating..." : "Create Admin"}
-                                            </Button>
-                                          </DialogFooter>
-                                        </form>
-                                      </Form>
-                                    </DialogContent>
-                                  </Dialog>
-                                </div>
-                                
-                                <div className="space-y-3">
-                                {users.filter(user => user.role === "admin").map((user) => (
-                                  <UserProfileCard key={user.id} user={user} />
-                                ))}
-                                {users.filter(user => user.role === "admin").length === 0 && (
-                                  <div className="text-center py-8 bg-gray-50 rounded-lg border border-dashed border-gray-300">
-                                    <p className="text-gray-500">No administrators found</p>
-                                  </div>
-                                )}
-                                </div>
-                              </div>
-                            </TabsContent>
-                            
-                            {/* Director Users Tab */}
-                            <TabsContent value="directors">
-                              <div className="space-y-4">
-                                <div className="flex justify-between items-center">
-                                  <h3 className="text-lg font-medium text-gray-900">Directors</h3>
-                                  <Dialog>
-                                    <DialogTrigger asChild>
-                                      <Button size="sm" className="flex items-center gap-1">
-                                        <UserPlus className="h-4 w-4" />
-                                        <span>Add Director</span>
-                                      </Button>
-                                    </DialogTrigger>
-                                    <DialogContent>
-                                      <DialogHeader>
-                                        <DialogTitle>Add New Director</DialogTitle>
-                                        <DialogDescription>
-                                          Create a new director user with ability to manage rooms, locations, and approve bookings.
-                                        </DialogDescription>
-                                      </DialogHeader>
-                                      
-                                      <Form {...form}>
-                                        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                                          <FormField
-                                            control={form.control}
-                                            name="email"
-                                            render={({ field }) => (
-                                              <FormItem>
-                                                <FormLabel>Email</FormLabel>
-                                                <FormControl>
-                                                  <Input placeholder="Email address" {...field} />
-                                                </FormControl>
-                                                <FormMessage />
-                                              </FormItem>
-                                            )}
-                                          />
-                                          
-                                          <FormField
-                                            control={form.control}
-                                            name="name"
-                                            render={({ field }) => (
-                                              <FormItem>
-                                                <FormLabel>Full Name</FormLabel>
-                                                <FormControl>
-                                                  <Input placeholder="Full name" {...field} />
-                                                </FormControl>
-                                                <FormMessage />
-                                              </FormItem>
-                                            )}
-                                          />
-                                          
-                                          <FormField
-                                            control={form.control}
-                                            name="username"
-                                            render={({ field }) => (
-                                              <FormItem>
-                                                <FormLabel>Username</FormLabel>
-                                                <FormControl>
-                                                  <Input placeholder="Username" {...field} />
-                                                </FormControl>
-                                                <FormMessage />
-                                              </FormItem>
-                                            )}
-                                          />
-                                          
-                                          <FormField
-                                            control={form.control}
-                                            name="password"
-                                            render={({ field }) => (
-                                              <FormItem>
-                                                <FormLabel>Password</FormLabel>
-                                                <FormControl>
-                                                  <Input type="password" placeholder="Password" {...field} />
-                                                </FormControl>
-                                                <FormMessage />
-                                              </FormItem>
-                                            )}
-                                          />
-                                          
-                                          <FormField
-                                            control={form.control}
-                                            name="role"
-                                            render={({ field }) => (
-                                              <FormItem className="hidden">
-                                                <FormControl>
-                                                  <Input type="hidden" {...field} value="director" />
-                                                </FormControl>
-                                              </FormItem>
-                                            )}
-                                          />
-                                          
-                                          <DialogFooter>
-                                            <Button
-                                              type="submit"
-                                              disabled={createUserMutation.isPending}
-                                            >
-                                              {createUserMutation.isPending ? "Creating..." : "Create Director"}
-                                            </Button>
-                                          </DialogFooter>
-                                        </form>
-                                      </Form>
-                                    </DialogContent>
-                                  </Dialog>
-                                </div>
-                                
-                                <div className="space-y-3">
-                                {users.filter(user => user.role === "director").map((user) => (
-                                  <UserProfileCard key={user.id} user={user} />
-                                ))}
-                                {users.filter(user => user.role === "director").length === 0 && (
-                                  <div className="text-center py-8 bg-gray-50 rounded-lg border border-dashed border-gray-300">
-                                    <p className="text-gray-500">No directors found</p>
-                                  </div>
-                                )}
-                                </div>
-                              </div>
-                            </TabsContent>
-                            
-                            {/* Guest Users Tab */}
-                            <TabsContent value="guests">
-                              <div className="space-y-4">
-                                <div className="flex justify-between items-center">
-                                  <h3 className="text-lg font-medium text-gray-900">Guests</h3>
-                                  <Dialog>
-                                    <DialogTrigger asChild>
-                                      <Button size="sm" className="flex items-center gap-1">
-                                        <UserPlus className="h-4 w-4" />
-                                        <span>Add Guest</span>
-                                      </Button>
-                                    </DialogTrigger>
-                                    <DialogContent>
-                                      <DialogHeader>
-                                        <DialogTitle>Add New Guest</DialogTitle>
-                                        <DialogDescription>
-                                          Create a new guest user with ability to make bookings.
-                                        </DialogDescription>
-                                      </DialogHeader>
-                                      
-                                      <Form {...form}>
-                                        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                                          <FormField
-                                            control={form.control}
-                                            name="email"
-                                            render={({ field }) => (
-                                              <FormItem>
-                                                <FormLabel>Email</FormLabel>
-                                                <FormControl>
-                                                  <Input placeholder="Email address" {...field} />
-                                                </FormControl>
-                                                <FormMessage />
-                                              </FormItem>
-                                            )}
-                                          />
-                                          
-                                          <FormField
-                                            control={form.control}
-                                            name="name"
-                                            render={({ field }) => (
-                                              <FormItem>
-                                                <FormLabel>Full Name</FormLabel>
-                                                <FormControl>
-                                                  <Input placeholder="Full name" {...field} />
-                                                </FormControl>
-                                                <FormMessage />
-                                              </FormItem>
-                                            )}
-                                          />
-                                          
-                                          <FormField
-                                            control={form.control}
-                                            name="username"
-                                            render={({ field }) => (
-                                              <FormItem>
-                                                <FormLabel>Username</FormLabel>
-                                                <FormControl>
-                                                  <Input placeholder="Username" {...field} />
-                                                </FormControl>
-                                                <FormMessage />
-                                              </FormItem>
-                                            )}
-                                          />
-                                          
-                                          <FormField
-                                            control={form.control}
-                                            name="password"
-                                            render={({ field }) => (
-                                              <FormItem>
-                                                <FormLabel>Password</FormLabel>
-                                                <FormControl>
-                                                  <Input type="password" placeholder="Password" {...field} />
-                                                </FormControl>
-                                                <FormMessage />
-                                              </FormItem>
-                                            )}
-                                          />
-                                          
-                                          <FormField
-                                            control={form.control}
-                                            name="role"
-                                            render={({ field }) => (
-                                              <FormItem className="hidden">
-                                                <FormControl>
-                                                  <Input type="hidden" {...field} value="guest" />
-                                                </FormControl>
-                                              </FormItem>
-                                            )}
-                                          />
-                                          
-                                          <DialogFooter>
-                                            <Button
-                                              type="submit"
-                                              disabled={createUserMutation.isPending}
-                                            >
-                                              {createUserMutation.isPending ? "Creating..." : "Create Guest"}
-                                            </Button>
-                                          </DialogFooter>
-                                        </form>
-                                      </Form>
-                                    </DialogContent>
-                                  </Dialog>
-                                </div>
-                                
-                                <div className="space-y-3">
-                                {users.filter(user => user.role === "guest").map((user) => (
-                                  <UserProfileCard key={user.id} user={user} />
-                                ))}
-                                {users.filter(user => user.role === "guest").length === 0 && (
-                                  <div className="text-center py-8 bg-gray-50 rounded-lg border border-dashed border-gray-300">
-                                    <p className="text-gray-500">No guests found</p>
-                                  </div>
-                                )}
-                                </div>
-                              </div>
-                            </TabsContent>
-                            
-                            {/* My Account Tab */}
-                            <TabsContent value="account">
-                              <div className="space-y-6">
-                                <div className="flex justify-between items-center">
-                                  <h3 className="text-lg font-medium text-gray-900">My Account</h3>
-                                  {user?.deletionRequested && (
-                                    <Badge key="my-account-deletion-badge" variant="outline" className="text-red-500 border-red-200 bg-red-50">
-                                      Deletion Requested
-                                    </Badge>
-                                  )}
-                                </div>
-                                
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                  {/* Personal Information */}
-                                  <Card>
-                                    <CardHeader>
-                                      <CardTitle>Personal Information</CardTitle>
-                                      <CardDescription>Update your account details</CardDescription>
-                                    </CardHeader>
-                                    <CardContent>
-                                      <Form {...profileForm}>
-                                        <form onSubmit={profileForm.handleSubmit(onProfileSubmit)} className="space-y-4">
-                                          <FormField
-                                            control={profileForm.control}
-                                            name="name"
-                                            render={({ field }) => (
-                                              <FormItem>
-                                                <FormLabel>Full Name</FormLabel>
-                                                <FormControl>
-                                                  <Input placeholder="Your name" {...field} />
-                                                </FormControl>
-                                                <FormMessage />
-                                              </FormItem>
-                                            )}
-                                          />
-                                          
-                                          <FormField
-                                            control={profileForm.control}
-                                            name="username"
-                                            render={({ field }) => (
-                                              <FormItem>
-                                                <FormLabel>Username</FormLabel>
-                                                <FormControl>
-                                                  <Input placeholder="Username" {...field} />
-                                                </FormControl>
-                                                <FormMessage />
-                                              </FormItem>
-                                            )}
-                                          />
-                                          
-                                          <FormField
-                                            control={profileForm.control}
-                                            name="email"
-                                            render={({ field }) => (
-                                              <FormItem>
-                                                <FormLabel>Email</FormLabel>
-                                                <FormControl>
-                                                  <Input placeholder="Email address" {...field} />
-                                                </FormControl>
-                                                <FormMessage />
-                                              </FormItem>
-                                            )}
-                                          />
-                                          
-                                          <div className="pt-2">
-                                            <Button
-                                              type="submit"
-                                              className="w-full"
-                                              disabled={updateProfileMutation.isPending}
-                                            >
-                                              {updateProfileMutation.isPending ? "Saving..." : "Save Changes"}
-                                            </Button>
-                                          </div>
-                                        </form>
-                                      </Form>
-                                    </CardContent>
-                                  </Card>
-                                  
-                                  {/* Password & Security */}
-                                  <Card>
-                                    <CardHeader>
-                                      <CardTitle>Password & Security</CardTitle>
-                                      <CardDescription>Update your password and security settings</CardDescription>
-                                    </CardHeader>
-                                    <CardContent>
-                                      <Accordion type="single" collapsible className="w-full">
-                                        <AccordionItem value="password">
-                                          <AccordionTrigger className="flex items-center gap-2">
-                                            <KeyRound className="h-5 w-5 text-gray-500" />
-                                            <span>Change Password</span>
-                                          </AccordionTrigger>
-                                          <AccordionContent>
-                                            <Form {...passwordForm}>
-                                              <form onSubmit={passwordForm.handleSubmit(onPasswordSubmit)} className="space-y-4 mt-4">
-                                                <FormField
-                                                  control={passwordForm.control}
-                                                  name="currentPassword"
-                                                  render={({ field }) => (
-                                                    <FormItem>
-                                                      <FormLabel>Current Password</FormLabel>
-                                                      <FormControl>
-                                                        <Input type="password" placeholder="Your current password" {...field} />
-                                                      </FormControl>
-                                                      <FormMessage />
-                                                    </FormItem>
-                                                  )}
-                                                />
-                                                
-                                                <FormField
-                                                  control={passwordForm.control}
-                                                  name="newPassword"
-                                                  render={({ field }) => (
-                                                    <FormItem>
-                                                      <FormLabel>New Password</FormLabel>
-                                                      <FormControl>
-                                                        <Input type="password" placeholder="Your new password" {...field} />
-                                                      </FormControl>
-                                                      <FormMessage />
-                                                    </FormItem>
-                                                  )}
-                                                />
-                                                
-                                                <FormField
-                                                  control={passwordForm.control}
-                                                  name="confirmNewPassword"
-                                                  render={({ field }) => (
-                                                    <FormItem>
-                                                      <FormLabel>Confirm New Password</FormLabel>
-                                                      <FormControl>
-                                                        <Input type="password" placeholder="Confirm your new password" {...field} />
-                                                      </FormControl>
-                                                      <FormMessage />
-                                                    </FormItem>
-                                                  )}
-                                                />
-                                                
-                                                <Button
-                                                  type="submit"
-                                                  className="w-full"
-                                                  disabled={changePasswordMutation.isPending}
-                                                >
-                                                  {changePasswordMutation.isPending ? "Updating..." : "Update Password"}
-                                                </Button>
-                                              </form>
-                                            </Form>
-                                          </AccordionContent>
-                                        </AccordionItem>
-                                        
-                                        <AccordionItem value="account-deletion">
-                                          <AccordionTrigger className="flex items-center gap-2">
-                                            <UserMinus className="h-5 w-5 text-red-500" />
-                                            <span className="text-red-500">
-                                              {user?.deletionRequested ? "Deletion Requested" : "Request Account Deletion"}
-                                            </span>
-                                          </AccordionTrigger>
-                                          <AccordionContent>
-                                            <div className="bg-red-50 p-4 rounded-md mt-4">
-                                              {user?.deletionRequested ? (
-                                                <>
-                                                  <div className="flex items-center gap-3">
-                                                    <AlertCircle className="h-6 w-6 text-orange-500" />
-                                                    <h4 className="font-medium text-orange-700">Deletion request pending</h4>
-                                                  </div>
-                                                  <p className="mt-2 text-sm text-orange-600">
-                                                    Your account deletion request has been submitted and is pending approval from an administrator.
-                                                    You can continue to use your account until the request is approved.
-                                                  </p>
-                                                </>
-                                              ) : (
-                                                <>
-                                                  <div className="flex items-center gap-3">
-                                                    <AlertCircle className="h-6 w-6 text-red-500" />
-                                                    <h4 className="font-medium text-red-700">Warning: This action cannot be undone</h4>
-                                                  </div>
-                                                  <p className="mt-2 text-sm text-red-600">
-                                                    Requesting account deletion will mark your account for removal.
-                                                    An administrator will need to approve this request.
-                                                    All of your data and personal information will be permanently deleted.
-                                                  </p>
-                                                  <div className="mt-4 flex justify-end">
-                                                    <Button 
-                                                      variant="destructive"
-                                                      onClick={() => {
-                                                        if (confirm("Are you sure you want to request account deletion? This action will mark your account for deletion.")) {
-                                                          requestDeletionMutation.mutate();
-                                                        }
-                                                      }}
-                                                      disabled={requestDeletionMutation.isPending}
-                                                    >
-                                                      {requestDeletionMutation.isPending ? "Requesting..." : "Request Account Deletion"}
-                                                    </Button>
-                                                  </div>
-                                                </>
-                                              )}
-                                            </div>
-                                          </AccordionContent>
-                                        </AccordionItem>
-                                      </Accordion>
-                                    </CardContent>
-                                  </Card>
-                                </div>
-                              </div>
-                            </TabsContent>
-                          </Tabs>
-                        </div>
-                      ) : (
-                        <div className="text-center py-8 bg-gray-50 rounded-lg border border-dashed border-gray-300">
-                          <p className="text-gray-500 mb-4">No users found</p>
+                  {/* Users tab - Admin only */}
+                  {user?.role === 'admin' && (
+                    <TabsContent value="users">
+                      <div className="space-y-6">
+                        <div className="flex justify-between items-center">
+                          <h2 className="text-lg leading-6 font-medium text-gray-900">
+                            {t('settings.manageUsers')}
+                          </h2>
                           
                           <Dialog>
                             <DialogTrigger asChild>
                               <Button>
-                                Add Your First User
+                                <UserPlus className="h-4 w-4 mr-2" />
+                                {t('settings.addUser')}
                               </Button>
                             </DialogTrigger>
                             <DialogContent>
                               <DialogHeader>
-                                <DialogTitle>Add New User</DialogTitle>
+                                <DialogTitle>{t('settings.addNewUser')}</DialogTitle>
                                 <DialogDescription>
-                                  Create a new user account.
+                                  {t('settings.addNewUserDesc')}
                                 </DialogDescription>
                               </DialogHeader>
                               
-                              <Form {...form}>
-                                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                              <Form {...newUserForm}>
+                                <form onSubmit={newUserForm.handleSubmit(onAddUserSubmit)} className="space-y-4">
                                   <FormField
-                                    control={form.control}
-                                    name="email"
-                                    render={({ field }) => (
-                                      <FormItem>
-                                        <FormLabel>Email</FormLabel>
-                                        <FormControl>
-                                          <Input placeholder="Email address" {...field} />
-                                        </FormControl>
-                                        <FormMessage />
-                                      </FormItem>
-                                    )}
-                                  />
-                                  
-                                  <FormField
-                                    control={form.control}
+                                    control={newUserForm.control}
                                     name="name"
                                     render={({ field }) => (
                                       <FormItem>
-                                        <FormLabel>Full Name</FormLabel>
+                                        <FormLabel>{t('settings.fullName')}</FormLabel>
                                         <FormControl>
-                                          <Input placeholder="Full name" {...field} />
+                                          <Input placeholder={t('settings.fullNamePlaceholder')} {...field} />
                                         </FormControl>
                                         <FormMessage />
                                       </FormItem>
@@ -1253,13 +675,13 @@ export default function SettingsPage() {
                                   />
                                   
                                   <FormField
-                                    control={form.control}
+                                    control={newUserForm.control}
                                     name="username"
                                     render={({ field }) => (
                                       <FormItem>
-                                        <FormLabel>Username</FormLabel>
+                                        <FormLabel>{t('settings.username')}</FormLabel>
                                         <FormControl>
-                                          <Input placeholder="Username" {...field} />
+                                          <Input placeholder={t('settings.usernamePlaceholder')} {...field} />
                                         </FormControl>
                                         <FormMessage />
                                       </FormItem>
@@ -1267,13 +689,27 @@ export default function SettingsPage() {
                                   />
                                   
                                   <FormField
-                                    control={form.control}
+                                    control={newUserForm.control}
+                                    name="email"
+                                    render={({ field }) => (
+                                      <FormItem>
+                                        <FormLabel>{t('settings.email')}</FormLabel>
+                                        <FormControl>
+                                          <Input placeholder={t('settings.emailPlaceholder')} {...field} />
+                                        </FormControl>
+                                        <FormMessage />
+                                      </FormItem>
+                                    )}
+                                  />
+                                  
+                                  <FormField
+                                    control={newUserForm.control}
                                     name="password"
                                     render={({ field }) => (
                                       <FormItem>
-                                        <FormLabel>Password</FormLabel>
+                                        <FormLabel>{t('settings.password')}</FormLabel>
                                         <FormControl>
-                                          <Input type="password" placeholder="Password" {...field} />
+                                          <Input type="password" placeholder={t('settings.passwordPlaceholder')} {...field} />
                                         </FormControl>
                                         <FormMessage />
                                       </FormItem>
@@ -1281,24 +717,21 @@ export default function SettingsPage() {
                                   />
                                   
                                   <FormField
-                                    control={form.control}
+                                    control={newUserForm.control}
                                     name="role"
                                     render={({ field }) => (
                                       <FormItem>
-                                        <FormLabel>Role</FormLabel>
-                                        <Select
-                                          onValueChange={field.onChange}
-                                          defaultValue={field.value}
-                                        >
+                                        <FormLabel>{t('settings.role')}</FormLabel>
+                                        <Select onValueChange={field.onChange} defaultValue={field.value}>
                                           <FormControl>
                                             <SelectTrigger>
-                                              <SelectValue placeholder="Select a role" />
+                                              <SelectValue placeholder={t('settings.selectRole')} />
                                             </SelectTrigger>
                                           </FormControl>
                                           <SelectContent>
-                                            <SelectItem value="guest">Guest</SelectItem>
-                                            <SelectItem value="director">Director</SelectItem>
-                                            <SelectItem value="admin">Admin</SelectItem>
+                                            <SelectItem value="admin">{t('roles.admin')}</SelectItem>
+                                            <SelectItem value="director">{t('roles.director')}</SelectItem>
+                                            <SelectItem value="guest">{t('roles.guest')}</SelectItem>
                                           </SelectContent>
                                         </Select>
                                         <FormMessage />
@@ -1307,11 +740,14 @@ export default function SettingsPage() {
                                   />
                                   
                                   <DialogFooter>
-                                    <Button
-                                      type="submit"
-                                      disabled={createUserMutation.isPending}
+                                    <Button 
+                                      type="submit" 
+                                      className="w-full"
+                                      disabled={addUserMutation.isPending}
                                     >
-                                      {createUserMutation.isPending ? "Creating..." : "Create User"}
+                                      {addUserMutation.isPending 
+                                        ? t('common.creating') 
+                                        : t('settings.createUser')}
                                     </Button>
                                   </DialogFooter>
                                 </form>
@@ -1319,9 +755,84 @@ export default function SettingsPage() {
                             </DialogContent>
                           </Dialog>
                         </div>
-                      )}
-                    </div>
-                  </TabsContent>
+                        
+                        <div className="space-y-6">
+                          {/* Admin Users */}
+                          {adminUsers.length > 0 && (
+                            <div>
+                              <h3 className="text-md font-medium mb-4 flex items-center text-red-700">
+                                <ShieldCheck className="h-5 w-5 mr-2" />
+                                {t('roles.adminPlural')}
+                              </h3>
+                              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                {adminUsers.map((adminUser: User) => (
+                                  <UserProfileCard key={adminUser.id} user={adminUser} />
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                          
+                          {/* Director Users */}
+                          {directorUsers.length > 0 && (
+                            <div className="mt-8">
+                              <h3 className="text-md font-medium mb-4 flex items-center text-blue-700">
+                                <UserCog className="h-5 w-5 mr-2" />
+                                {t('roles.directorPlural')}
+                              </h3>
+                              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                {directorUsers.map((directorUser: User) => (
+                                  <UserProfileCard key={directorUser.id} user={directorUser} />
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                          
+                          {/* Guest Users */}
+                          {guestUsers.length > 0 && (
+                            <div className="mt-8">
+                              <h3 className="text-md font-medium mb-4 flex items-center text-gray-700">
+                                <UserCircle className="h-5 w-5 mr-2" />
+                                {t('roles.guestPlural')}
+                              </h3>
+                              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                {guestUsers.map((guestUser: User) => (
+                                  <UserProfileCard key={guestUser.id} user={guestUser} />
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </TabsContent>
+                  )}
+                  
+                  {/* Rooms tab - Admin only */}
+                  {user?.role === 'admin' && (
+                    <TabsContent value="rooms">
+                      <div className="space-y-6">
+                        <h2 className="text-lg leading-6 font-medium text-gray-900">
+                          {t('settings.manageRooms')}
+                        </h2>
+                        
+                        {/* Room management content */}
+                        {/* This would be similar to the RoomListPage */}
+                      </div>
+                    </TabsContent>
+                  )}
+                  
+                  {/* Locations tab - Director only */}
+                  {user?.role === 'director' && (
+                    <TabsContent value="locations">
+                      <div className="space-y-6">
+                        <h2 className="text-lg leading-6 font-medium text-gray-900">
+                          {t('settings.manageLocations')}
+                        </h2>
+                        
+                        {/* Locations management content */}
+                        {/* This would include a simplified view of locations */}
+                      </div>
+                    </TabsContent>
+                  )}
                 </Tabs>
               </CardContent>
             </Card>

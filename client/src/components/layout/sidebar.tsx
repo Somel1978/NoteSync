@@ -97,29 +97,44 @@ export function Sidebar() {
         )}
       </div>
 
-      {/* Navigation Links */}
+      {/* Navigation Links - Role-based access */}
       <nav className="flex-1 mt-4">
         <ul className="px-2">
-          <NavItem
-            href="/dashboard"
-            icon={<LayoutGrid className="h-5 w-5 mr-3" />}
-            label={t('navigation.dashboard')}
-          />
-          <NavItem
-            href="/admin/appointments"
-            icon={<CheckCircle className="h-5 w-5 mr-3" />}
-            label={t('navigation.appointments')}
-          />
-          <NavItem
-            href="/admin/rooms"
-            icon={<Store className="h-5 w-5 mr-3" />}
-            label={t('navigation.rooms')}
-          />
+          {/* Dashboard - Only for Admin and Director */}
+          {(user.role === 'admin' || user.role === 'director') && (
+            <NavItem
+              href="/dashboard"
+              icon={<LayoutGrid className="h-5 w-5 mr-3" />}
+              label={t('navigation.dashboard')}
+            />
+          )}
+          
+          {/* Appointments - Only for Admin and Director */}
+          {(user.role === 'admin' || user.role === 'director') && (
+            <NavItem
+              href="/admin/appointments"
+              icon={<CheckCircle className="h-5 w-5 mr-3" />}
+              label={t('navigation.appointments')}
+            />
+          )}
+          
+          {/* Rooms - Only for Admin and Director */}
+          {(user.role === 'admin' || user.role === 'director') && (
+            <NavItem
+              href="/admin/rooms"
+              icon={<Store className="h-5 w-5 mr-3" />}
+              label={t('navigation.rooms')}
+            />
+          )}
+          
+          {/* New Booking - For all users */}
           <NavItem
             href="/new-booking"
             icon={<PlusCircle className="h-5 w-5 mr-3" />}
             label={t('common.add')}
           />
+          
+          {/* Settings - For all users */}
           <NavItem
             href="/settings"
             icon={<Settings className="h-5 w-5 mr-3" />}
