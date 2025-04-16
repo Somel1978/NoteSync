@@ -63,6 +63,8 @@ export function LocationFormModal({
     defaultValues: {
       name: location?.name || "",
       description: location?.description || "",
+      latitude: location?.latitude || null,
+      longitude: location?.longitude || null,
     },
   });
 
@@ -72,6 +74,8 @@ export function LocationFormModal({
       form.reset({
         name: location?.name || "",
         description: location?.description || "",
+        latitude: location?.latitude || null,
+        longitude: location?.longitude || null,
       });
     }
   }, [open, location, form]);
@@ -197,6 +201,56 @@ export function LocationFormModal({
                 </FormItem>
               )}
             />
+
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="latitude"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t('locations.latitude')}</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="number" 
+                        step="0.000001"
+                        placeholder="e.g. 41.40338" 
+                        {...field}
+                        value={field.value === null ? '' : field.value}
+                        onChange={(e) => {
+                          const value = e.target.value === '' ? null : parseFloat(e.target.value);
+                          field.onChange(value);
+                        }}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="longitude"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t('locations.longitude')}</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="number" 
+                        step="0.000001"
+                        placeholder="e.g. 2.17403" 
+                        {...field}
+                        value={field.value === null ? '' : field.value}
+                        onChange={(e) => {
+                          const value = e.target.value === '' ? null : parseFloat(e.target.value);
+                          field.onChange(value);
+                        }}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
 
             <DialogFooter>
               <Button
