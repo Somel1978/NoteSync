@@ -17,6 +17,18 @@ import { Separator } from "@/components/ui/separator";
 import { format } from "date-fns";
 import { Edit, Save, X, Info } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+
+// Define custom window property for tracking custom facilities
+declare global {
+  interface Window {
+    customFacilities: Record<string, any>;
+  }
+}
+
+// Initialize the global custom facilities tracker
+if (typeof window !== 'undefined' && !window.customFacilities) {
+  window.customFacilities = {};
+}
 import { Appointment, Room, RoomBooking } from "@shared/schema";
 import {
   AlertDialog,
@@ -197,20 +209,74 @@ export function AppointmentDetailsModal({
   }, [open]);
 
   // Get available facilities for a room
-  const getAvailableFacilities = (roomId: number) => {
+  const getAvailableFacilities = (roomId: number, includeCustom: boolean = true) => {
+    // Get standard facilities from the room
     if (!rooms) return [];
     const targetRoom = rooms.find(r => r.id === roomId);
     if (!targetRoom || !targetRoom.facilities) return [];
     
+    let standardFacilities = [];
     try {
       if (typeof targetRoom.facilities === 'string') {
-        return JSON.parse(targetRoom.facilities);
+        standardFacilities = JSON.parse(targetRoom.facilities);
+      } else {
+        standardFacilities = targetRoom.facilities;
       }
-      return targetRoom.facilities;
     } catch (e) {
       console.error('Error parsing facilities:', e);
-      return [];
+      standardFacilities = [];
     }
+    
+    // If we don't need custom facilities or don't have the edited appointment yet
+    if (!includeCustom || !editedAppointment.rooms) {
+      return standardFacilities;
+    }
+    
+    // Find the current room in the edited appointment
+    const currentRoomBooking = (editedAppointment.rooms as RoomBooking[]).find(room => room.roomId === roomId);
+    if (!currentRoomBooking || !currentRoomBooking.requestedFacilities) {
+      return standardFacilities;
+    }
+    
+    // Create a map of existing facilities by name for quick lookup
+    const facilityMap = new Map();
+    standardFacilities.forEach((facility: any) => {
+      if (typeof facility === 'object' && facility !== null && facility.name) {
+        facilityMap.set(facility.name, facility);
+      }
+    });
+    
+    // Create a list of custom facilities (facilities in requestedFacilities but not in standard list)
+    // We'll use a customFacilities cache to track costs of custom facilities
+    if (!window.customFacilities) {
+      window.customFacilities = {};
+    }
+    
+    // Add custom facilities that aren't in the standard list
+    const result = [...standardFacilities];
+    currentRoomBooking.requestedFacilities.forEach(facilityName => {
+      if (!facilityMap.has(facilityName)) {
+        // This is likely a custom facility
+        const cacheKey = `${roomId}-${facilityName}`;
+        
+        // Use cached cost if available
+        const cachedFacility = window.customFacilities[cacheKey];
+        const facilityObj = cachedFacility || {
+          id: `custom-${facilityName}`,
+          name: facilityName,
+          cost: customFacilityCost || 0,
+          isCustom: true
+        };
+        
+        // Cache it for future use
+        window.customFacilities[cacheKey] = facilityObj;
+        
+        // Add to results
+        result.push(facilityObj);
+      }
+    });
+    
+    return result;
   };
 
   // Handlers
@@ -376,7 +442,7 @@ export function AppointmentDetailsModal({
       
       editedAppointment.rooms.forEach(room => {
         // Each room has its own cost stored
-        totalCost += room.cost || 0;
+        totalCost += Number(room.cost || 0);
       });
       
       return totalCost;
@@ -400,6 +466,11 @@ export function AppointmentDetailsModal({
       cost: customFacilityCost
     };
     
+    // Save this custom facility in our tracking system 
+    const roomId = (editedAppointment.rooms as RoomBooking[])[roomIndex].roomId;
+    const cacheKey = `${roomId}-${customFacilityName}`;
+    window.customFacilities[cacheKey] = customFacility;
+    
     // Add it to the room's facilities
     const updatedRooms = [...(editedAppointment.rooms as RoomBooking[])];
     const requestedFacilities = [...(updatedRooms[roomIndex].requestedFacilities || [])];
@@ -409,12 +480,12 @@ export function AppointmentDetailsModal({
     
     // Update the room with new cost including the facility
     // Get existing cost, default to 0 if undefined
-    const existingCost = parseInt(String(updatedRooms[roomIndex].cost || 0), 10);
+    const existingCost = Number(updatedRooms[roomIndex].cost || 0);
     console.log("Existing cost:", existingCost, "Type:", typeof existingCost);
     console.log("Custom facility cost:", customFacilityCost, "Type:", typeof customFacilityCost);
     
-    // Use parseInt to ensure we're working with numbers
-    const newCost = existingCost + parseInt(String(customFacilityCost), 10);
+    // Use Number to ensure we're working with numbers
+    const newCost = existingCost + Number(customFacilityCost);
     console.log("Calculated new cost:", newCost);
     
     updatedRooms[roomIndex] = {
