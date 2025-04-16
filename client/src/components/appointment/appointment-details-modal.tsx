@@ -430,8 +430,10 @@ export function AppointmentDetailsModal({
     if (!customPricing) {
       let totalCost = 0;
       updatedRooms.forEach(room => {
-        totalCost += room.cost;
+        console.log(`Room ${room.roomName} cost: ${room.cost}, Type: ${typeof room.cost}`);
+        totalCost += Number(room.cost || 0); // Ensure we're adding a number
       });
+      console.log("Total cost calculated:", totalCost);
       handleInputChange('agreedCost', totalCost);
     }
     
@@ -808,8 +810,10 @@ export function AppointmentDetailsModal({
                                       if (!customPricing) {
                                         let totalCost = 0;
                                         updatedRooms.forEach(room => {
-                                          totalCost += room.cost;
+                                          console.log(`Room ${room.roomName} cost: ${room.cost}, Type: ${typeof room.cost}`);
+                                          totalCost += Number(room.cost || 0); // Ensure we're adding a number
                                         });
+                                        console.log("Total cost calculated:", totalCost);
                                         
                                         handleInputChange('agreedCost', totalCost);
                                       }
@@ -887,8 +891,10 @@ export function AppointmentDetailsModal({
                                                     // Calculate new total cost
                                                     let totalCost = 0;
                                                     updatedRooms.forEach(room => {
-                                                      totalCost += room.cost;
+                                                      console.log(`Room ${room.roomName} cost: ${room.cost}, Type: ${typeof room.cost}`);
+                                                      totalCost += Number(room.cost || 0); // Ensure we're adding a number
                                                     });
+                                                    console.log("Total cost calculated:", totalCost);
                                                     
                                                     // Update both rooms and cost information
                                                     handleInputChange('rooms', updatedRooms);
