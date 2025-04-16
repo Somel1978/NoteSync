@@ -430,7 +430,7 @@ export function AppointmentDetailsModal({
 
                       {getRoomsArray(appointment).length > 0 ? (
                         <div className="space-y-4 max-h-[350px] overflow-y-auto pr-1">
-                          {appointment.rooms.map((roomBooking: any, index: number) => (
+                          {getRoomsArray(appointment).map((roomBooking: RoomBooking, index: number) => (
                             <div key={index} className="border rounded-lg p-3">
                               <div className="flex justify-between items-center mb-2">
                                 <h5 className="font-medium text-sm">{roomBooking.roomName}</h5>
@@ -761,9 +761,9 @@ export function AppointmentDetailsModal({
                     <div>
                       <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">Cost Breakdown</h5>
                       <div className="mt-1 bg-gray-50 rounded-md p-4">
-                        {appointment.rooms && Array.isArray(appointment.rooms) && appointment.rooms.length > 0 ? (
+                        {getRoomsArray(appointment).length > 0 ? (
                           <>
-                            {appointment.rooms.map((roomBooking: any, index: number) => (
+                            {getRoomsArray(appointment).map((roomBooking: RoomBooking, index: number) => (
                               <div key={index} className="mb-3">
                                 <div className="flex justify-between text-sm">
                                   <span className="font-medium">{roomBooking.roomName}:</span>
@@ -775,7 +775,7 @@ export function AppointmentDetailsModal({
                                    roomBooking.costType === 'per_attendee' ? 'Per Attendee' : 
                                    roomBooking.costType}
                                 </p>
-                                {index < appointment.rooms.length - 1 && <Separator className="my-2" />}
+                                {index < getRoomsArray(appointment).length - 1 && <Separator className="my-2" />}
                               </div>
                             ))}
                             
