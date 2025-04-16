@@ -64,6 +64,14 @@ export function AppointmentDetailsModal({
     rooms: RoomBooking[];
   }
   
+  // Helper functions to safely handle rooms array
+  const getRoomsArray = (appointment?: AppointmentWithRooms | null): RoomBooking[] => {
+    if (!appointment) return [];
+    if (!appointment.rooms) return [];
+    if (!Array.isArray(appointment.rooms)) return [];
+    return appointment.rooms;
+  }
+  
   const { data: appointment, isLoading: isAppointmentLoading } = useQuery<AppointmentWithRooms>({
     queryKey: ["/api/appointments", appointmentId],
     enabled: open && appointmentId > 0,
@@ -420,21 +428,21 @@ export function AppointmentDetailsModal({
                     <div>
                       <h4 className="text-sm font-medium text-gray-900 mb-4">Room Details</h4>
 
-                      {appointment.rooms && Array.isArray(appointment.rooms) && appointment.rooms.length > 0 ? (
-                        <div className="space-y-6">
+                      {getRoomsArray(appointment).length > 0 ? (
+                        <div className="space-y-4 max-h-[350px] overflow-y-auto pr-1">
                           {appointment.rooms.map((roomBooking: any, index: number) => (
-                            <div key={index} className="border rounded-lg p-4">
-                              <div className="flex justify-between items-center mb-4">
+                            <div key={index} className="border rounded-lg p-3">
+                              <div className="flex justify-between items-center mb-2">
                                 <h5 className="font-medium text-sm">{roomBooking.roomName}</h5>
-                                <Badge variant="outline">
+                                <Badge variant="outline" className="ml-2">
                                   €{(roomBooking.cost / 100).toFixed(2)}
                                 </Badge>
                               </div>
                               
-                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+                              <div className="grid grid-cols-2 gap-3 text-sm">
                                 <div>
                                   <h6 className="text-xs font-medium text-gray-500 uppercase mb-1">Cost Type</h6>
-                                  <p className="text-gray-700">
+                                  <p className="text-gray-700 text-xs">
                                     {roomBooking.costType === 'flat' ? 'Flat Rate' : 
                                      roomBooking.costType === 'hourly' ? 'Hourly Rate' : 
                                      roomBooking.costType === 'per_attendee' ? 'Per Attendee' : 
@@ -452,7 +460,7 @@ export function AppointmentDetailsModal({
                                         </Badge>
                                       ))
                                     ) : (
-                                      <p className="text-gray-500 text-xs">None requested</p>
+                                      <p className="text-gray-500 text-xs">None</p>
                                     )}
                                   </div>
                                 </div>
