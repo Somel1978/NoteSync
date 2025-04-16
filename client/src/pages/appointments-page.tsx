@@ -12,8 +12,10 @@ import { format } from "date-fns";
 import { Eye, Filter, Clock, CheckCircle2, XCircle } from "lucide-react";
 import { Appointment } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
+import { useTranslation } from "react-i18next";
 
 export default function AppointmentsPage() {
+  const { t } = useTranslation();
   const [selectedAppointmentId, setSelectedAppointmentId] = useState<number | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
@@ -43,14 +45,14 @@ export default function AppointmentsPage() {
     },
     onSuccess: () => {
       toast({
-        title: "Appointment approved",
-        description: "The appointment has been successfully approved.",
+        title: t('appointments.approveSuccess', 'Appointment approved'),
+        description: t('appointments.approveSuccessDetail', 'The appointment has been successfully approved.'),
       });
       queryClient.invalidateQueries({ queryKey: ["/api/appointments"] });
     },
     onError: (error) => {
       toast({
-        title: "Failed to approve appointment",
+        title: t('appointments.approveError', 'Failed to approve appointment'),
         description: error.message,
         variant: "destructive",
       });
@@ -81,9 +83,9 @@ export default function AppointmentsPage() {
   });
 
   const getRoomName = (roomId: number) => {
-    if (!rooms || !Array.isArray(rooms)) return "Loading...";
+    if (!rooms || !Array.isArray(rooms)) return t('common.loading', 'Loading...');
     const room = rooms.find((r: any) => r.id === roomId);
-    return room ? room.name : `Room #${roomId}`;
+    return room ? room.name : `${t('rooms.room', 'Room')} #${roomId}`;
   };
 
   const handleViewDetails = (appointmentId: number) => {
@@ -96,7 +98,7 @@ export default function AppointmentsPage() {
   };
 
   const handleReject = (id: number) => {
-    if (confirm("Are you sure you want to reject this appointment?")) {
+    if (confirm(t('appointments.confirmReject', 'Are you sure you want to reject this appointment?'))) {
       rejectAppointmentMutation.mutate(id);
     }
   };
@@ -104,13 +106,13 @@ export default function AppointmentsPage() {
   const columns: ColumnDef<Appointment>[] = [
     {
       accessorKey: "orderNumber",
-      header: "Order #",
+      header: t('appointments.orderNumber', 'Order #'),
       cell: ({ row }) => <span>#{row.original.orderNumber}</span>,
       size: 80,
     },
     {
       accessorKey: "startTime",
-      header: "Date & Time",
+      header: t('appointments.dateTime', 'Date & Time'),
       cell: ({ row }) => (
         <span className="whitespace-nowrap">
           {format(new Date(row.original.startTime), "MMM d, h:mm a")} - {format(new Date(row.original.endTime), "h:mm a")}
@@ -119,7 +121,7 @@ export default function AppointmentsPage() {
     },
     {
       accessorKey: "title",
-      header: "Details",
+      header: t('appointments.details', 'Details'),
       cell: ({ row }) => (
         <div>
           <div className="font-medium">{row.original.title}</div>
@@ -129,17 +131,17 @@ export default function AppointmentsPage() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
             </svg>
-            {Array.isArray(rooms) && rooms.find((r: any) => r.id === row.original.roomId)?.locationId || "Location"}
+            {Array.isArray(rooms) && rooms.find((r: any) => r.id === row.original.roomId)?.locationId || t('appointments.location', 'Location')}
           </div>
           <div className="text-sm text-gray-500">
-            Purpose: {row.original.purpose || "N/A"}
+            {t('appointments.purpose', 'Purpose')}: {row.original.purpose || "N/A"}
           </div>
         </div>
       ),
     },
     {
       accessorKey: "status",
-      header: "Status",
+      header: t('appointments.status', 'Status'),
       cell: ({ row }) => {
         const status = row.original.status;
         const variant = 
@@ -150,7 +152,7 @@ export default function AppointmentsPage() {
         
         return (
           <Badge variant={variant} className="whitespace-nowrap">
-            {status.charAt(0).toUpperCase() + status.slice(1)}
+            {t(`appointments.${status}`, status.charAt(0).toUpperCase() + status.slice(1))}
           </Badge>
         );
       },
@@ -158,7 +160,7 @@ export default function AppointmentsPage() {
     },
     {
       id: "actions",
-      header: "Actions",
+      header: t('appointments.actions', 'Actions'),
       cell: ({ row }) => {
         const appointment = row.original;
         return (
@@ -167,7 +169,7 @@ export default function AppointmentsPage() {
               variant="ghost"
               size="icon"
               onClick={() => handleViewDetails(appointment.id)}
-              title="View Details"
+              title={t('common.view', 'View Details')}
               className="h-8 w-8"
             >
               <Eye className="h-4 w-4 text-gray-500" />
@@ -179,7 +181,7 @@ export default function AppointmentsPage() {
                   variant="ghost"
                   size="icon"
                   onClick={() => handleApprove(appointment.id)}
-                  title="Approve"
+                  title={t('common.approve', 'Approve')}
                   className="h-8 w-8"
                 >
                   <CheckCircle2 className="h-4 w-4 text-green-500" />
@@ -189,7 +191,7 @@ export default function AppointmentsPage() {
                   variant="ghost"
                   size="icon"
                   onClick={() => handleReject(appointment.id)}
-                  title="Reject"
+                  title={t('common.reject', 'Reject')}
                   className="h-8 w-8"
                 >
                   <XCircle className="h-4 w-4 text-red-500" />
@@ -207,14 +209,14 @@ export default function AppointmentsPage() {
     <AppLayout>
       <div className="p-4 pt-8 sm:p-8">
         <header className="mb-6 sm:mb-8">
-          <h1 className="text-xl sm:text-2xl font-semibold text-gray-800">Approve Appointments</h1>
-          <p className="text-gray-600 text-sm">Review and manage appointment requests</p>
+          <h1 className="text-xl sm:text-2xl font-semibold text-gray-800">{t('appointments.title', 'Approve Appointments')}</h1>
+          <p className="text-gray-600 text-sm">{t('appointments.subtitle', 'Review and manage appointment requests')}</p>
         </header>
 
         <Card className="mb-8">
           <div className="p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center border-b">
             <div className="mb-4 sm:mb-0">
-              <h2 className="font-medium">Filters</h2>
+              <h2 className="font-medium">{t('appointments.filters', 'Filters')}</h2>
             </div>
             <div className="flex flex-wrap gap-2 sm:gap-3">
               <Button 
@@ -224,7 +226,7 @@ export default function AppointmentsPage() {
                 className="flex items-center"
               >
                 <Filter className="h-4 w-4 mr-1 sm:mr-2" />
-                <span>All</span>
+                <span>{t('common.all', 'All')}</span>
               </Button>
               <Button 
                 variant={statusFilter === "pending" ? "default" : "outline"}
@@ -233,7 +235,7 @@ export default function AppointmentsPage() {
                 className="flex items-center"
               >
                 <Clock className="h-4 w-4 mr-1 sm:mr-2" />
-                <span>Pending</span>
+                <span>{t('appointments.pending', 'Pending')}</span>
               </Button>
               <Button 
                 variant={statusFilter === "approved" ? "default" : "outline"}
@@ -242,7 +244,7 @@ export default function AppointmentsPage() {
                 className="flex items-center"
               >
                 <CheckCircle2 className="h-4 w-4 mr-1 sm:mr-2" />
-                <span>Approved</span>
+                <span>{t('appointments.approved', 'Approved')}</span>
               </Button>
               <Button 
                 variant={statusFilter === "rejected" ? "default" : "outline"}
@@ -251,7 +253,7 @@ export default function AppointmentsPage() {
                 className="flex items-center"
               >
                 <XCircle className="h-4 w-4 mr-1 sm:mr-2" />
-                <span>Rejected</span>
+                <span>{t('appointments.rejected', 'Rejected')}</span>
               </Button>
             </div>
           </div>
@@ -260,7 +262,7 @@ export default function AppointmentsPage() {
             <DataTable
               columns={columns}
               data={appointments || []}
-              searchPlaceholder="Search appointments..."
+              searchPlaceholder={t('appointments.searchPlaceholder', 'Search appointments...')}
               searchColumn="title"
             />
           </div>
