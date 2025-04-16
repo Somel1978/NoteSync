@@ -78,11 +78,11 @@ export default function RoomListPage() {
 
   return (
     <AppLayout>
-      <div className="p-4 pt-10 sm:p-8">
+      <div className="p-4 pt-14 sm:p-8">
         <header className="mb-6 sm:mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center">
           <div>
-            <h1 className="text-xl sm:text-2xl font-semibold text-gray-800 pl-8 sm:pl-0">Available Rooms</h1>
-            <p className="text-gray-600 text-sm pl-8 sm:pl-0">Manage rooms and their facilities</p>
+            <h1 className="text-xl sm:text-2xl font-semibold text-gray-800 pl-14 sm:pl-0">Available Rooms</h1>
+            <p className="text-gray-600 text-sm pl-14 sm:pl-0">Manage rooms and their facilities</p>
           </div>
           <div className="mt-4 sm:mt-0">
             <Button 
