@@ -112,6 +112,8 @@ export const insertAppointmentSchema = createInsertSchema(appointments).pick({
   customerName: true,
   customerEmail: true,
   customerPhone: true,
+  customerOrganization: true,
+  notes: true,
   membershipNumber: true,
   attendeesCount: true,
   requestedFacilities: true,
