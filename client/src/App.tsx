@@ -10,6 +10,7 @@ import RoomListPage from "@/pages/room-list-page";
 import NewBookingPage from "@/pages/new-booking-page";
 import SettingsPage from "@/pages/settings-page";
 import LandingPage from "@/pages/landing-page";
+import PublicRoomPage from "@/pages/public-room-page";
 import { ProtectedRoute } from "./lib/protected-route";
 import { AuthProvider } from "./hooks/use-auth";
 import { LanguageProvider } from "./hooks/use-language";
@@ -18,10 +19,11 @@ function Router() {
   return (
     <Switch>
       <Route path="/" component={LandingPage} />
+      <Route path="/rooms" component={PublicRoomPage} />
       <Route path="/auth" component={AuthPage} />
       <ProtectedRoute path="/dashboard" component={DashboardPage} />
-      <ProtectedRoute path="/appointments" component={AppointmentsPage} />
-      <ProtectedRoute path="/rooms" component={RoomListPage} />
+      <ProtectedRoute path="/admin/appointments" component={AppointmentsPage} />
+      <ProtectedRoute path="/admin/rooms" component={RoomListPage} />
       <ProtectedRoute path="/new-booking" component={NewBookingPage} />
       <ProtectedRoute path="/settings" component={SettingsPage} />
       <Route component={NotFound} />
