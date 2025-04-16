@@ -1,3 +1,4 @@
+import React, { useCallback } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -25,10 +26,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Room, Facility, RoomBooking } from "@shared/schema";
+import { Room, Facility, RoomBooking, Appointment } from "@shared/schema";
 import { format, addHours, parse } from "date-fns";
 import { z } from "zod";
-import { Check, CalendarIcon, Save } from "lucide-react";
+import { Check, CalendarIcon, Save, AlertCircle, Clock } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
@@ -66,13 +67,6 @@ export default function NewBookingPage() {
   const { data: rooms, isLoading: roomsLoading } = useQuery<Room[]>({
     queryKey: ["/api/rooms"],
   });
-  
-  // Fetch appointments for availability checking
-  const { data: appointments } = useQuery<Appointment[]>({
-    queryKey: ["/api/appointments"],
-    // Only fetch when we have start and end times
-    enabled: !!form.getValues('startTime') && !!form.getValues('endTime'),
-  });
 
   const form = useForm<BookingFormValues>({
     resolver: zodResolver(bookingFormSchema),
@@ -97,6 +91,15 @@ export default function NewBookingPage() {
   const { data: selectedRoom } = useQuery<Room>({
     queryKey: ["/api/rooms", selectedRoomId],
     enabled: selectedRoomId > 0,
+  });
+  
+  // Fetch appointments for availability checking
+  const startTime = form.watch('startTime');
+  const endTime = form.watch('endTime');
+  const { data: appointments } = useQuery<Appointment[]>({
+    queryKey: ["/api/appointments"],
+    // Only fetch when we have start and end times
+    enabled: !!startTime && !!endTime,
   });
 
   const createBookingMutation = useMutation({
@@ -241,13 +244,10 @@ export default function NewBookingPage() {
   };
 
   // Function to check if a room is available during selected time
-  const isRoomAvailable = (roomId: number) => {
-    if (!form.getValues('startTime') || !form.getValues('endTime') || !appointments) {
+  const isRoomAvailable = useCallback((roomId: number) => {
+    if (!startTime || !endTime || !appointments) {
       return true; // If no time selected or no appointment data, assume available
     }
-    
-    const startTime = new Date(form.getValues('startTime'));
-    const endTime = new Date(form.getValues('endTime'));
     
     // Check for conflicts with existing appointments
     const conflicts = appointments.filter(appointment => {
@@ -265,7 +265,7 @@ export default function NewBookingPage() {
     });
     
     return conflicts.length === 0;
-  };
+  }, [startTime, endTime, appointments]);
   
   const calculateCost = (formData: BookingFormValues, room?: Room) => {
     if (formData.selectedRooms?.length > 0) {
@@ -384,15 +384,30 @@ export default function NewBookingPage() {
                               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 {rooms.map((room) => {
                                   const isSelected = field.value?.includes(room.id);
+                                  const isAvailable = isRoomAvailable(room.id);
+                                  const showAvailability = startTime && endTime;
+                                  
                                   return (
                                     <div 
                                       key={room.id}
                                       className={`p-4 border rounded-md cursor-pointer transition-colors ${
                                         isSelected 
                                           ? "border-primary bg-primary/5" 
+                                          : showAvailability && !isAvailable
+                                          ? "border-red-200 bg-red-50"
                                           : "border-gray-200 hover:border-gray-300"
-                                      }`}
+                                      } ${showAvailability && !isAvailable ? 'opacity-60' : ''}`}
                                       onClick={() => {
+                                        // If room is not available at selected time, show warning
+                                        if (showAvailability && !isAvailable) {
+                                          toast({
+                                            title: "Room unavailable",
+                                            description: `${room.name} is already booked for the selected time.`,
+                                            variant: "destructive",
+                                          });
+                                          return;
+                                        }
+                                        
                                         const newSelectedRooms = isSelected
                                           ? field.value.filter(id => id !== room.id)
                                           : [...field.value, room.id];
@@ -421,9 +436,26 @@ export default function NewBookingPage() {
                                       <div className="flex justify-between items-start">
                                         <div>
                                           <h3 className="font-medium">{room.name}</h3>
-                                          <p className="text-sm text-gray-500">
+                                          <div className="text-sm text-gray-500">
                                             Capacity: {room.capacity} people
-                                          </p>
+                                            
+                                            {/* Availability indicator */}
+                                            {showAvailability && (
+                                              <div className={`flex items-center mt-1 ${isAvailable ? 'text-green-600' : 'text-red-600'}`}>
+                                                {isAvailable ? (
+                                                  <>
+                                                    <Clock className="h-3 w-3 mr-1" />
+                                                    <span>Available</span>
+                                                  </>
+                                                ) : (
+                                                  <>
+                                                    <AlertCircle className="h-3 w-3 mr-1" />
+                                                    <span>Booked</span>
+                                                  </>
+                                                )}
+                                              </div>
+                                            )}
+                                          </div>
                                         </div>
                                         <div className="h-5 w-5 mt-1 flex items-center justify-center">
                                           {isSelected && <Check className="h-4 w-4 text-primary" />}
