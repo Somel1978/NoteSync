@@ -216,7 +216,7 @@ export function AppointmentDetailsModal({
                         'secondary'
                       }
                     >
-                      {appointment.status.charAt(0).toUpperCase() + appointment.status.slice(1)}
+                      {appointment.status ? appointment.status.charAt(0).toUpperCase() + appointment.status.slice(1) : 'Unknown'}
                     </Badge>
                   </div>
                   <div>

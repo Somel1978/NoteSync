@@ -174,30 +174,6 @@ export default function AppointmentsPage() {
             >
               <Eye className="h-4 w-4 text-gray-500" />
             </Button>
-            
-            {appointment.status === "pending" && (
-              <>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => handleApprove(appointment.id)}
-                  title={t('common.approve', 'Approve')}
-                  className="h-8 w-8"
-                >
-                  <CheckCircle2 className="h-4 w-4 text-green-500" />
-                </Button>
-                
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => handleReject(appointment.id)}
-                  title={t('common.reject', 'Reject')}
-                  className="h-8 w-8"
-                >
-                  <XCircle className="h-4 w-4 text-red-500" />
-                </Button>
-              </>
-            )}
           </div>
         );
       },
