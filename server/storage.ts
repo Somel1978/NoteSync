@@ -237,21 +237,49 @@ export class DatabaseStorage implements IStorage {
     const originalAppointment = await this.getAppointment(id);
     if (!originalAppointment) return undefined;
     
+    // Deep clone the original data for comparison
+    const originalForComparison = JSON.parse(JSON.stringify(originalAppointment));
+    
     const [updatedAppointment] = await db
       .update(appointments)
       .set({ ...updates, updatedAt: new Date() })
       .where(eq(appointments.id, id))
       .returning();
     
-    // Create audit log for update
-    if (updatedAppointment && updates.userId) {
-      await this.createAuditLog({
-        appointmentId: updatedAppointment.id,
-        userId: updates.userId,
-        action: 'update',
-        oldData: originalAppointment,
-        newData: updatedAppointment
+    // Create audit log for update - always create an audit log entry
+    if (updatedAppointment) {
+      // If userId not specified, use the original appointment's userId for the audit log
+      const userId = updates.userId || originalAppointment.userId;
+      
+      // Only create audit log if there are actual changes
+      const newForComparison = JSON.parse(JSON.stringify(updatedAppointment));
+      
+      // Determine what fields have changed
+      const changedFields: string[] = [];
+      Object.keys(newForComparison).forEach(key => {
+        // Skip timestamps in comparison
+        if (key === 'updatedAt' || key === 'createdAt') return;
+        
+        // Convert to string for reliable comparison
+        const oldValue = JSON.stringify(originalForComparison[key]);
+        const newValue = JSON.stringify(newForComparison[key]);
+        
+        if (oldValue !== newValue) {
+          changedFields.push(key);
+        }
       });
+      
+      // Only create audit log if something actually changed
+      if (changedFields.length > 0) {
+        await this.createAuditLog({
+          appointmentId: updatedAppointment.id,
+          userId: userId,
+          action: 'update',
+          oldData: originalAppointment,
+          newData: updatedAppointment,
+          changedFields: changedFields
+        });
+      }
     }
     
     return updatedAppointment;
