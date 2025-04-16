@@ -106,12 +106,13 @@ export default function AppointmentsPage() {
       accessorKey: "orderNumber",
       header: "Order #",
       cell: ({ row }) => <span>#{row.original.orderNumber}</span>,
+      size: 80,
     },
     {
       accessorKey: "startTime",
       header: "Date & Time",
       cell: ({ row }) => (
-        <span>
+        <span className="whitespace-nowrap">
           {format(new Date(row.original.startTime), "MMM d, h:mm a")} - {format(new Date(row.original.endTime), "h:mm a")}
         </span>
       ),
@@ -148,11 +149,12 @@ export default function AppointmentsPage() {
           "secondary";
         
         return (
-          <Badge variant={variant}>
+          <Badge variant={variant} className="whitespace-nowrap">
             {status.charAt(0).toUpperCase() + status.slice(1)}
           </Badge>
         );
       },
+      size: 100,
     },
     {
       id: "actions",
@@ -160,14 +162,15 @@ export default function AppointmentsPage() {
       cell: ({ row }) => {
         const appointment = row.original;
         return (
-          <div className="flex space-x-2">
+          <div className="flex flex-wrap gap-1">
             <Button
               variant="ghost"
               size="icon"
               onClick={() => handleViewDetails(appointment.id)}
               title="View Details"
+              className="h-8 w-8"
             >
-              <Eye className="h-5 w-5 text-gray-500" />
+              <Eye className="h-4 w-4 text-gray-500" />
             </Button>
             
             {appointment.status === "pending" && (
@@ -177,8 +180,9 @@ export default function AppointmentsPage() {
                   size="icon"
                   onClick={() => handleApprove(appointment.id)}
                   title="Approve"
+                  className="h-8 w-8"
                 >
-                  <CheckCircle2 className="h-5 w-5 text-green-500" />
+                  <CheckCircle2 className="h-4 w-4 text-green-500" />
                 </Button>
                 
                 <Button
@@ -186,14 +190,16 @@ export default function AppointmentsPage() {
                   size="icon"
                   onClick={() => handleReject(appointment.id)}
                   title="Reject"
+                  className="h-8 w-8"
                 >
-                  <XCircle className="h-5 w-5 text-red-500" />
+                  <XCircle className="h-4 w-4 text-red-500" />
                 </Button>
               </>
             )}
           </div>
         );
       },
+      size: 100,
     },
   ];
 
@@ -210,15 +216,15 @@ export default function AppointmentsPage() {
             <div className="mb-4 sm:mb-0">
               <h2 className="font-medium">Filters</h2>
             </div>
-            <div className="flex space-x-3">
+            <div className="flex flex-wrap gap-2 sm:gap-3">
               <Button 
                 variant={statusFilter === null ? "default" : "outline"}
                 size="sm"
                 onClick={() => setStatusFilter(null)}
                 className="flex items-center"
               >
-                <Filter className="h-4 w-4 mr-2" />
-                All
+                <Filter className="h-4 w-4 mr-1 sm:mr-2" />
+                <span>All</span>
               </Button>
               <Button 
                 variant={statusFilter === "pending" ? "default" : "outline"}
@@ -226,8 +232,8 @@ export default function AppointmentsPage() {
                 onClick={() => setStatusFilter("pending")}
                 className="flex items-center"
               >
-                <Clock className="h-4 w-4 mr-2" />
-                Pending
+                <Clock className="h-4 w-4 mr-1 sm:mr-2" />
+                <span>Pending</span>
               </Button>
               <Button 
                 variant={statusFilter === "approved" ? "default" : "outline"}
@@ -235,8 +241,8 @@ export default function AppointmentsPage() {
                 onClick={() => setStatusFilter("approved")}
                 className="flex items-center"
               >
-                <CheckCircle2 className="h-4 w-4 mr-2" />
-                Approved
+                <CheckCircle2 className="h-4 w-4 mr-1 sm:mr-2" />
+                <span>Approved</span>
               </Button>
               <Button 
                 variant={statusFilter === "rejected" ? "default" : "outline"}
@@ -244,8 +250,8 @@ export default function AppointmentsPage() {
                 onClick={() => setStatusFilter("rejected")}
                 className="flex items-center"
               >
-                <XCircle className="h-4 w-4 mr-2" />
-                Rejected
+                <XCircle className="h-4 w-4 mr-1 sm:mr-2" />
+                <span>Rejected</span>
               </Button>
             </div>
           </div>
