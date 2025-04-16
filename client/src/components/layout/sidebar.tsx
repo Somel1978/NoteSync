@@ -131,11 +131,10 @@ export function Sidebar() {
           onClick={handleLogout}
         >
           <LogOut className="h-5 w-5 mr-3" />
-          <span>Logout</span>
+          <span>{t('common.logout')}</span>
         </Button>
-        <div className="flex items-center mt-4 px-4">
-          <Globe className="h-5 w-5 text-gray-400" />
-          <span className="ml-2 text-sm text-gray-400">English</span>
+        <div className="mt-4">
+          <LanguageSelector />
         </div>
       </div>
     </>
