@@ -88,19 +88,25 @@ export default function AuthPage() {
     <div className="min-h-screen bg-gray-50 flex flex-col">
       {/* Language Selector */}
       <div className="absolute top-4 right-4 z-10">
-        <div className="flex items-center space-x-2 bg-white shadow-sm rounded-md px-3 py-2">
-          <Globe className="h-4 w-4 text-gray-500" />
+        <div className="flex items-center space-x-2 bg-primary text-white shadow-md rounded-md px-4 py-2">
+          <Globe className="h-5 w-5" />
           <select 
             value={language}
             onChange={(e) => changeLanguage(e.target.value as 'en' | 'es' | 'pt')}
-            className="text-sm bg-transparent border-none focus:ring-0 text-gray-700 cursor-pointer"
+            className="text-sm bg-transparent border-none focus:ring-0 text-white font-medium cursor-pointer appearance-none pr-8"
+            style={{ backgroundImage: 'none' }}
           >
             {languages.map((lang) => (
-              <option key={lang.code} value={lang.code}>
+              <option key={lang.code} value={lang.code} className="text-gray-900">
                 {lang.name}
               </option>
             ))}
           </select>
+          <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4">
+            <svg className="h-4 w-4 fill-current text-white" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+            </svg>
+          </div>
         </div>
       </div>
 
