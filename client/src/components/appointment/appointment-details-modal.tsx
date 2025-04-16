@@ -312,7 +312,7 @@ export function AppointmentDetailsModal({
         
         // Update cost breakdown to reflect automatic calculation
         const costBreakdown = {
-          ...(typeof appointment.costBreakdown === 'object' ? appointment.costBreakdown : {}),
+          ...(appointment && typeof appointment.costBreakdown === 'object' ? appointment.costBreakdown : {}),
           base: totalCost,
           isCustom: false,
           total: totalCost
@@ -324,7 +324,7 @@ export function AppointmentDetailsModal({
         // Single room case
         // Update cost breakdown to reflect automatic calculation
         const costBreakdown = {
-          ...(typeof appointment.costBreakdown === 'object' ? appointment.costBreakdown : {}),
+          ...(appointment && typeof appointment.costBreakdown === 'object' ? appointment.costBreakdown : {}),
           base: calculatedCost,
           isCustom: false,
           total: calculatedCost
@@ -337,7 +337,7 @@ export function AppointmentDetailsModal({
       // Just mark as custom but keep current price
       const currentCost = editedAppointment.agreedCost || appointment?.agreedCost || 0;
       const costBreakdown = {
-        ...(typeof appointment.costBreakdown === 'object' ? appointment.costBreakdown : {}),
+        ...(appointment && typeof appointment.costBreakdown === 'object' ? appointment.costBreakdown : {}),
         base: currentCost,
         isCustom: true,
         total: currentCost
@@ -367,13 +367,30 @@ export function AppointmentDetailsModal({
           </DialogHeader>
           
           {appointment && appointment.status === 'pending' && !isEditMode && (
-            <div className="px-6 mb-4 flex justify-end space-x-3">
-              <Button variant="outline" onClick={handleReject}>
-                Reject
-              </Button>
-              <Button onClick={handleApprove}>
-                Approve
-              </Button>
+            <div className="px-6 mb-4">
+              <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-md mb-3">
+                <div className="flex items-start">
+                  <div className="flex-shrink-0">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                  <div className="ml-3">
+                    <h3 className="text-sm font-medium text-yellow-800">Pending Approval</h3>
+                    <div className="mt-1 text-xs text-yellow-700">
+                      This appointment requires your approval or rejection.
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="flex justify-end space-x-3">
+                <Button variant="outline" onClick={handleReject} className="bg-white hover:bg-gray-50">
+                  Reject
+                </Button>
+                <Button onClick={handleApprove} className="bg-green-600 hover:bg-green-700">
+                  Approve
+                </Button>
+              </div>
             </div>
           )}
 
