@@ -260,11 +260,30 @@ export function AppointmentDetailsModal({
     
     // Determine which rate to use based on the cost type
     let baseCost = 0;
-    const costType = editedAppointment.costType || appointment?.costType || 'flat';
+    let roomCostType = 'flat';
     
-    if (costType === 'flat') {
+    // Check if this room has a specific cost type in edited data
+    if (editedAppointment.rooms && Array.isArray(editedAppointment.rooms)) {
+      const roomData = editedAppointment.rooms.find(r => r.roomId === roomId);
+      if (roomData && roomData.costType) {
+        roomCostType = roomData.costType;
+      }
+    } 
+    // Fallback to original room data
+    else if (appointment && appointment.rooms && Array.isArray(appointment.rooms)) {
+      const roomData = appointment.rooms.find(r => r.roomId === roomId);
+      if (roomData && roomData.costType) {
+        roomCostType = roomData.costType;
+      }
+    }
+    // Last resort, use appointment's global cost type
+    else {
+      roomCostType = editedAppointment.costType || appointment?.costType || 'flat';
+    }
+    
+    if (roomCostType === 'flat') {
       baseCost = selectedRoom.flatRate || 0;
-    } else if (costType === 'hourly') {
+    } else if (roomCostType === 'hourly') {
       baseCost = selectedRoom.hourlyRate || 0;
       
       // Apply duration calculation for hourly rate
@@ -272,7 +291,7 @@ export function AppointmentDetailsModal({
         const durationHours = (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60);
         baseCost = baseCost * Math.max(1, Math.ceil(durationHours));
       }
-    } else if (costType === 'per_attendee') {
+    } else if (roomCostType === 'per_attendee') {
       baseCost = selectedRoom.attendeeRate || 0;
       
       // Apply attendee count for per-attendee rate
@@ -280,7 +299,7 @@ export function AppointmentDetailsModal({
       baseCost = baseCost * attendeesCount;
     }
     
-    console.log(`Calculated cost for room ${roomId} with type ${costType}: ${baseCost}`);
+    console.log(`Calculated cost for room ${roomId} with type ${roomCostType}: ${baseCost}`);
     return baseCost;
   };
   
@@ -321,17 +340,23 @@ export function AppointmentDetailsModal({
     setCustomPricing(enabled);
     
     if (!enabled && appointment) {
-      // Reset to calculated price based on current settings
-      const roomId = editedAppointment.roomId || appointment.roomId;
-      const calculatedCost = calculateCost(roomId);
-      
-      console.log('Toggle off custom pricing, new calculated cost:', calculatedCost);
+      console.log('Toggle off custom pricing, recalculating costs');
       
       // Handle multiple rooms case
-      if (editedAppointment.rooms && Array.isArray(editedAppointment.rooms) && editedAppointment.rooms.length > 0) {
+      if (Array.isArray(editedAppointment.rooms) && editedAppointment.rooms.length > 0) {
+        // Create new array for updated room costs
+        const updatedRooms = [...editedAppointment.rooms].map(room => {
+          // Calculate cost for each room
+          const roomCost = calculateRoomCost(room.roomId);
+          return {
+            ...room,
+            cost: roomCost
+          };
+        });
+        
         // Calculate total from all rooms
         let totalCost = 0;
-        (editedAppointment.rooms as RoomBooking[]).forEach(room => {
+        updatedRooms.forEach(room => {
           totalCost += room.cost;
         });
         
@@ -343,10 +368,18 @@ export function AppointmentDetailsModal({
           total: totalCost
         };
         
+        // Update both rooms and cost information
+        handleInputChange('rooms', updatedRooms);
         handleInputChange('agreedCost', totalCost);
         handleInputChange('costBreakdown', costBreakdown);
+        
+        console.log('Updated rooms with recalculated costs:', updatedRooms);
+        console.log('Total cost after recalculation:', totalCost);
       } else {
         // Single room case
+        const roomId = editedAppointment.roomId || appointment.roomId;
+        const calculatedCost = calculateCost(roomId);
+        
         // Update cost breakdown to reflect automatic calculation
         const costBreakdown = {
           ...(appointment && typeof appointment.costBreakdown === 'object' ? appointment.costBreakdown : {}),
@@ -357,9 +390,11 @@ export function AppointmentDetailsModal({
         
         handleInputChange('agreedCost', calculatedCost);
         handleInputChange('costBreakdown', costBreakdown);
+        
+        console.log('Single room recalculated cost:', calculatedCost);
       }
     } else if (enabled) {
-      // Just mark as custom but keep current price
+      // Mark as custom but keep current price
       const currentCost = editedAppointment.agreedCost || appointment?.agreedCost || 0;
       const costBreakdown = {
         ...(appointment && typeof appointment.costBreakdown === 'object' ? appointment.costBreakdown : {}),
@@ -369,6 +404,7 @@ export function AppointmentDetailsModal({
       };
       
       handleInputChange('costBreakdown', costBreakdown);
+      console.log('Custom pricing enabled, keeping current cost:', currentCost);
     }
   };
 
@@ -915,17 +951,22 @@ export function AppointmentDetailsModal({
                                 
                                 <div>
                                   <h6 className="text-xs font-medium text-gray-500 uppercase mb-1">Facilities</h6>
-                                  <div className="flex flex-wrap gap-1">
-                                    {roomBooking.requestedFacilities && roomBooking.requestedFacilities.length > 0 ? (
-                                      roomBooking.requestedFacilities.map((facility: string, i: number) => (
-                                        <Badge key={i} variant="secondary" className="text-xs">
+                                  {roomBooking.requestedFacilities && roomBooking.requestedFacilities.length > 0 ? (
+                                    <div className="flex flex-wrap gap-1 p-2 bg-gray-50 rounded-md">
+                                      {roomBooking.requestedFacilities.map((facility: string, i: number) => (
+                                        <Badge key={i} variant="secondary" className="text-xs py-1">
+                                          <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                          </svg>
                                           {facility}
                                         </Badge>
-                                      ))
-                                    ) : (
-                                      <p className="text-sm text-gray-500">None</p>
-                                    )}
-                                  </div>
+                                      ))}
+                                    </div>
+                                  ) : (
+                                    <div className="p-2 bg-gray-50 rounded-md">
+                                      <p className="text-sm text-gray-500">No additional facilities requested</p>
+                                    </div>
+                                  )}
                                 </div>
                               </div>
                             </div>
@@ -952,17 +993,22 @@ export function AppointmentDetailsModal({
                           </div>
                           <div>
                             <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">Requested Facilities</h5>
-                            <div className="flex flex-wrap gap-2 mt-1">
-                              {appointment.requestedFacilities && Array.isArray(appointment.requestedFacilities) && appointment.requestedFacilities.length > 0 ? (
-                                appointment.requestedFacilities.map((facility: string, index) => (
-                                  <Badge key={index} variant="secondary">
+                            {appointment.requestedFacilities && Array.isArray(appointment.requestedFacilities) && appointment.requestedFacilities.length > 0 ? (
+                              <div className="flex flex-wrap gap-1 p-2 bg-gray-50 rounded-md">
+                                {appointment.requestedFacilities.map((facility: string, index) => (
+                                  <Badge key={index} variant="secondary" className="text-xs py-1">
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                    </svg>
                                     {facility}
                                   </Badge>
-                                ))
-                              ) : (
-                                <p className="text-sm text-gray-500">None requested</p>
-                              )}
-                            </div>
+                                ))}
+                              </div>
+                            ) : (
+                              <div className="p-2 bg-gray-50 rounded-md">
+                                <p className="text-sm text-gray-500">No additional facilities requested</p>
+                              </div>
+                            )}
                           </div>
                         </div>
                       )}
