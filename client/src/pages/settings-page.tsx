@@ -395,11 +395,11 @@ export default function SettingsPage() {
                 <h4 className="font-medium">{user.name}</h4>
                 <p className="text-sm text-gray-500">{user.email}</p>
                 <div className="flex gap-2 mt-1">
-                  <Badge variant={roleBadgeColors[user.role] as any}>
+                  <Badge key="role-badge" variant={roleBadgeColors[user.role] as any}>
                     {roleLabels[user.role]}
                   </Badge>
                   {user.deletionRequested && (
-                    <Badge variant="outline" className="text-red-500 border-red-200 bg-red-50">
+                    <Badge key="deletion-badge" variant="outline" className="text-red-500 border-red-200 bg-red-50">
                       Deletion Requested
                     </Badge>
                   )}
@@ -590,11 +590,11 @@ export default function SettingsPage() {
                               </div>
                             )}
 
-                            {room.facilities && Array.isArray(room.facilities) && (room.facilities as any).length > 0 && (
+                            {room.facilities && Array.isArray(room.facilities) && (room.facilities as Array<{id: string, name: string}>).length > 0 && (
                               <div className="mt-4">
                                 <h4 className="text-sm font-medium text-gray-700">Facilities</h4>
                                 <div className="mt-2 flex flex-wrap gap-2">
-                                  {(room.facilities as any).map((facility: any) => (
+                                  {(room.facilities as Array<{id: string, name: string}>).map((facility) => (
                                     <Badge key={facility.id} variant="secondary">
                                       {facility.name}
                                     </Badge>
@@ -1005,7 +1005,7 @@ export default function SettingsPage() {
                                 <div className="flex justify-between items-center">
                                   <h3 className="text-lg font-medium text-gray-900">My Account</h3>
                                   {user?.deletionRequested && (
-                                    <Badge variant="outline" className="text-red-500 border-red-200 bg-red-50">
+                                    <Badge key="my-account-deletion-badge" variant="outline" className="text-red-500 border-red-200 bg-red-50">
                                       Deletion Requested
                                     </Badge>
                                   )}
