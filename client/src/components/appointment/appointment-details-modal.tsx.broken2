@@ -80,8 +80,11 @@ export function AppointmentDetailsModal({
   const { data: appointment, isLoading: isAppointmentLoading } = useQuery<AppointmentWithRooms>({
     queryKey: ["/api/appointments", appointmentId],
     queryFn: async () => {
+      console.log("Fetching appointment details for ID:", appointmentId);
+      console.log("API URL:", `/api/appointments/${appointmentId}`);
       const res = await apiRequest("GET", `/api/appointments/${appointmentId}`);
       const data = await res.json();
+      console.log("Appointment data received:", [data]);
       return data;
     },
     enabled: open && appointmentId > 0,
@@ -267,6 +270,10 @@ export function AppointmentDetailsModal({
         const selectedRoom = rooms?.find(r => r.id === roomBooking.roomId);
         if (selectedRoom) {
           const roomCost = calculateRoomCost(roomBooking.roomId, roomBooking.costType, roomBooking.requestedFacilities);
+          console.log(`Calculated cost for room ${roomBooking.roomId} with type ${roomBooking.costType}:`);
+          console.log(`- Base cost: ${roomCost.baseCost}`);
+          console.log(`- Facilities cost: ${roomCost.facilitiesCost}`);
+          console.log(`- Total cost: ${roomCost.totalCost}`);
           
           updatedRooms[index] = {
             ...updatedRooms[index],
@@ -276,6 +283,9 @@ export function AppointmentDetailsModal({
           totalCost += roomCost.totalCost;
         }
       });
+      
+      console.log("Updated rooms with recalculated costs:", updatedRooms);
+      console.log("Total cost after recalculation:", totalCost);
       
       handleInputChange('rooms', updatedRooms);
       handleInputChange('agreedCost', totalCost);
@@ -294,6 +304,7 @@ export function AppointmentDetailsModal({
         isCustom: true
       };
       handleInputChange('costBreakdown', costBreakdown);
+      console.log("Custom pricing enabled, keeping current cost:", editedAppointment.agreedCost);
     }
   };
 
@@ -347,12 +358,12 @@ export function AppointmentDetailsModal({
         }
         
         facilities.forEach(facilityName => {
-          const facility = availableFacilities.find((f: any) => 
-            (typeof f === 'object' && f !== null && f.name === facilityName)
+          const facility = availableFacilities.find(f => 
+            (typeof f === 'object' && f !== null && (f as any).name === facilityName)
           );
           
-          if (facility && typeof facility === 'object' && facility.cost) {
-            facilitiesCost += facility.cost;
+          if (facility && typeof facility === 'object' && (facility as any).cost) {
+            facilitiesCost += (facility as any).cost;
           }
         });
       } catch (e) {
@@ -393,55 +404,6 @@ export function AppointmentDetailsModal({
       </Dialog>
     );
   }
-
-  // Function to handle custom facility addition
-  const handleAddCustomFacility = (roomIndex: number) => {
-    if (!customFacilityName || customFacilityCost <= 0 || !editedAppointment.rooms) return;
-    
-    // Create the custom facility object
-    const customFacility = {
-      id: `custom-${Date.now()}`,
-      name: customFacilityName,
-      cost: customFacilityCost
-    };
-    
-    // Add it to the room's facilities
-    const updatedRooms = [...(editedAppointment.rooms as RoomBooking[])];
-    const requestedFacilities = [...(updatedRooms[roomIndex].requestedFacilities || [])];
-    
-    // Add facility name to requested facilities
-    requestedFacilities.push(customFacilityName);
-    
-    // Update the room with new cost including the facility
-    const newCost = updatedRooms[roomIndex].cost + customFacilityCost;
-    updatedRooms[roomIndex] = {
-      ...updatedRooms[roomIndex],
-      cost: newCost,
-      requestedFacilities: requestedFacilities
-    };
-    
-    // Update the edited appointment state
-    handleInputChange('rooms', updatedRooms);
-    
-    // Update the total cost if not using custom pricing
-    if (!customPricing) {
-      let totalCost = 0;
-      updatedRooms.forEach(room => {
-        totalCost += room.cost;
-      });
-      handleInputChange('agreedCost', totalCost);
-    }
-    
-    // Reset form
-    setCustomFacilityName("");
-    setCustomFacilityCost(0);
-    
-    // Show success message
-    toast({
-      title: "Custom facility added",
-      description: `Added ${customFacilityName} (€${(customFacilityCost/100).toFixed(2)})`,
-    });
-  };
 
   return (
     <>
@@ -534,137 +496,144 @@ export function AppointmentDetailsModal({
                           appointment.status
                         }
                       </h3>
-                      
                       {appointment.status === "rejected" && appointment.rejectionReason && (
-                        <p className="mt-2 text-sm">
-                          <span className="font-medium">Reason:</span> {appointment.rejectionReason}
-                        </p>
+                        <p className="mt-2 text-sm">Reason: {appointment.rejectionReason}</p>
                       )}
                     </div>
                   )}
 
                   {!isEditMode ? (
-                    <div className="space-y-6">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                       <div>
                         <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">Title</h5>
                         <p className="text-sm text-gray-900">{appointment.title}</p>
                       </div>
                       <div>
-                        <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">Description</h5>
-                        <p className="text-sm text-gray-900">{appointment.description || "No description provided"}</p>
+                        <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">Order Number</h5>
+                        <p className="text-sm text-gray-900">#{appointment.orderNumber || appointmentId}</p>
                       </div>
-                      <div className="grid grid-cols-2 gap-6">
-                        <div>
-                          <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">Date</h5>
-                          <p className="text-sm text-gray-900">
-                            {appointment.startTime ? format(new Date(appointment.startTime), "MMMM d, yyyy") : "Not set"}
-                          </p>
-                        </div>
-                        <div>
-                          <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">Time</h5>
-                          <p className="text-sm text-gray-900">
-                            {appointment.startTime && appointment.endTime ? (
-                              <>
-                                {format(new Date(appointment.startTime), "h:mm a")} - {format(new Date(appointment.endTime), "h:mm a")}
-                              </>
-                            ) : (
-                              "Not set"
-                            )}
-                          </p>
-                        </div>
+                      <div>
+                        <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">Date and Time</h5>
+                        <p className="text-sm text-gray-900">
+                          {appointment.startTime && appointment.endTime ? (
+                            <>
+                              {format(new Date(appointment.startTime), "MMM dd, yyyy h:mm a")} - {format(new Date(appointment.endTime), "h:mm a")}
+                            </>
+                          ) : (
+                            "Not specified"
+                          )}
+                        </p>
+                      </div>
+                      <div>
+                        <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">Primary Room</h5>
+                        <p className="text-sm text-gray-900">{room?.name || `Room ID: ${appointment.roomId}` || "N/A"}</p>
                       </div>
                       <div>
                         <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">Attendees</h5>
-                        <p className="text-sm text-gray-900">{appointment.attendeesCount || 0} people</p>
+                        <p className="text-sm text-gray-900">{appointment.attendeesCount || "N/A"}</p>
                       </div>
                       <div>
-                        <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">Order Number</h5>
-                        <p className="text-sm text-gray-900">{appointment.orderNumber || "Not assigned"}</p>
+                        <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">Status</h5>
+                        <Badge variant={
+                          appointment.status === "pending" ? "outline" :
+                          appointment.status === "approved" ? "success" :
+                          appointment.status === "rejected" ? "destructive" :
+                          "secondary"
+                        }>
+                          {appointment.status}
+                        </Badge>
+                      </div>
+                      <div className="sm:col-span-2">
+                        <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">Purpose</h5>
+                        <p className="text-sm text-gray-900">{appointment.purpose || "N/A"}</p>
                       </div>
                     </div>
                   ) : (
-                    <div className="space-y-6">
-                      <div>
-                        <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">Title</h5>
-                        <Input
-                          value={editedAppointment.title || ""}
-                          onChange={(e) => handleInputChange('title', e.target.value)}
-                          className="mt-1"
-                        />
-                      </div>
-                      <div>
-                        <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">Description</h5>
-                        <Textarea
-                          value={editedAppointment.description || ""}
-                          onChange={(e) => handleInputChange('description', e.target.value)}
-                          className="mt-1"
-                          rows={4}
-                        />
-                      </div>
-                      <div className="grid grid-cols-2 gap-6">
-                        <div>
-                          <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">Start Time</h5>
-                          <Input
-                            type="datetime-local"
-                            value={editedAppointment.startTime ? new Date(editedAppointment.startTime).toISOString().slice(0, 16) : ""}
-                            onChange={(e) => handleInputChange('startTime', e.target.value)}
-                            className="mt-1"
+                    <>
+                      <div className="space-y-6">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                          <div>
+                            <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">Title</h5>
+                            <Input
+                              value={editedAppointment.title || ''}
+                              onChange={(e) => handleInputChange('title', e.target.value)}
+                              className="mt-1"
+                            />
+                          </div>
+                          <div>
+                            <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">Primary Room</h5>
+                            <Select
+                              value={String(editedAppointment.roomId || '')}
+                              onValueChange={(value) => handleRoomChange(Number(value))}
+                            >
+                              <SelectTrigger className="w-full mt-1">
+                                <SelectValue placeholder="Select primary room" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {rooms && rooms.map((room) => (
+                                  <SelectItem key={room.id} value={String(room.id)}>
+                                    {room.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <p className="text-xs text-gray-500 mt-1">
+                              To book multiple rooms, use the New Booking page
+                            </p>
+                          </div>
+                          <div>
+                            <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">Attendees</h5>
+                            <Input
+                              type="number"
+                              min="1"
+                              value={editedAppointment.attendeesCount || ''}
+                              onChange={(e) => handleInputChange('attendeesCount', Number(e.target.value))}
+                              className="mt-1"
+                            />
+                          </div>
+                        </div>
+                        
+                        {/* Room editing moved to Rooms tab */}
+                        {editedAppointment.rooms && 
+                         Array.isArray(editedAppointment.rooms) && 
+                         (editedAppointment.rooms as RoomBooking[]).length > 0 && (
+                          <>
+                            <div className="bg-blue-50 p-4 rounded-md mt-4">
+                              <div className="flex items-center text-blue-800">
+                                <Info className="h-4 w-4 mr-2" />
+                                <h5 className="text-xs font-medium">Multiple Rooms Booked</h5>
+                              </div>
+                              <p className="text-xs text-blue-700 mt-1">
+                                This appointment has {(editedAppointment.rooms as RoomBooking[]).length} rooms booked. 
+                                Go to the <strong>Rooms tab</strong> to see details and make changes to room bookings.
+                              </p>
+                            </div>
+                          </>
+                         )}
+                        
+                        <div className="sm:col-span-2">
+                          <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">Purpose</h5>
+                          <Textarea
+                            value={editedAppointment.purpose || ''}
+                            onChange={(e) => handleInputChange('purpose', e.target.value)}
+                            className="mt-1 h-24"
                           />
                         </div>
-                        <div>
-                          <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">End Time</h5>
-                          <Input
-                            type="datetime-local"
-                            value={editedAppointment.endTime ? new Date(editedAppointment.endTime).toISOString().slice(0, 16) : ""}
-                            onChange={(e) => handleInputChange('endTime', e.target.value)}
-                            className="mt-1"
-                          />
-                        </div>
                       </div>
-                      <div>
-                        <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">Attendees</h5>
-                        <Input
-                          type="number"
-                          value={editedAppointment.attendeesCount || 0}
-                          onChange={(e) => handleInputChange('attendeesCount', Number(e.target.value))}
-                          min={0}
-                          className="mt-1"
-                        />
-                      </div>
-                      {rooms && (
-                        <div>
-                          <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">Primary Room</h5>
-                          <Select
-                            value={editedAppointment.roomId?.toString() || ""}
-                            onValueChange={(value) => handleRoomChange(Number(value))}
-                          >
-                            <SelectTrigger className="w-full mt-1">
-                              <SelectValue placeholder="Select a room" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {rooms.map((room) => (
-                                <SelectItem key={room.id} value={room.id.toString()}>
-                                  {room.name}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      )}
-                    </div>
+                    </>
                   )}
                 </TabsContent>
-                
+
                 <TabsContent value="rooms" className="p-6">
                   <div className="flex items-start justify-between mb-6">
                     <div className="flex items-start">
                       <div className="flex-shrink-0 bg-blue-100 rounded-full p-2">
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
                         </svg>
                       </div>
                       <div className="ml-4">
-                        <h4 className="text-sm font-medium text-gray-900">Booked Rooms</h4>
+                        <h4 className="text-sm font-medium text-gray-900">Room Information</h4>
                       </div>
                     </div>
                     <Button 
@@ -690,7 +659,7 @@ export function AppointmentDetailsModal({
                   {!isEditMode ? (
                     <div>
                       <h4 className="text-sm font-medium text-gray-900 mb-4">Booked Rooms</h4>
-                      
+
                       {getRoomsArray(appointment).length > 0 ? (
                         <div className="space-y-4 overflow-y-auto pr-1">
                           {getRoomsArray(appointment).map((roomBooking: RoomBooking, index: number) => (
@@ -702,10 +671,10 @@ export function AppointmentDetailsModal({
                                 </Badge>
                               </div>
                               
-                              <div className="space-y-4">
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
                                   <h6 className="text-xs font-medium text-gray-500 uppercase mb-1">Cost Type</h6>
-                                  <p className="text-sm text-gray-900">
+                                  <p className="text-sm text-gray-700">
                                     {roomBooking.costType === 'flat' ? 'Flat Rate' : 
                                      roomBooking.costType === 'hourly' ? 'Hourly Rate' : 
                                      roomBooking.costType === 'per_attendee' ? 'Per Attendee' : 
@@ -727,17 +696,34 @@ export function AppointmentDetailsModal({
                                       ))}
                                     </div>
                                   ) : (
-                                    <p className="text-sm text-gray-500">No additional facilities requested</p>
+                                    <div className="p-2 bg-gray-50 rounded-md">
+                                      <p className="text-sm text-gray-500">No additional facilities requested</p>
+                                    </div>
                                   )}
                                 </div>
                               </div>
                             </div>
                           ))}
+                          
+                          <div className="mt-4 pt-4 border-t">
+                            <div className="flex justify-between items-center">
+                              <span className="text-sm font-medium">Total for all rooms:</span>
+                              <span className="text-sm font-medium">
+                                €{(appointment.agreedCost / 100).toFixed(2)}
+                              </span>
+                            </div>
+                          </div>
                         </div>
                       ) : (
-                        <div className="text-center text-gray-500 p-6">
-                          <p>No rooms have been added to this appointment.</p>
-                          <p className="text-sm mt-2">Use the New Booking page to create an appointment with multiple rooms.</p>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                          <div>
+                            <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">Room Name</h5>
+                            <p className="text-sm text-gray-900">{room?.name || "Loading..."}</p>
+                          </div>
+                          <div>
+                            <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">Location</h5>
+                            <p className="text-sm text-gray-900">{room?.locationId ? `Location ID: ${room.locationId}` : "N/A"}</p>
+                          </div>
                         </div>
                       )}
                     </div>
@@ -760,7 +746,7 @@ export function AppointmentDetailsModal({
                                   className="ml-2 p-0 h-6" 
                                   onClick={() => setActiveRoomIndex(index)}
                                 >
-                                  {activeRoomIndex === index ? "✓ Active" : "Set Active"}
+                                  {activeRoomIndex === index ? "✓" : "Set Active"}
                                 </Button>
                               </div>
                               
@@ -778,6 +764,8 @@ export function AppointmentDetailsModal({
                                         value as 'flat' | 'hourly' | 'per_attendee',
                                         roomBooking.requestedFacilities
                                       );
+                                      
+                                      console.log(`Recalculated cost for room ${roomBooking.roomId} with new type ${value}: ${totalCost}`);
                                       
                                       updatedRooms[index] = {
                                         ...updatedRooms[index],
@@ -816,16 +804,16 @@ export function AppointmentDetailsModal({
                                     {roomBooking.requestedFacilities && roomBooking.requestedFacilities.map((facility, i) => {
                                       // For each facility, find the cost if available
                                       const availableFacilities = getAvailableFacilities(roomBooking.roomId);
-                                      const facilityData = availableFacilities.find((f: any) => 
-                                        typeof f === 'object' && f !== null && f.name === facility
+                                      const facilityData = availableFacilities.find(f => 
+                                        typeof f === 'object' && f !== null && (f as any).name === facility
                                       );
                                       
                                       return (
                                         <Badge key={i} variant="secondary" className="text-xs py-1 pr-2">
                                           {facility} 
-                                          {facilityData && typeof facilityData === 'object' && facilityData.cost && (
+                                          {facilityData && typeof facilityData === 'object' && (facilityData as any).cost && (
                                             <span className="ml-1 text-gray-500 text-xs">
-                                              €{(facilityData.cost / 100).toFixed(2)}
+                                              €{((facilityData as any).cost / 100).toFixed(2)}
                                             </span>
                                           )}
                                           <button 
@@ -851,15 +839,16 @@ export function AppointmentDetailsModal({
                                                   }
                                                   
                                                   // Find the removed facility's cost
-                                                  const facility = availableFacilities.find((f: any) => 
+                                                  const facility = availableFacilities.find(f => 
                                                     (typeof f === 'object' && f !== null && 
-                                                    (f.name === removedFacility || f.id === removedFacility))
+                                                    ((f as any).name === removedFacility || (f as any).id === removedFacility))
                                                   );
                                                   
-                                                  if (facility && typeof facility === 'object' && facility.cost) {
+                                                  if (facility && typeof facility === 'object' && (facility as any).cost) {
                                                     // Subtract the facility cost from the current room cost
-                                                    const facilityCost = facility.cost;
+                                                    const facilityCost = (facility as any).cost;
                                                     const newCost = roomBooking.cost - facilityCost;
+                                                    console.log(`Removing facility ${removedFacility} with cost ${facilityCost}. New total: ${newCost}`);
                                                     
                                                     // Update the room with the new cost
                                                     updatedRooms[index] = {
@@ -946,17 +935,18 @@ export function AppointmentDetailsModal({
                                               }
                                               
                                               // Find the added facility's cost
-                                              const facility = availableFacilities.find((f: any) => 
+                                              const facility = availableFacilities.find(f => 
                                                 (typeof f === 'object' && f !== null && 
-                                                (f.name === value || f.id === value))
+                                                ((f as any).name === value || (f as any).id === value))
                                               );
                                               
-                                              if (facility && typeof facility === 'object' && facility.cost) {
+                                              if (facility && typeof facility === 'object' && (facility as any).cost) {
                                                 // Add the facility cost to the current room cost
-                                                const facilityCost = facility.cost;
+                                                const facilityCost = (facility as any).cost;
                                                 const newCost = roomBooking.cost + facilityCost;
+                                                console.log(`Adding facility ${value} with cost ${facilityCost}. New total: ${newCost}`);
                                                 
-                                                // Update the room with the new cost and facilities
+                                                // Update the room with the new cost
                                                 updatedRooms[index] = {
                                                   ...updatedRooms[index],
                                                   cost: newCost,
@@ -972,9 +962,18 @@ export function AppointmentDetailsModal({
                                                 // Update both rooms and cost information
                                                 handleInputChange('rooms', updatedRooms);
                                                 
-                                                // Update global cost if not using custom pricing
+                                                // Update global cost and breakdown if not using custom pricing
                                                 if (!customPricing) {
                                                   handleInputChange('agreedCost', totalCost);
+                                                  
+                                                  // Create updated cost breakdown
+                                                  const costBreakdown = {
+                                                    ...(appointment && typeof appointment.costBreakdown === 'object' ? 
+                                                      appointment.costBreakdown : {}),
+                                                    total: totalCost,
+                                                    isCustom: false
+                                                  };
+                                                  handleInputChange('costBreakdown', costBreakdown);
                                                 }
                                                 return; // Exit early as we've handled the update
                                               }
@@ -991,24 +990,28 @@ export function AppointmentDetailsModal({
                                           handleInputChange('rooms', updatedRooms);
                                         }}
                                       >
-                                        <SelectTrigger className="w-full mt-1">
-                                          <SelectValue placeholder="Select facility" />
+                                        <SelectTrigger className="w-full h-9 text-sm">
+                                          <SelectValue placeholder="Select a facility" />
                                         </SelectTrigger>
                                         <SelectContent>
                                           {(() => {
-                                            const availableFacilities = getAvailableFacilities(roomBooking.roomId);
-                                            return availableFacilities.map((facility: any, i: number) => {
-                                              if (typeof facility !== 'object' || facility === null) return null;
+                                            const facilities = getAvailableFacilities(roomBooking.roomId);
+                                            console.log('Available facilities:', facilities);
+                                            return facilities.map((facility, i) => {
+                                              console.log('Facility item:', facility, typeof facility);
                                               
-                                              // Skip facilities that are already selected
-                                              if (roomBooking.requestedFacilities && 
-                                                  roomBooking.requestedFacilities.includes(facility.name)) {
-                                                return null;
-                                              }
-                                              
+                                              // Handle different types of facility values
+                                              const facilityName = typeof facility === 'object' && facility !== null ? 
+                                                ((facility as any).name || JSON.stringify(facility)) : String(facility);
+                                              const facilityValue = typeof facility === 'object' && facility !== null ? 
+                                                ((facility as any).name || JSON.stringify(facility)) : String(facility);
+                                              const facilityCost = typeof facility === 'object' && facility !== null ? 
+                                                ((facility as any).cost || 0) : 0;
+                                                
                                               return (
-                                                <SelectItem key={i} value={facility.name}>
-                                                  {facility.name} (€{(facility.cost / 100).toFixed(2)})
+                                                <SelectItem key={i} value={facilityValue}>
+                                                  {facilityName} 
+                                                  {facilityCost > 0 && ` (€${(facilityCost / 100).toFixed(2)})`}
                                                 </SelectItem>
                                               );
                                             });
@@ -1049,8 +1052,54 @@ export function AppointmentDetailsModal({
                                           className="w-full text-xs" 
                                           variant="outline" 
                                           size="sm"
-                                          disabled={!customFacilityName || customFacilityCost <= 0}
-                                          onClick={() => handleAddCustomFacility(index)}
+                                          disabled={!customFacilityName || customFacilityCost <= 0 || activeRoomIndex === -1}
+                                          onClick={() => {
+                                            // Create the custom facility object
+                                            const customFacility = {
+                                              id: `custom-${Date.now()}`,
+                                              name: customFacilityName,
+                                              cost: customFacilityCost
+                                            };
+                                            
+                                            // Add it to the room's facilities
+                                            const updatedRooms = [...(editedAppointment.rooms as RoomBooking[])];
+                                            // Use the activeRoomIndex instead of the map iterator
+                                            const roomIndex = activeRoomIndex;
+                                            const requestedFacilities = [...(updatedRooms[roomIndex].requestedFacilities || [])];
+                                            
+                                            // Add facility name to requested facilities
+                                            requestedFacilities.push(customFacilityName);
+                                            
+                                            // Update the room with new cost including the facility
+                                            const newCost = updatedRooms[roomIndex].cost + customFacilityCost;
+                                            updatedRooms[roomIndex] = {
+                                              ...updatedRooms[roomIndex],
+                                              cost: newCost,
+                                              requestedFacilities: requestedFacilities
+                                            };
+                                            
+                                            // Update the edited appointment state
+                                            handleInputChange('rooms', updatedRooms);
+                                            
+                                            // Update the total cost if not using custom pricing
+                                            if (!customPricing) {
+                                              let totalCost = 0;
+                                              updatedRooms.forEach(room => {
+                                                totalCost += room.cost;
+                                              });
+                                              handleInputChange('agreedCost', totalCost);
+                                            }
+                                            
+                                            // Reset form
+                                            setCustomFacilityName("");
+                                            setCustomFacilityCost(0);
+                                            
+                                            // Show success message
+                                            toast({
+                                              title: "Custom facility added",
+                                              description: `Added ${customFacilityName} (€${(customFacilityCost/100).toFixed(2)})`,
+                                            });
+                                          }}
                                         >
                                           Add Custom Facility
                                         </Button>
@@ -1149,12 +1198,12 @@ export function AppointmentDetailsModal({
                                         {roomBooking.requestedFacilities.map((facility, facilityIndex) => {
                                           // Get facility cost if available
                                           const availableFacilities = getAvailableFacilities(roomBooking.roomId);
-                                          const facilityData = availableFacilities.find((f: any) => 
-                                            typeof f === 'object' && f !== null && f.name === facility
+                                          const facilityData = availableFacilities.find(f => 
+                                            typeof f === 'object' && f !== null && (f as any).name === facility
                                           );
                                           
                                           const facilityCost = facilityData && typeof facilityData === 'object' ? 
-                                            facilityData.cost : 0;
+                                            (facilityData as any).cost : 0;
                                           
                                           return (
                                             <li key={facilityIndex} className="flex justify-between">
@@ -1271,24 +1320,21 @@ export function AppointmentDetailsModal({
                       {!customPricing && (
                         <div className="bg-gray-50 rounded-md p-4">
                           <h6 className="text-xs font-medium text-gray-700 mb-2">Automatic Price Calculation</h6>
-                          <p className="text-xs text-gray-600">
-                            The price is automatically calculated based on selected rooms, facilities, duration and number of attendees.
-                          </p>
-                          <p className="text-xs text-gray-600 mt-1">
-                            Current total: €{((calculateCost() || 0) / 100).toFixed(2)}
+                          <p className="text-xs text-gray-500">
+                            Price is calculated based on the selected room, cost type, and duration/attendees.
                           </p>
                         </div>
                       )}
                     </div>
                   )}
                 </TabsContent>
-                
+
                 <TabsContent value="contact" className="p-6">
                   <div className="flex items-start justify-between mb-6">
                     <div className="flex items-start">
                       <div className="flex-shrink-0 bg-green-100 rounded-full p-2">
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207" />
                         </svg>
                       </div>
                       <div className="ml-4">
@@ -1316,151 +1362,139 @@ export function AppointmentDetailsModal({
                   </div>
 
                   {!isEditMode ? (
-                    <div className="space-y-6">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                       <div>
-                        <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">Customer Name</h5>
-                        <p className="text-sm text-gray-900">{appointment.customerName || "Not provided"}</p>
+                        <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">Contact Name</h5>
+                        <p className="text-sm text-gray-900">{appointment.customerName || "N/A"}</p>
                       </div>
                       <div>
-                        <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">Email</h5>
-                        <p className="text-sm text-gray-900">{appointment.customerEmail || "Not provided"}</p>
+                        <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">Contact Email</h5>
+                        <p className="text-sm text-gray-900">{appointment.customerEmail || "N/A"}</p>
                       </div>
                       <div>
-                        <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">Phone</h5>
-                        <p className="text-sm text-gray-900">{appointment.customerPhone || "Not provided"}</p>
-                      </div>
-                      <div>
-                        <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">Organization</h5>
-                        <p className="text-sm text-gray-900">{appointment.customerOrganization || "Not provided"}</p>
-                      </div>
-                      <div>
-                        <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">Notes</h5>
-                        <p className="text-sm text-gray-900 whitespace-pre-line">{appointment.notes || "No additional notes"}</p>
+                        <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">Contact Phone</h5>
+                        <p className="text-sm text-gray-900">{appointment.customerPhone || "N/A"}</p>
                       </div>
                     </div>
                   ) : (
-                    <div className="space-y-6">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                       <div>
-                        <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">Customer Name</h5>
+                        <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">Contact Name</h5>
                         <Input
-                          value={editedAppointment.customerName || ""}
+                          value={editedAppointment.customerName || ''}
                           onChange={(e) => handleInputChange('customerName', e.target.value)}
                           className="mt-1"
                         />
                       </div>
                       <div>
-                        <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">Email</h5>
+                        <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">Contact Email</h5>
                         <Input
                           type="email"
-                          value={editedAppointment.customerEmail || ""}
+                          value={editedAppointment.customerEmail || ''}
                           onChange={(e) => handleInputChange('customerEmail', e.target.value)}
                           className="mt-1"
                         />
                       </div>
                       <div>
-                        <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">Phone</h5>
+                        <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">Contact Phone</h5>
                         <Input
-                          value={editedAppointment.customerPhone || ""}
+                          value={editedAppointment.customerPhone || ''}
                           onChange={(e) => handleInputChange('customerPhone', e.target.value)}
                           className="mt-1"
                         />
                       </div>
-                      <div>
-                        <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">Organization</h5>
-                        <Input
-                          value={editedAppointment.customerOrganization || ""}
-                          onChange={(e) => handleInputChange('customerOrganization', e.target.value)}
-                          className="mt-1"
-                        />
-                      </div>
-                      <div>
-                        <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">Notes</h5>
-                        <Textarea
-                          value={editedAppointment.notes || ""}
-                          onChange={(e) => handleInputChange('notes', e.target.value)}
-                          className="mt-1"
-                          rows={4}
-                        />
-                      </div>
+
                     </div>
                   )}
                 </TabsContent>
-                
+
                 <TabsContent value="history" className="p-6">
-                  <div className="flex items-start mb-6">
-                    <div className="flex-shrink-0 bg-purple-100 rounded-full p-2">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                    </div>
-                    <div className="ml-4">
-                      <h4 className="text-sm font-medium text-gray-900">Appointment History</h4>
-                      <p className="text-xs text-gray-500 mt-1">
-                        A log of all changes made to this appointment
-                      </p>
-                    </div>
+                  <div className="mb-6">
+                    <h4 className="text-sm font-medium text-gray-900">Audit Log</h4>
+                    <p className="text-xs text-gray-500 mt-1">Track all changes made to this appointment</p>
                   </div>
 
                   {isLogsLoading ? (
-                    <div className="flex justify-center items-center h-40">
-                      <p>Loading history...</p>
+                    <div className="flex justify-center items-center h-36">
+                      <p>Loading audit logs...</p>
                     </div>
                   ) : auditLogs && Array.isArray(auditLogs) && auditLogs.length > 0 ? (
-                    <div className="space-y-4 max-h-[400px] overflow-y-auto">
-                      {auditLogs.map((log: any, index: number) => (
-                        <div 
-                          key={index} 
-                          className={`p-4 rounded-md border-l-4 ${
-                            log.actionType === 'create' ? 'border-l-green-500 bg-green-50' :
-                            log.actionType === 'update' ? 'border-l-blue-500 bg-blue-50' :
-                            log.actionType === 'approve' ? 'border-l-emerald-500 bg-emerald-50' :
-                            log.actionType === 'reject' ? 'border-l-red-500 bg-red-50' :
-                            log.actionType === 'delete' ? 'border-l-gray-500 bg-gray-50' :
-                            'border-l-gray-300 bg-gray-50'
-                          }`}
-                        >
-                          <div className="flex justify-between items-start">
-                            <div>
-                              <h5 className="font-medium text-sm">
-                                {log.actionType === 'create' ? 'Appointment Created' :
-                                 log.actionType === 'update' ? 'Appointment Updated' :
-                                 log.actionType === 'approve' ? 'Appointment Approved' :
-                                 log.actionType === 'reject' ? 'Appointment Rejected' :
-                                 log.actionType === 'delete' ? 'Appointment Deleted' :
-                                 log.actionType}
-                              </h5>
-                              <p className="text-xs text-gray-500 mt-1">
-                                {log.timestamp ? format(new Date(log.timestamp), "MMM d, yyyy 'at' h:mm a") : "Unknown date"}
-                              </p>
-                            </div>
-                            <div className="text-right">
-                              <p className="text-xs text-gray-500">
-                                {log.userId ? `User ID: ${log.userId}` : "System"}
-                              </p>
-                            </div>
+                    <div className="border border-gray-200 rounded-md overflow-hidden">
+                      {auditLogs.map((log: any, index) => (
+                        <div key={log.id || index}>
+                          <div className="px-4 py-3 bg-gray-50 text-xs uppercase font-medium text-gray-500 flex justify-between">
+                            <span>{format(new Date(log.createdAt), "MMM dd, yyyy h:mm a")}</span>
+                            <Badge variant="outline" className="text-xs uppercase">
+                              {log.action}
+                            </Badge>
                           </div>
-                          
-                          {log.details && (
-                            <div className="mt-3">
-                              <h6 className="text-xs font-medium text-gray-700 mb-1">Changes:</h6>
-                              <div className="text-xs text-gray-600 whitespace-pre-line bg-white p-2 rounded border">
-                                {typeof log.details === 'string' ? log.details : JSON.stringify(log.details, null, 2)}
+                          <div className="p-4 border-t border-gray-200">
+                            <p className="text-sm text-gray-600 mb-2">Updated by User ID: {log.userId}</p>
+                            
+                            {(log.oldData || log.newData || log.changedFields) && (
+                              <div className="mt-4 relative">
+                                <div className="max-h-64 overflow-y-auto text-xs rounded-md bg-gray-50 p-4">
+                                  {log.changedFields && log.changedFields.length > 0 ? (
+                                    <div className="mb-3">
+                                      <h5 className="font-medium text-gray-700 mb-1">Changed Fields:</h5>
+                                      <div className="pl-2 border-l-2 border-amber-300">
+                                        {log.changedFields.map((field: string, idx: number) => (
+                                          <div key={idx} className="mb-1 flex items-center">
+                                            <span className="rounded-full bg-amber-100 w-4 h-4 flex items-center justify-center mr-2">
+                                              <span className="text-amber-600 text-xs">!</span>
+                                            </span>
+                                            <span className="font-medium">{field}</span>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  ) : null}
+                                  
+                                  {log.oldData && (
+                                    <div className="mb-3">
+                                      <h5 className="font-medium text-gray-700 mb-1">Previous Values:</h5>
+                                      <div className="pl-2 border-l-2 border-red-300">
+                                        {Object.entries(typeof log.oldData === 'object' ? log.oldData : {}).map(([key, value]: [string, any]) => (
+                                          <div key={key} className="mb-1">
+                                            <span className="font-medium">{key}:</span>{' '}
+                                            <span className="text-red-500">{typeof value === 'object' ? JSON.stringify(value) : String(value)}</span>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  )}
+                                  
+                                  {log.newData && (
+                                    <div>
+                                      <h5 className="font-medium text-gray-700 mb-1">New Values:</h5>
+                                      <div className="pl-2 border-l-2 border-green-300">
+                                        {Object.entries(typeof log.newData === 'object' ? log.newData : {}).map(([key, value]: [string, any]) => (
+                                          <div key={key} className="mb-1">
+                                            <span className="font-medium">{key}:</span>{' '}
+                                            <span className="text-green-600">{typeof value === 'object' ? JSON.stringify(value) : String(value)}</span>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
                               </div>
-                            </div>
-                          )}
+                            )}
+                          </div>
                         </div>
                       ))}
                     </div>
                   ) : (
-                    <div className="text-center text-gray-500 p-6">
-                      <p>No history records found for this appointment.</p>
+                    <div className="text-center text-gray-500 py-6 border rounded-md">
+                      <p>No audit logs available for this appointment.</p>
+                      <p className="text-xs mt-2">Changes to the appointment will be tracked here</p>
                     </div>
                   )}
                 </TabsContent>
               </>
             ) : (
-              <div className="flex justify-center items-center h-40">
-                <p>No appointment data available.</p>
+              <div className="flex justify-center items-center h-64">
+                <p>Appointment not found</p>
               </div>
             )}
           </Tabs>
@@ -1472,23 +1506,20 @@ export function AppointmentDetailsModal({
           <AlertDialogHeader>
             <AlertDialogTitle>Reject Appointment</AlertDialogTitle>
             <AlertDialogDescription>
-              Please provide a reason for rejecting this appointment. This information will be shared with the customer.
+              Please provide a reason for rejecting this appointment. This will be recorded in the audit log.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <div className="py-4">
+          <div className="my-4">
             <Textarea
               value={rejectionReason}
               onChange={(e) => setRejectionReason(e.target.value)}
-              placeholder="Reason for rejection..."
-              className="w-full"
-              rows={4}
+              placeholder="Enter rejection reason"
+              className="min-h-[100px]"
             />
           </div>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleConfirmReject}>
-              Confirm Rejection
-            </AlertDialogAction>
+            <AlertDialogCancel onClick={() => setRejectionReason("")}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmReject}>Submit</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
