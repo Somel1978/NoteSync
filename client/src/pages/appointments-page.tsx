@@ -68,14 +68,14 @@ export default function AppointmentsPage() {
     },
     onSuccess: () => {
       toast({
-        title: "Appointment rejected",
-        description: "The appointment has been successfully rejected.",
+        title: t('appointments.rejectSuccess', 'Appointment rejected'),
+        description: t('appointments.rejectSuccessDetail', 'The appointment has been successfully rejected.'),
       });
       queryClient.invalidateQueries({ queryKey: ["/api/appointments"] });
     },
     onError: (error) => {
       toast({
-        title: "Failed to reject appointment",
+        title: t('appointments.rejectError', 'Failed to reject appointment'),
         description: error.message,
         variant: "destructive",
       });

@@ -15,8 +15,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useTranslation } from "react-i18next";
 
 export default function RoomListPage() {
+  const { t } = useTranslation();
   const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [locationFilter, setLocationFilter] = useState<string>("all");
@@ -36,14 +38,14 @@ export default function RoomListPage() {
     },
     onSuccess: () => {
       toast({
-        title: "Room deleted",
-        description: "The room has been successfully deleted.",
+        title: t('rooms.deleteSuccess', 'Room deleted'),
+        description: t('rooms.deleteSuccessDetail', 'The room has been successfully deleted.'),
       });
       queryClient.invalidateQueries({ queryKey: ["/api/rooms"] });
     },
     onError: (error) => {
       toast({
-        title: "Failed to delete room",
+        title: t('rooms.deleteError', 'Failed to delete room'),
         description: error.message,
         variant: "destructive",
       });
@@ -61,7 +63,7 @@ export default function RoomListPage() {
   };
 
   const handleDeleteRoom = (roomId: number) => {
-    if (confirm("Are you sure you want to delete this room? This action cannot be undone.")) {
+    if (confirm(t('rooms.confirmDelete', 'Are you sure you want to delete this room? This action cannot be undone.'))) {
       deleteRoomMutation.mutate(roomId);
     }
   };
@@ -71,9 +73,9 @@ export default function RoomListPage() {
   );
 
   const getLocationName = (locationId: number) => {
-    if (!locations || !Array.isArray(locations)) return `Location #${locationId}`;
+    if (!locations || !Array.isArray(locations)) return `${t('appointments.location', 'Location')} #${locationId}`;
     const location = locations.find((loc: any) => loc.id === locationId);
-    return location ? location.name : `Location #${locationId}`;
+    return location ? location.name : `${t('appointments.location', 'Location')} #${locationId}`;
   };
 
   return (
@@ -81,8 +83,8 @@ export default function RoomListPage() {
       <div className="p-4 pt-8 sm:p-8">
         <header className="mb-6 sm:mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center">
           <div>
-            <h1 className="text-xl sm:text-2xl font-semibold text-gray-800">Available Rooms</h1>
-            <p className="text-gray-600 text-sm">Manage rooms and their facilities</p>
+            <h1 className="text-xl sm:text-2xl font-semibold text-gray-800">{t('rooms.title', 'Available Rooms')}</h1>
+            <p className="text-gray-600 text-sm">{t('rooms.subtitle', 'Manage rooms and their facilities')}</p>
           </div>
           <div className="mt-4 sm:mt-0">
             <Button 
@@ -90,24 +92,24 @@ export default function RoomListPage() {
               onClick={handleAddRoom}
             >
               <Plus className="h-5 w-5 mr-2" />
-              Add Room
+              {t('rooms.addRoom', 'Add Room')}
             </Button>
           </div>
         </header>
 
         <div className="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div className="flex items-center gap-2">
-            <span className="text-sm font-medium">Filter by location:</span>
+            <span className="text-sm font-medium">{t('rooms.filterByLocation', 'Filter by location')}:</span>
             <Select
               value={locationFilter}
               onValueChange={setLocationFilter}
               disabled={locationsLoading}
             >
               <SelectTrigger className="w-[200px]">
-                <SelectValue placeholder="Select a location" />
+                <SelectValue placeholder={t('rooms.selectLocation', 'Select a location')} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Locations</SelectItem>
+                <SelectItem value="all">{t('rooms.allLocations', 'All Locations')}</SelectItem>
                 {Array.isArray(locations) && locations.map((location: any) => (
                   <SelectItem key={location.id} value={location.id.toString()}>
                     {location.name}
@@ -123,18 +125,18 @@ export default function RoomListPage() {
                 className="ml-2"
               >
                 <FilterX className="h-4 w-4 mr-1" />
-                Clear
+                {t('rooms.clear', 'Clear')}
               </Button>
             )}
           </div>
           <div className="flex items-center text-sm text-gray-500">
-            {filteredRooms ? `Showing ${filteredRooms.length} of ${rooms?.length} rooms` : "Loading rooms..."}
+            {filteredRooms ? t('rooms.showing', 'Showing') + ` ${filteredRooms.length} ${t('rooms.of', 'of')} ${rooms?.length} ${t('rooms.rooms', 'rooms')}` : t('common.loading', 'Loading rooms...')}
           </div>
         </div>
 
         {roomsLoading ? (
           <div className="flex justify-center items-center h-64">
-            <p className="text-gray-500">Loading rooms...</p>
+            <p className="text-gray-500">{t('common.loading', 'Loading rooms...')}</p>
           </div>
         ) : filteredRooms && filteredRooms.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -149,8 +151,8 @@ export default function RoomListPage() {
           </div>
         ) : (
           <div className="flex flex-col justify-center items-center h-64 bg-gray-50 rounded-lg border border-dashed border-gray-300">
-            <p className="text-gray-500 mb-4">No rooms found</p>
-            <Button onClick={handleAddRoom}>Add Your First Room</Button>
+            <p className="text-gray-500 mb-4">{t('rooms.noRoomsFound', 'No rooms found')}</p>
+            <Button onClick={handleAddRoom}>{t('rooms.addFirstRoom', 'Add Your First Room')}</Button>
           </div>
         )}
 
