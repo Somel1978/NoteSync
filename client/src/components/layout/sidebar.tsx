@@ -146,9 +146,9 @@ export function Sidebar() {
           variant="ghost"
           size="icon"
           onClick={() => setIsOpen(true)}
-          className="fixed top-4 left-4 z-50 rounded-full bg-primary text-white shadow-lg"
+          className="fixed top-4 left-2 z-50 rounded-full bg-primary text-white shadow-lg h-8 w-8 p-1.5"
         >
-          <Menu className="h-4 w-4" />
+          <Menu className="h-3.5 w-3.5" />
         </Button>
         
         {/* Mobile sidebar */}
