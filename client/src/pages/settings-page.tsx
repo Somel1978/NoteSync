@@ -205,17 +205,17 @@ export default function SettingsPage() {
   }, [user, profileForm]);
   
   // Fetch data
-  const { data: users = [] } = useQuery({
+  const { data: users = [] } = useQuery<User[]>({
     queryKey: ['/api/users'],
     enabled: user?.role === 'admin'
   });
   
-  const { data: rooms = [] } = useQuery({
+  const { data: rooms = [] } = useQuery<Room[]>({
     queryKey: ['/api/rooms'],
     enabled: user?.role === 'admin' || user?.role === 'director'
   });
   
-  const { data: locations = [] } = useQuery({
+  const { data: locations = [] } = useQuery<Location[]>({
     queryKey: ['/api/locations'],
     enabled: user?.role === 'admin' || user?.role === 'director'
   });
