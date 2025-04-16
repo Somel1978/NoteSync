@@ -1,5 +1,6 @@
 import { createContext, useState, useContext, ReactNode, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import i18n from 'i18next';
 
 type Language = 'en' | 'es' | 'pt';
 
@@ -14,14 +15,21 @@ interface LanguageContextType {
 
 const LanguageContext = createContext<LanguageContextType | null>(null);
 
+// Define language names outside the component
+const languageNames = {
+  en: 'English',
+  es: 'Spanish',
+  pt: 'Portuguese'
+};
+
 export function LanguageProvider({ children }: { children: ReactNode }) {
-  const { i18n, t } = useTranslation();
+  const { t } = useTranslation();
   const [language, setLanguage] = useState<Language>((i18n.language || 'en').split('-')[0] as Language);
 
   const languages = [
-    { code: 'en' as Language, name: t('settings.english') },
-    { code: 'es' as Language, name: t('settings.spanish') },
-    { code: 'pt' as Language, name: t('settings.portuguese') }
+    { code: 'en' as Language, name: languageNames.en },
+    { code: 'es' as Language, name: languageNames.es },
+    { code: 'pt' as Language, name: languageNames.pt }
   ];
 
   const changeLanguage = (lang: Language) => {
