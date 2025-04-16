@@ -1309,7 +1309,72 @@ export function AppointmentDetailsModal({
                                               onClick={() => {
                                                 const updatedRooms = [...(editedAppointment.rooms as RoomBooking[])];
                                                 const updatedFacilities = [...roomBooking.requestedFacilities];
+                                                const removedFacility = updatedFacilities[i];
                                                 updatedFacilities.splice(i, 1);
+                                                
+                                                // Calculate new cost after removing the facility
+                                                const selectedRoom = rooms && Array.isArray(rooms) ? 
+                                                  rooms.find(r => r.id === roomBooking.roomId) : undefined;
+                                                  
+                                                if (selectedRoom && selectedRoom.facilities && removedFacility) {
+                                                  try {
+                                                    // Parse facilities if needed
+                                                    let availableFacilities: any[] = [];
+                                                    if (typeof selectedRoom.facilities === 'string') {
+                                                      availableFacilities = JSON.parse(selectedRoom.facilities);
+                                                    } else if (Array.isArray(selectedRoom.facilities)) {
+                                                      availableFacilities = selectedRoom.facilities;
+                                                    }
+                                                    
+                                                    // Find the removed facility's cost
+                                                    const facility = availableFacilities.find(f => 
+                                                      (typeof f === 'object' && f !== null && 
+                                                      ((f as any).name === removedFacility || (f as any).id === removedFacility))
+                                                    );
+                                                    
+                                                    if (facility && typeof facility === 'object' && (facility as any).cost) {
+                                                      // Subtract the facility cost from the current room cost
+                                                      const facilityCost = (facility as any).cost;
+                                                      const newCost = roomBooking.cost - facilityCost;
+                                                      console.log(`Removing facility ${removedFacility} with cost ${facilityCost}. New total: ${newCost}`);
+                                                      
+                                                      // Update the room with the new cost
+                                                      updatedRooms[index] = {
+                                                        ...updatedRooms[index],
+                                                        cost: newCost,
+                                                        requestedFacilities: updatedFacilities
+                                                      };
+                                                      
+                                                      // Calculate new total cost
+                                                      let totalCost = 0;
+                                                      updatedRooms.forEach(room => {
+                                                        totalCost += room.cost;
+                                                      });
+                                                      
+                                                      // Update both rooms and cost information
+                                                      handleInputChange('rooms', updatedRooms);
+                                                      
+                                                      // Update global cost and breakdown if not using custom pricing
+                                                      if (!customPricing) {
+                                                        handleInputChange('agreedCost', totalCost);
+                                                        
+                                                        // Create updated cost breakdown
+                                                        const costBreakdown = {
+                                                          ...(appointment && typeof appointment.costBreakdown === 'object' ? 
+                                                            appointment.costBreakdown : {}),
+                                                          total: totalCost,
+                                                          isCustom: false
+                                                        };
+                                                        handleInputChange('costBreakdown', costBreakdown);
+                                                      }
+                                                      return; // Exit early as we've handled the update
+                                                    }
+                                                  } catch (e) {
+                                                    console.warn('Error calculating facility cost for removal:', e);
+                                                  }
+                                                }
+                                                
+                                                // Fallback to just updating the facilities list without cost changes
                                                 updatedRooms[index] = {
                                                   ...updatedRooms[index],
                                                   requestedFacilities: updatedFacilities
@@ -1340,6 +1405,70 @@ export function AppointmentDetailsModal({
                                               ...(roomBooking.requestedFacilities || []), 
                                               value
                                             ];
+                                            
+                                            // Calculate new cost that includes facility
+                                            const selectedRoom = rooms && Array.isArray(rooms) ? 
+                                              rooms.find(r => r.id === roomBooking.roomId) : undefined;
+                                              
+                                            if (selectedRoom && selectedRoom.facilities) {
+                                              try {
+                                                // Parse facilities if needed
+                                                let availableFacilities: any[] = [];
+                                                if (typeof selectedRoom.facilities === 'string') {
+                                                  availableFacilities = JSON.parse(selectedRoom.facilities);
+                                                } else if (Array.isArray(selectedRoom.facilities)) {
+                                                  availableFacilities = selectedRoom.facilities;
+                                                }
+                                                
+                                                // Find the added facility's cost
+                                                const facility = availableFacilities.find(f => 
+                                                  (typeof f === 'object' && f !== null && 
+                                                  ((f as any).name === value || (f as any).id === value))
+                                                );
+                                                
+                                                if (facility && typeof facility === 'object' && (facility as any).cost) {
+                                                  // Add the facility cost to the current room cost
+                                                  const facilityCost = (facility as any).cost;
+                                                  const newCost = roomBooking.cost + facilityCost;
+                                                  console.log(`Adding facility ${value} with cost ${facilityCost}. New total: ${newCost}`);
+                                                  
+                                                  // Update the room with the new cost
+                                                  updatedRooms[index] = {
+                                                    ...updatedRooms[index],
+                                                    cost: newCost,
+                                                    requestedFacilities: updatedFacilities
+                                                  };
+                                                  
+                                                  // Calculate new total cost
+                                                  let totalCost = 0;
+                                                  updatedRooms.forEach(room => {
+                                                    totalCost += room.cost;
+                                                  });
+                                                  
+                                                  // Update both rooms and cost information
+                                                  handleInputChange('rooms', updatedRooms);
+                                                  
+                                                  // Update global cost and breakdown if not using custom pricing
+                                                  if (!customPricing) {
+                                                    handleInputChange('agreedCost', totalCost);
+                                                    
+                                                    // Create updated cost breakdown
+                                                    const costBreakdown = {
+                                                      ...(appointment && typeof appointment.costBreakdown === 'object' ? 
+                                                        appointment.costBreakdown : {}),
+                                                      total: totalCost,
+                                                      isCustom: false
+                                                    };
+                                                    handleInputChange('costBreakdown', costBreakdown);
+                                                  }
+                                                  return; // Exit early as we've handled the update
+                                                }
+                                              } catch (e) {
+                                                console.warn('Error calculating facility cost:', e);
+                                              }
+                                            }
+                                            
+                                            // Fallback to just updating the facilities list without cost changes
                                             updatedRooms[index] = {
                                               ...updatedRooms[index],
                                               requestedFacilities: updatedFacilities
