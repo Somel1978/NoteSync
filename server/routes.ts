@@ -287,19 +287,12 @@ export function registerRoutes(app: Express): Server {
       const userId = req.user!.id;
       const validatedData = insertAppointmentSchema.parse({
         ...req.body,
-        userId,
-        orderNumber: await storage.getNextAppointmentOrderNumber()
+        userId
+        // No need to set orderNumber here as storage.createAppointment now handles this
       });
       
+      // Storage method now includes audit logging internally
       const appointment = await storage.createAppointment(validatedData);
-      
-      // Create audit log
-      await storage.createAuditLog({
-        appointmentId: appointment.id,
-        userId,
-        action: "created",
-        newData: appointment
-      });
       
       res.status(201).json(appointment);
     } catch (error) {
@@ -325,23 +318,22 @@ export function registerRoutes(app: Express): Server {
       const id = parseInt(req.params.id);
       const userId = req.user!.id;
       
-      // Get original appointment for audit log
+      // Check if appointment exists
       const originalAppointment = await storage.getAppointment(id);
       if (!originalAppointment) {
         return res.status(404).json({ message: "Appointment not found" });
       }
       
-      const validatedData = insertAppointmentSchema.partial().parse(req.body);
-      const updatedAppointment = await storage.updateAppointment(id, validatedData);
-      
-      // Create audit log
-      await storage.createAuditLog({
-        appointmentId: id,
-        userId,
-        action: "updated",
-        oldData: originalAppointment,
-        newData: updatedAppointment
+      const validatedData = insertAppointmentSchema.partial().parse({
+        ...req.body,
+        userId // Include userId for audit logging
       });
+      
+      // Storage method now handles audit logging internally
+      const updatedAppointment = await storage.updateAppointment(id, validatedData);
+      if (!updatedAppointment) {
+        return res.status(404).json({ message: "Failed to update appointment" });
+      }
       
       res.json(updatedAppointment);
     } catch (error) {
@@ -354,21 +346,17 @@ export function registerRoutes(app: Express): Server {
       const id = parseInt(req.params.id);
       const userId = req.user!.id;
       
-      // Get original appointment for audit log
+      // Check if appointment exists
       const originalAppointment = await storage.getAppointment(id);
       if (!originalAppointment) {
         return res.status(404).json({ message: "Appointment not found" });
       }
       
-      const success = await storage.deleteAppointment(id);
-      
-      // Create audit log
-      await storage.createAuditLog({
-        appointmentId: id,
-        userId,
-        action: "deleted",
-        oldData: originalAppointment
-      });
+      // The storage method now handles audit logging internally
+      const success = await storage.deleteAppointment(id, userId);
+      if (!success) {
+        return res.status(500).json({ message: "Failed to delete appointment" });
+      }
       
       res.status(204).end();
     } catch (error) {

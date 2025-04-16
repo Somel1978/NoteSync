@@ -299,7 +299,10 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getAppointmentsByStatus(status: string): Promise<Appointment[]> {
-    return db.select().from(appointments).where(eq(appointments.status, status));
+    // Use a type assertion to handle the PgEnumColumn type
+    return db.select().from(appointments).where(
+      eq(appointments.status as any, status)
+    );
   }
 
   async getAllAppointments(): Promise<Appointment[]> {
@@ -375,7 +378,7 @@ export class DatabaseStorage implements IStorage {
     }).from(appointments).where(
       and(
         eq(appointments.roomId, roomId),
-        eq(appointments.status, 'approved'),
+        eq(appointments.status as any, 'approved'),
         gte(appointments.startTime, startDate),
         lte(appointments.endTime, endDate)
       )
