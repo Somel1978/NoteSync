@@ -59,14 +59,29 @@ export function AppointmentDetailsModal({
   const [endDate, setEndDate] = useState<Date | undefined>(undefined);
   const { toast } = useToast();
   
-  // Extend the Appointment type to include rooms array
-  interface AppointmentWithRooms extends Appointment {
-    rooms?: RoomBooking[];
+  // Define a type that includes the appointment with properly typed rooms
+  type AppointmentWithRooms = Omit<Appointment, 'rooms'> & {
+    rooms: RoomBooking[];
   }
   
   const { data: appointment, isLoading: isAppointmentLoading } = useQuery<AppointmentWithRooms>({
     queryKey: ["/api/appointments", appointmentId],
     enabled: open && appointmentId > 0,
+    queryFn: async ({ queryKey }) => {
+      console.log('Fetching appointment details for ID:', appointmentId);
+      const [_, id] = queryKey;
+      const url = `/api/appointments/${id}`;
+      console.log('API URL:', url);
+      const response = await fetch(url, { credentials: "include" });
+      if (!response.ok) {
+        const errorData = await response.text();
+        console.error('Error fetching appointment details:', response.status, errorData);
+        throw new Error("Failed to fetch appointment details");
+      }
+      const data = await response.json();
+      console.log('Appointment data received:', data);
+      return data;
+    },
   });
   
   const { data: room, isLoading: isRoomLoading } = useQuery<Room>({
