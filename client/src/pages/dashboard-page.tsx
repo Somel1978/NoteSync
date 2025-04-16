@@ -7,6 +7,7 @@ import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Calendar, TicketPlus, Users, BarChart3, Clock } from "lucide-react";
 import { format } from "date-fns";
+import { useTranslation } from "react-i18next";
 
 interface DashboardStats {
   totalAppointments: number;
@@ -39,6 +40,7 @@ interface RecentBooking {
 }
 
 export default function DashboardPage() {
+  const { t } = useTranslation();
   const { data, isLoading, error } = useQuery<DashboardStats>({
     queryKey: ["/api/stats"],
   });
@@ -52,7 +54,7 @@ export default function DashboardPage() {
       <AppLayout>
         <div className="p-8">
           <div className="flex justify-center items-center h-96">
-            <p className="text-gray-500">Loading dashboard data...</p>
+            <p className="text-gray-500">{t('common.loading', 'Loading dashboard data...')}</p>
           </div>
         </div>
       </AppLayout>
@@ -64,7 +66,7 @@ export default function DashboardPage() {
       <AppLayout>
         <div className="p-8">
           <div className="flex justify-center items-center h-96">
-            <p className="text-red-500">Error loading dashboard: {error.message}</p>
+            <p className="text-red-500">{t('common.error', 'Error loading dashboard:')} {error.message}</p>
           </div>
         </div>
       </AppLayout>
@@ -72,52 +74,52 @@ export default function DashboardPage() {
   }
 
   const getRoomName = (roomId: number) => {
-    if (!rooms || !Array.isArray(rooms)) return `Room #${roomId}`;
+    if (!rooms || !Array.isArray(rooms)) return `${t('rooms.room', 'Room')} #${roomId}`;
     const room = rooms.find((r: any) => r.id === roomId);
-    return room ? room.name : `Room #${roomId}`;
+    return room ? room.name : `${t('rooms.room', 'Room')} #${roomId}`;
   };
   
   return (
     <AppLayout>
       <div className="p-4 pt-8 sm:p-8">
         <header className="mb-6 sm:mb-8">
-          <h1 className="text-xl sm:text-2xl font-semibold text-gray-800">Dashboard</h1>
-          <p className="text-gray-600 text-sm">Real-time overview of your room management system</p>
+          <h1 className="text-xl sm:text-2xl font-semibold text-gray-800">{t('dashboard.title', 'Dashboard')}</h1>
+          <p className="text-gray-600 text-sm">{t('dashboard.subtitle', 'Real-time overview of your room management system')}</p>
         </header>
 
         {/* Stats Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8">
           <StatsCard
-            title="Total Bookings"
+            title={t('dashboard.totalBookings', 'Total Bookings')}
             value={data?.totalAppointments || 0}
-            subtitle="All time"
+            subtitle={t('dashboard.allTime', 'All time')}
             icon={<Calendar />}
             iconColor="text-indigo-500"
             iconBgColor="bg-indigo-50"
           />
           
           <StatsCard
-            title="Active Rooms"
+            title={t('dashboard.activeRooms', 'Active Rooms')}
             value={data?.activeRooms || 0}
-            subtitle="Across all locations"
+            subtitle={t('dashboard.acrossLocations', 'Across all locations')}
             icon={<TicketPlus />}
             iconColor="text-blue-500"
             iconBgColor="bg-blue-50"
           />
           
           <StatsCard
-            title="Total Users"
+            title={t('dashboard.totalUsers', 'Total Users')}
             value={data?.totalUsers || 0}
-            subtitle="Registered users"
+            subtitle={t('dashboard.registeredUsers', 'Registered users')}
             icon={<Users />}
             iconColor="text-violet-500"
             iconBgColor="bg-violet-50"
           />
           
           <StatsCard
-            title="Utilization Rate"
+            title={t('dashboard.utilizationRate', 'Utilization Rate')}
             value={`${Math.round(data?.utilization || 0)}%`}
-            subtitle="Room usage this month"
+            subtitle={t('dashboard.roomUsageMonth', 'Room usage this month')}
             icon={<BarChart3 />}
             iconColor="text-emerald-500"
             iconBgColor="bg-emerald-50"
@@ -129,7 +131,7 @@ export default function DashboardPage() {
           {/* Recent Bookings */}
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="text-lg font-medium">Recent Bookings</CardTitle>
+              <CardTitle className="text-lg font-medium">{t('dashboard.recentBookings', 'Recent Bookings')}</CardTitle>
             </CardHeader>
             <CardContent>
               {data?.recentBookings && data.recentBookings.length > 0 ? (
@@ -153,7 +155,7 @@ export default function DashboardPage() {
                             "secondary"
                           }
                         >
-                          {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
+                          {t(`appointments.${booking.status}`, booking.status.charAt(0).toUpperCase() + booking.status.slice(1))}
                         </Badge>
                       </div>
                     </div>
@@ -161,7 +163,7 @@ export default function DashboardPage() {
                 </div>
               ) : (
                 <div className="text-center py-8 text-gray-500">
-                  <p>No recent bookings</p>
+                  <p>{t('dashboard.noBookings', 'No recent bookings')}</p>
                 </div>
               )}
             </CardContent>
@@ -170,7 +172,7 @@ export default function DashboardPage() {
           {/* Popular Rooms */}
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="text-lg font-medium">Popular Rooms</CardTitle>
+              <CardTitle className="text-lg font-medium">{t('dashboard.popularRooms', 'Popular Rooms')}</CardTitle>
             </CardHeader>
             <CardContent>
               {data?.popularRooms && data.popularRooms.length > 0 ? (
@@ -180,11 +182,11 @@ export default function DashboardPage() {
                       <div className="flex justify-between items-start mb-2">
                         <div>
                           <h3 className="font-medium text-gray-800">{roomData.room.name}</h3>
-                          <p className="text-sm text-gray-600">Location ID: {roomData.room.locationId}</p>
+                          <p className="text-sm text-gray-600">{t('appointments.location', 'Location')} ID: {roomData.room.locationId}</p>
                         </div>
                         <div className="text-right">
-                          <p className="font-medium text-gray-800">{roomData.bookings} bookings</p>
-                          <p className="text-sm text-gray-600">{Math.round(roomData.utilization)}% utilization</p>
+                          <p className="font-medium text-gray-800">{roomData.bookings} {t('dashboard.bookings', 'bookings')}</p>
+                          <p className="text-sm text-gray-600">{Math.round(roomData.utilization)}% {t('dashboard.utilization', 'utilization')}</p>
                         </div>
                       </div>
                       <Progress value={roomData.utilization} className="h-2" />
@@ -193,7 +195,7 @@ export default function DashboardPage() {
                 </div>
               ) : (
                 <div className="text-center py-8 text-gray-500">
-                  <p>No rooms data available</p>
+                  <p>{t('dashboard.noRoomsData', 'No rooms data available')}</p>
                 </div>
               )}
             </CardContent>
