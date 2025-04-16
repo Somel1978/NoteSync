@@ -16,14 +16,16 @@
     "settings": "Configurações",
     "logout": "Sair",
     "noData": "Nenhum dado disponível",
-    "error": "Ocorreu um erro"
+    "error": "Ocorreu um erro",
+    "notAvailable": "N/D"
   },
   "navigation": {
     "dashboard": "Painel",
     "appointments": "Agendamentos",
     "rooms": "Salas",
     "settings": "Configurações",
-    "language": "Idioma"
+    "language": "Idioma",
+    "selectLanguage": "Selecionar Idioma"
   },
   "auth": {
     "login": "Entrar",
@@ -89,12 +91,20 @@
     "of": "de",
     "rooms": "salas",
     "noRooms": "Nenhuma sala encontrada",
+    "noRoomsFound": "Nenhuma sala encontrada",
     "addFirstRoom": "Adicione sua primeira sala",
     "capacity": "Capacidade",
     "price": "Preço",
     "facilities": "Instalações",
     "bookNow": "Reservar Agora",
-    "confirmDelete": "Tem certeza que deseja excluir esta sala?"
+    "confirmDelete": "Tem certeza que deseja excluir esta sala?",
+    "active": "Ativo",
+    "inactive": "Inativo",
+    "flatRate": "Taxa Fixa",
+    "hourlyRate": "Taxa por Hora",
+    "deleteSuccess": "Sala excluída",
+    "deleteSuccessDetail": "A sala foi excluída com sucesso.",
+    "deleteError": "Falha ao excluir sala"
   },
   "settings": {
     "title": "Configurações",
@@ -106,7 +116,9 @@
     "security": "Segurança",
     "billing": "Faturamento",
     "users": "Usuários",
-    "addUser": "Adicionar Usuário",
+    "addUser": "Adicionar Usuário"
+  },
+  "languages": {
     "english": "Inglês",
     "spanish": "Espanhol",
     "portuguese": "Português"
