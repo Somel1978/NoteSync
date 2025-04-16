@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery, useMutation, UseMutationResult } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { AppLayout } from "@/components/layout/app-layout";
 import { RoomFormModal } from "@/components/room/room-form-modal";
@@ -92,7 +92,19 @@ type ChangePasswordFormValues = z.infer<typeof changePasswordSchema>;
 type NewUserFormValues = z.infer<typeof newUserSchema>;
 
 // UserProfileCard component
-const UserProfileCard = ({ user }: { user: User }) => {
+const UserProfileCard = ({ 
+  user, 
+  setSelectedUser, 
+  setUserModalOpen,
+  deleteUserMutation,
+  approveDeleteMutation
+}: { 
+  user: User;
+  setSelectedUser: (user: User) => void;
+  setUserModalOpen: (open: boolean) => void;
+  deleteUserMutation: UseMutationResult<any, Error, number>;
+  approveDeleteMutation: UseMutationResult<any, Error, number>;
+}) => {
   const { t } = useTranslation();
   
   return (
@@ -141,8 +153,8 @@ const UserProfileCard = ({ user }: { user: User }) => {
             size="sm" 
             className="text-xs"
             onClick={() => {
-              // Open user edit modal or implement inline editing
-              alert(`Edit user functionality for ${user.name} will be implemented`);
+              setSelectedUser(user);
+              setUserModalOpen(true);
             }}
           >
             <Pencil className="h-3 w-3 mr-1" />
@@ -814,7 +826,14 @@ export default function SettingsPage() {
                               </h3>
                               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                                 {adminUsers.map((adminUser: User) => (
-                                  <UserProfileCard key={adminUser.id} user={adminUser} />
+                                  <UserProfileCard 
+                                    key={adminUser.id} 
+                                    user={adminUser} 
+                                    setSelectedUser={setSelectedUser}
+                                    setUserModalOpen={setUserModalOpen}
+                                    deleteUserMutation={deleteUserMutation}
+                                    approveDeleteMutation={approveDeleteMutation}
+                                  />
                                 ))}
                               </div>
                             </div>
@@ -829,7 +848,14 @@ export default function SettingsPage() {
                               </h3>
                               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                                 {directorUsers.map((directorUser: User) => (
-                                  <UserProfileCard key={directorUser.id} user={directorUser} />
+                                  <UserProfileCard 
+                                    key={directorUser.id} 
+                                    user={directorUser} 
+                                    setSelectedUser={setSelectedUser}
+                                    setUserModalOpen={setUserModalOpen}
+                                    deleteUserMutation={deleteUserMutation}
+                                    approveDeleteMutation={approveDeleteMutation}
+                                  />
                                 ))}
                               </div>
                             </div>
@@ -844,7 +870,14 @@ export default function SettingsPage() {
                               </h3>
                               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                                 {guestUsers.map((guestUser: User) => (
-                                  <UserProfileCard key={guestUser.id} user={guestUser} />
+                                  <UserProfileCard 
+                                    key={guestUser.id} 
+                                    user={guestUser} 
+                                    setSelectedUser={setSelectedUser}
+                                    setUserModalOpen={setUserModalOpen}
+                                    deleteUserMutation={deleteUserMutation}
+                                    approveDeleteMutation={approveDeleteMutation}
+                                  />
                                 ))}
                               </div>
                             </div>
@@ -968,6 +1001,14 @@ export default function SettingsPage() {
         open={locationModalOpen}
         onOpenChange={setLocationModalOpen}
       />
+      {/* User form modal */}
+      {selectedUser && (
+        <UserFormModal
+          user={selectedUser}
+          open={userModalOpen}
+          onOpenChange={setUserModalOpen}
+        />
+      )}
     </AppLayout>
   );
 }
