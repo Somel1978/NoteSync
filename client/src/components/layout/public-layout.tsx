@@ -1,10 +1,19 @@
-import { ReactNode } from "react";
-import { Link, useLocation } from "wouter";
+import { ReactNode, useState, useEffect } from "react";
+import { useLocation } from "wouter";
 import { useTranslation } from "react-i18next";
-import { Clock, LayoutGrid, LogIn } from "lucide-react";
+import { 
+  Clock, 
+  LayoutGrid, 
+  LogIn, 
+  Menu, 
+  X, 
+  Home 
+} from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { LanguageSelector } from "./language-selector";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface PublicLayoutProps {
   children: ReactNode;
@@ -13,92 +22,179 @@ interface PublicLayoutProps {
 export function PublicLayout({ children }: PublicLayoutProps) {
   const { t } = useTranslation();
   const { user } = useAuth();
-  const [location] = useLocation();
+  const [location, navigate] = useLocation();
+  const [isOpen, setIsOpen] = useState(false);
+  const isMobile = useIsMobile();
+
+  // Close sidebar when navigating on mobile
+  useEffect(() => {
+    if (isMobile) {
+      setIsOpen(false);
+    }
+  }, [location, isMobile]);
 
   const navigationItems = [
     {
       title: t("navigation.appointments"),
       href: "/",
-      icon: Clock,
+      icon: <Clock className="h-5 w-5 mr-3" />,
       active: location === "/"
     },
     {
       title: t("navigation.rooms"),
       href: "/rooms",
-      icon: LayoutGrid,
+      icon: <LayoutGrid className="h-5 w-5 mr-3" />,
       active: location === "/rooms"
     }
   ];
 
-  return (
-    <div className="flex h-screen bg-gray-100 dark:bg-gray-900">
-      {/* Sidebar */}
-      <div className="w-64 bg-black text-white flex flex-col">
-        {/* Logo and Title */}
-        <div className="p-4 flex flex-col items-center space-y-2">
-          <div className="w-24 h-24 rounded-md bg-white flex items-center justify-center overflow-hidden">
-            <img 
-              src="/logo.svg" 
-              alt="ACRDSC Logo" 
-              className="w-20 h-20 object-contain"
-              onError={(e) => {
-                const target = e.target as HTMLImageElement;
-                target.src = "https://placehold.co/80x80?text=ACRDSC";
-              }}
-            />
-          </div>
-          <h1 className="text-xl font-bold">ACRDSC Reservas</h1>
-        </div>
+  const NavItem = ({ href, icon, label, active }: { href: string; icon: React.ReactNode; label: string; active: boolean }) => {
+    const handleClick = (e: React.MouseEvent) => {
+      e.preventDefault();
+      navigate(href);
+    };
 
-        {/* Navigation Links */}
-        <nav className="flex-1 mt-6">
-          <ul className="space-y-1">
-            {navigationItems.map((item) => (
-              <li key={item.href}>
-                <Link href={item.href}>
-                  <a className={cn(
-                    "flex items-center px-4 py-3 text-gray-300 hover:bg-gray-800 hover:text-white transition-colors",
-                    item.active && "bg-gray-800 text-white"
-                  )}>
-                    <item.icon className="mr-3 h-5 w-5" />
-                    {item.title}
-                  </a>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </nav>
-
-        {/* Bottom Actions */}
-        <div className="p-4 border-t border-gray-800">
-          {user ? (
-            <Link href="/dashboard">
-              <a className="flex items-center text-gray-300 hover:text-white transition-colors">
-                <LayoutGrid className="mr-2 h-5 w-5" />
-                {t("dashboard.title")}
-              </a>
-            </Link>
-          ) : (
-            <Link href="/auth">
-              <a className="flex items-center text-gray-300 hover:text-white transition-colors">
-                <LogIn className="mr-2 h-5 w-5" />
-                {t("auth.login")}
-              </a>
-            </Link>
+    return (
+      <li className="mb-2">
+        <button
+          onClick={handleClick}
+          className={cn(
+            "flex items-center text-gray-300 hover:bg-primary-hover px-4 py-3 rounded-md transition-colors w-full text-left",
+            {
+              "bg-primary-hover border-l-3 border-green-500 text-white": active,
+            }
           )}
-          
-          <div className="mt-4">
+        >
+          {icon}
+          <span>{label}</span>
+        </button>
+      </li>
+    );
+  };
+
+  const sidebarContent = (
+    <>
+      {/* Logo and Title */}
+      <div className="p-4 flex items-center justify-between border-b border-gray-700">
+        <div className="flex items-center">
+          <div className="bg-white p-2 rounded-md w-10 h-10 flex items-center justify-center">
+            <div className="text-xl font-bold text-primary">AC</div>
+          </div>
+          <div className="ml-3 text-white">
+            <div className="font-semibold text-sm">ACRDSC</div>
+            <div className="text-xs">Reservas</div>
+          </div>
+        </div>
+        {isMobile && (
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setIsOpen(false)}
+            className="text-white"
+          >
+            <X className="h-5 w-5" />
+          </Button>
+        )}
+      </div>
+
+      {/* Navigation Links */}
+      <nav className="flex-1 mt-4">
+        <ul className="px-2">
+          {navigationItems.map((item) => (
+            <NavItem
+              key={item.href}
+              href={item.href}
+              icon={item.icon}
+              label={item.title}
+              active={item.active}
+            />
+          ))}
+        </ul>
+      </nav>
+
+      {/* Bottom Actions */}
+      <div className="mt-auto border-t border-gray-700 p-4">
+        {user ? (
+          <Button
+            variant="ghost"
+            className="text-gray-300 hover:text-white w-full justify-start px-4 py-2"
+            onClick={() => navigate("/dashboard")}
+          >
+            <LayoutGrid className="h-5 w-5 mr-3" />
+            <span>{t("dashboard.title")}</span>
+          </Button>
+        ) : (
+          <Button
+            variant="ghost"
+            className="text-gray-300 hover:text-white w-full justify-start px-4 py-2"
+            onClick={() => navigate("/auth")}
+          >
+            <LogIn className="h-5 w-5 mr-3" />
+            <span>{t("auth.login")}</span>
+          </Button>
+        )}
+        
+        <div className="mt-4">
+          {/* Language Selector with enhanced visibility */}
+          <div className="rounded-md p-2 mb-2">
+            <div className="text-xs text-white/70 mb-1 font-medium px-2">{t('navigation.selectLanguage', 'Select Language')}</div>
             <LanguageSelector />
           </div>
         </div>
       </div>
+    </>
+  );
 
-      {/* Main Content */}
-      <div className="flex-1 overflow-auto">
-        <main className="p-6">
+  // Mobile menu toggle
+  if (isMobile) {
+    return (
+      <div className="flex flex-col min-h-screen bg-gray-100 dark:bg-gray-900">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => setIsOpen(true)}
+          className="fixed top-4 left-2 z-50 rounded-full bg-primary text-white shadow-lg h-8 w-8 p-1.5"
+        >
+          <Menu className="h-3.5 w-3.5" />
+        </Button>
+        
+        {/* Mobile sidebar */}
+        <aside
+          className={cn(
+            "bg-primary w-64 h-full flex flex-col fixed left-0 top-0 z-50 transform transition-transform duration-300 ease-in-out",
+            isOpen ? "translate-x-0" : "-translate-x-full"
+          )}
+        >
+          {sidebarContent}
+        </aside>
+        
+        {/* Backdrop */}
+        {isOpen && (
+          <div 
+            className="fixed inset-0 bg-black bg-opacity-50 z-40"
+            onClick={() => setIsOpen(false)}
+          />
+        )}
+        
+        {/* Main Content */}
+        <main className="flex-1 w-full p-6 md:pl-6">
           {children}
         </main>
       </div>
+    );
+  }
+
+  return (
+    <div className="flex min-h-screen bg-gray-100 dark:bg-gray-900">
+      {/* Desktop sidebar */}
+      <aside className="bg-primary w-64 h-screen flex flex-col fixed left-0 top-0 z-40">
+        {sidebarContent}
+      </aside>
+      
+      {/* Main Content */}
+      <main className="flex-1 ml-64 p-6 overflow-y-auto">
+        {children}
+      </main>
     </div>
   );
 }

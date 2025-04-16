@@ -13,6 +13,7 @@ import {
   Menu,
   X,
   Globe,
+  Home
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -27,7 +28,11 @@ export function Sidebar() {
   const isMobile = useIsMobile();
 
   const handleLogout = () => {
-    logoutMutation.mutate();
+    logoutMutation.mutate(undefined, {
+      onSuccess: () => {
+        navigate("/"); // Redirect to the landing page after logout
+      }
+    });
   };
 
   const isActive = (path: string) => {
@@ -96,17 +101,17 @@ export function Sidebar() {
       <nav className="flex-1 mt-4">
         <ul className="px-2">
           <NavItem
-            href="/"
+            href="/dashboard"
             icon={<LayoutGrid className="h-5 w-5 mr-3" />}
             label={t('navigation.dashboard')}
           />
           <NavItem
-            href="/appointments"
+            href="/admin/appointments"
             icon={<CheckCircle className="h-5 w-5 mr-3" />}
             label={t('navigation.appointments')}
           />
           <NavItem
-            href="/rooms"
+            href="/admin/rooms"
             icon={<Store className="h-5 w-5 mr-3" />}
             label={t('navigation.rooms')}
           />
@@ -127,12 +132,22 @@ export function Sidebar() {
       <div className="mt-auto border-t border-gray-700 p-4">
         <Button
           variant="ghost"
+          className="text-gray-300 hover:text-white w-full justify-start px-4 py-2 mb-2"
+          onClick={() => navigate("/")}
+        >
+          <Home className="h-5 w-5 mr-3" />
+          <span>{t('navigation.returnHome')}</span>
+        </Button>
+        
+        <Button
+          variant="ghost"
           className="text-gray-300 hover:text-white w-full justify-start px-4 py-2"
           onClick={handleLogout}
         >
           <LogOut className="h-5 w-5 mr-3" />
           <span>{t('common.logout')}</span>
         </Button>
+        
         <div className="mt-4">
           {/* Language Selector with enhanced visibility */}
           <div className="rounded-md p-2 mb-2">
