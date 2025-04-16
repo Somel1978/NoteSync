@@ -86,6 +86,8 @@ export const appointments = pgTable("appointments", {
   customerName: text("customer_name").notNull(),
   customerEmail: text("customer_email").notNull(),
   customerPhone: text("customer_phone"),
+  customerOrganization: text("customer_organization"), // Customer's organization/company
+  notes: text("notes"), // Additional notes about the customer or booking
   membershipNumber: text("membership_number"), // Added membership number
   attendeesCount: integer("attendees_count").notNull(),
   requestedFacilities: json("requested_facilities").notNull().default([]),

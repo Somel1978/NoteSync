@@ -64,8 +64,12 @@ export function AppointmentDetailsModal({
   const { toast } = useToast();
   
   // Define a type that includes the appointment with properly typed rooms
+  // and additional fields not in the database schema
   type AppointmentWithRooms = Omit<Appointment, 'rooms'> & {
     rooms: RoomBooking[];
+    description?: string;
+    customerOrganization?: string;
+    notes?: string;
   }
   
   // Helper functions to safely handle rooms array
@@ -1404,7 +1408,7 @@ export function AppointmentDetailsModal({
                             </div>
                             <div className="text-right">
                               <p className="text-xs text-gray-500">
-                                {log.userId ? `User ID: ${log.userId}` : "System"}
+                                {log.username || (log.userId ? `User ${log.userId}` : "System")}
                               </p>
                             </div>
                           </div>
