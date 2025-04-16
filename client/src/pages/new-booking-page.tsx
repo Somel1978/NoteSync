@@ -66,6 +66,13 @@ export default function NewBookingPage() {
   const { data: rooms, isLoading: roomsLoading } = useQuery<Room[]>({
     queryKey: ["/api/rooms"],
   });
+  
+  // Fetch appointments for availability checking
+  const { data: appointments } = useQuery<Appointment[]>({
+    queryKey: ["/api/appointments"],
+    // Only fetch when we have start and end times
+    enabled: !!form.getValues('startTime') && !!form.getValues('endTime'),
+  });
 
   const form = useForm<BookingFormValues>({
     resolver: zodResolver(bookingFormSchema),
@@ -233,6 +240,33 @@ export default function NewBookingPage() {
     };
   };
 
+  // Function to check if a room is available during selected time
+  const isRoomAvailable = (roomId: number) => {
+    if (!form.getValues('startTime') || !form.getValues('endTime') || !appointments) {
+      return true; // If no time selected or no appointment data, assume available
+    }
+    
+    const startTime = new Date(form.getValues('startTime'));
+    const endTime = new Date(form.getValues('endTime'));
+    
+    // Check for conflicts with existing appointments
+    const conflicts = appointments.filter(appointment => {
+      // Skip if it's not for this room
+      if (appointment.roomId !== roomId) return false;
+      
+      const appointmentStart = new Date(appointment.startTime);
+      const appointmentEnd = new Date(appointment.endTime);
+      
+      // Check for overlap
+      return (
+        (startTime <= appointmentEnd && endTime >= appointmentStart) ||
+        (appointmentStart <= endTime && appointmentEnd >= startTime)
+      );
+    });
+    
+    return conflicts.length === 0;
+  };
+  
   const calculateCost = (formData: BookingFormValues, room?: Room) => {
     if (formData.selectedRooms?.length > 0) {
       // Calculate cost for all selected rooms
@@ -622,16 +656,17 @@ export default function NewBookingPage() {
                               />
                               
                               {/* Room facilities */}
-                              {facilities.length > 0 && (
-                                <FormField
-                                  control={form.control}
-                                  name={`roomSettings.${room.id}.requestedFacilities`}
-                                  render={({ field }) => (
-                                    <FormItem>
-                                      <FormLabel>Additional Facilities</FormLabel>
-                                      <FormDescription>
-                                        Select the facilities you need for this room
-                                      </FormDescription>
+                              <FormField
+                                control={form.control}
+                                name={`roomSettings.${room.id}.requestedFacilities`}
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel>Additional Facilities</FormLabel>
+                                    <FormDescription>
+                                      Select the facilities you need for this room
+                                    </FormDescription>
+                                    
+                                    {facilities.length > 0 ? (
                                       <div className="flex flex-wrap gap-4 mt-2">
                                         {facilities.map((facility) => (
                                           <FormItem
@@ -648,14 +683,26 @@ export default function NewBookingPage() {
                                                       const currentValues = field.value || [];
                                                       // Only add if not already included
                                                       if (!currentValues.includes(facility.name)) {
+                                                        // Update form with new selection
                                                         field.onChange([...currentValues, facility.name]);
+                                                        
+                                                        // Force cost preview update
+                                                        setTimeout(() => {
+                                                          form.trigger('roomSettings');
+                                                        }, 50);
                                                       }
                                                     } else {
+                                                      // Update form with removed selection
                                                       field.onChange(
                                                         (field.value || []).filter(
                                                           (value) => value !== facility.name
                                                         )
                                                       );
+                                                      
+                                                      // Force cost preview update
+                                                      setTimeout(() => {
+                                                        form.trigger('roomSettings');
+                                                      }, 50);
                                                     }
                                                   }, 0);
                                                 }}
@@ -672,11 +719,15 @@ export default function NewBookingPage() {
                                           </FormItem>
                                         ))}
                                       </div>
-                                      <FormMessage />
-                                    </FormItem>
-                                  )}
-                                />
-                              )}
+                                    ) : (
+                                      <div className="text-sm text-gray-500 mt-2">
+                                        No additional facilities available for this room.
+                                      </div>
+                                    )}
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
                             </div>
                           );
                         })}
@@ -797,38 +848,6 @@ export default function NewBookingPage() {
                 {/* Pricing Information */}
                 <div className="border-t border-gray-200 pt-6">
                   <h2 className="text-lg font-medium text-gray-800 mb-4">Pricing Information</h2>
-                  
-                  <FormField
-                    control={form.control}
-                    name="costType"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Cost Type</FormLabel>
-                        <Select
-                          onValueChange={field.onChange}
-                          defaultValue={field.value}
-                        >
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select a cost type" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="flat" disabled={!selectedRoom?.flatRate}>
-                              Flat Rate {selectedRoom?.flatRate ? `(€${(selectedRoom.flatRate / 100).toFixed(2)})` : "(Not available)"}
-                            </SelectItem>
-                            <SelectItem value="hourly" disabled={!selectedRoom?.hourlyRate}>
-                              Hourly Rate {selectedRoom?.hourlyRate ? `(€${(selectedRoom.hourlyRate / 100).toFixed(2)}/hour)` : "(Not available)"}
-                            </SelectItem>
-                            <SelectItem value="per_attendee" disabled={!selectedRoom?.attendeeRate}>
-                              Per Attendee {selectedRoom?.attendeeRate ? `(€${(selectedRoom.attendeeRate / 100).toFixed(2)}/person)` : "(Not available)"}
-                            </SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
 
                   {/* Cost Preview */}
                   {form.getValues('selectedRooms')?.length > 0 ? (
