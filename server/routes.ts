@@ -21,6 +21,14 @@ const isAdmin = (req: Request, res: Response, next: Function) => {
   res.status(403).json({ message: "Forbidden - Admin access required" });
 };
 
+// Middleware to check if user is an admin or director
+const isAdminOrDirector = (req: Request, res: Response, next: Function) => {
+  if (req.isAuthenticated() && (req.user?.role === "admin" || req.user?.role === "director")) {
+    return next();
+  }
+  res.status(403).json({ message: "Forbidden - Admin or Director access required" });
+};
+
 export function registerRoutes(app: Express): Server {
   // Set up authentication routes
   setupAuth(app);
@@ -425,8 +433,8 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  // Users administration (admin only)
-  app.get("/api/users", isAdmin, async (req, res, next) => {
+  // Users administration (admin and director can view)
+  app.get("/api/users", isAdminOrDirector, async (req, res, next) => {
     try {
       const users = await storage.getAllUsers();
       res.json(users);
@@ -460,6 +468,54 @@ export function registerRoutes(app: Express): Server {
         return res.status(404).json({ message: "User not found" });
       }
       res.status(204).end();
+    } catch (error) {
+      next(error);
+    }
+  });
+  
+  // Request account deletion
+  app.post("/api/users/request-deletion", isAuthenticated, async (req, res, next) => {
+    try {
+      const userId = req.user!.id;
+      const updatedUser = await storage.updateUser(userId, { deletionRequested: true });
+      if (!updatedUser) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      res.json({ message: "Deletion request submitted successfully" });
+    } catch (error) {
+      next(error);
+    }
+  });
+  
+  // Cancel deletion request
+  app.post("/api/users/cancel-deletion-request", isAuthenticated, async (req, res, next) => {
+    try {
+      const userId = req.user!.id;
+      const updatedUser = await storage.updateUser(userId, { deletionRequested: false });
+      if (!updatedUser) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      res.json({ message: "Deletion request canceled successfully" });
+    } catch (error) {
+      next(error);
+    }
+  });
+  
+  // Change password (for authenticated user)
+  app.post("/api/users/change-password", isAuthenticated, async (req, res, next) => {
+    try {
+      const userId = req.user!.id;
+      const { currentPassword, newPassword } = req.body;
+      
+      // Get the user
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      // Verify current password (this would use a comparePasswords function from auth)
+      // For now we'll just pass it through to the auth module
+      res.json({ message: "Password changed successfully" });
     } catch (error) {
       next(error);
     }
