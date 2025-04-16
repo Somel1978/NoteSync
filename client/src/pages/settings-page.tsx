@@ -368,6 +368,70 @@ export default function SettingsPage() {
     const location = locations.find(loc => loc.id === locationId);
     return location ? location.name : `Location #${locationId}`;
   };
+  
+  // Helper component for user profile cards
+  const UserProfileCard = ({ user }: { user: User }) => {
+    const roleLabels: Record<string, string> = {
+      admin: "Administrator",
+      director: "Director",
+      guest: "Guest"
+    };
+    
+    const roleBadgeColors: Record<string, string> = {
+      admin: "destructive",
+      director: "default",
+      guest: "secondary"
+    };
+    
+    return (
+      <Card key={user.id} className="overflow-hidden">
+        <div className="p-4">
+          <div className="flex justify-between items-start">
+            <div className="flex items-center gap-3">
+              <div className="bg-gray-100 rounded-full p-2">
+                <UserCircle className="h-8 w-8 text-gray-500" />
+              </div>
+              <div>
+                <h4 className="font-medium">{user.name}</h4>
+                <p className="text-sm text-gray-500">{user.email}</p>
+                <div className="flex gap-2 mt-1">
+                  <Badge variant={roleBadgeColors[user.role] as any}>
+                    {roleLabels[user.role]}
+                  </Badge>
+                  {user.deletionRequested && (
+                    <Badge variant="outline" className="text-red-500 border-red-200 bg-red-50">
+                      Deletion Requested
+                    </Badge>
+                  )}
+                </div>
+              </div>
+            </div>
+            <div className="flex gap-1">
+              {user.deletionRequested ? (
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  className="text-red-500 border-red-200 hover:bg-red-50"
+                  onClick={() => handleDeleteUser(user.id, true)}
+                >
+                  <CheckCircle className="h-4 w-4 mr-1" />
+                  Approve Deletion
+                </Button>
+              ) : (
+                <Button 
+                  variant="ghost" 
+                  size="icon"
+                  onClick={() => handleDeleteUser(user.id)}
+                >
+                  <Trash className="h-5 w-5 text-gray-400 hover:text-red-500" />
+                </Button>
+              )}
+            </div>
+          </div>
+        </div>
+      </Card>
+    );
+  };
 
   return (
     <AppLayout>
