@@ -400,33 +400,89 @@ export function AppointmentDetailsModal({
                     <div>
                       <h4 className="text-sm font-medium text-gray-900 mb-4">Room Details</h4>
 
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                        <div>
-                          <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">Room Name</h5>
-                          <p className="text-sm text-gray-900">{room?.name || "Loading..."}</p>
-                        </div>
-                        <div>
-                          <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">Location</h5>
-                          <p className="text-sm text-gray-900">{room?.locationId ? `Location ID: ${room.locationId}` : "N/A"}</p>
-                        </div>
-                        <div>
-                          <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">Requested Facilities</h5>
-                          <div className="flex flex-wrap gap-2 mt-1">
-                            {appointment.requestedFacilities && Array.isArray(appointment.requestedFacilities) && appointment.requestedFacilities.length > 0 ? (
-                              appointment.requestedFacilities.map((facility: string, index) => (
-                                <Badge key={index} variant="secondary">
-                                  {facility}
+                      {appointment.rooms && Array.isArray(appointment.rooms) && appointment.rooms.length > 0 ? (
+                        <div className="space-y-6">
+                          {appointment.rooms.map((roomBooking: any, index: number) => (
+                            <div key={index} className="border rounded-lg p-4">
+                              <div className="flex justify-between items-center mb-4">
+                                <h5 className="font-medium text-sm">{roomBooking.roomName}</h5>
+                                <Badge variant="outline">
+                                  €{(roomBooking.cost / 100).toFixed(2)}
                                 </Badge>
-                              ))
-                            ) : (
-                              <p className="text-sm text-gray-500">None requested</p>
-                            )}
+                              </div>
+                              
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+                                <div>
+                                  <h6 className="text-xs font-medium text-gray-500 uppercase mb-1">Cost Type</h6>
+                                  <p className="text-gray-700">
+                                    {roomBooking.costType === 'flat' ? 'Flat Rate' : 
+                                     roomBooking.costType === 'hourly' ? 'Hourly Rate' : 
+                                     roomBooking.costType === 'per_attendee' ? 'Per Attendee' : 
+                                     roomBooking.costType}
+                                  </p>
+                                </div>
+                                
+                                <div>
+                                  <h6 className="text-xs font-medium text-gray-500 uppercase mb-1">Facilities</h6>
+                                  <div className="flex flex-wrap gap-1">
+                                    {roomBooking.requestedFacilities && roomBooking.requestedFacilities.length > 0 ? (
+                                      roomBooking.requestedFacilities.map((facility: string, i: number) => (
+                                        <Badge key={i} variant="secondary" className="text-xs">
+                                          {facility}
+                                        </Badge>
+                                      ))
+                                    ) : (
+                                      <p className="text-gray-500 text-xs">None requested</p>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                          
+                          <div className="mt-4 pt-4 border-t">
+                            <div className="flex justify-between items-center">
+                              <span className="text-sm font-medium">Total for all rooms:</span>
+                              <span className="text-sm font-medium">
+                                €{(appointment.agreedCost / 100).toFixed(2)}
+                              </span>
+                            </div>
                           </div>
                         </div>
-                        <div>
-                          <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">Purpose</h5>
-                          <p className="text-sm text-gray-900">{appointment.purpose || "N/A"}</p>
+                      ) : (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                          <div>
+                            <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">Room Name</h5>
+                            <p className="text-sm text-gray-900">{room?.name || "Loading..."}</p>
+                          </div>
+                          <div>
+                            <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">Location</h5>
+                            <p className="text-sm text-gray-900">{room?.locationId ? `Location ID: ${room.locationId}` : "N/A"}</p>
+                          </div>
+                          <div>
+                            <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">Requested Facilities</h5>
+                            <div className="flex flex-wrap gap-2 mt-1">
+                              {appointment.requestedFacilities && Array.isArray(appointment.requestedFacilities) && appointment.requestedFacilities.length > 0 ? (
+                                appointment.requestedFacilities.map((facility: string, index) => (
+                                  <Badge key={index} variant="secondary">
+                                    {facility}
+                                  </Badge>
+                                ))
+                              ) : (
+                                <p className="text-sm text-gray-500">None requested</p>
+                              )}
+                            </div>
+                          </div>
+                          <div>
+                            <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">Purpose</h5>
+                            <p className="text-sm text-gray-900">{appointment.purpose || "N/A"}</p>
+                          </div>
                         </div>
+                      )}
+                      
+                      <div className="mt-4">
+                        <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">Purpose</h5>
+                        <p className="text-sm text-gray-900">{appointment.purpose || "N/A"}</p>
                       </div>
                     </div>
                   </>
@@ -543,35 +599,59 @@ export function AppointmentDetailsModal({
                     <div>
                       <h4 className="text-sm font-medium text-gray-900 mb-4">Room Details</h4>
 
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                        <div>
-                          <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">Room</h5>
-                          <Select
-                            value={String(editedAppointment.roomId || '')}
-                            onValueChange={(value) => handleRoomChange(Number(value))}
-                          >
-                            <SelectTrigger className="w-full mt-1">
-                              <SelectValue placeholder="Select room" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {rooms && rooms.map((room) => (
-                                <SelectItem key={room.id} value={String(room.id)}>
-                                  {room.name}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                      <div className="space-y-6">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                          <div>
+                            <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">Primary Room</h5>
+                            <Select
+                              value={String(editedAppointment.roomId || '')}
+                              onValueChange={(value) => handleRoomChange(Number(value))}
+                            >
+                              <SelectTrigger className="w-full mt-1">
+                                <SelectValue placeholder="Select primary room" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {rooms && rooms.map((room) => (
+                                  <SelectItem key={room.id} value={String(room.id)}>
+                                    {room.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <p className="text-xs text-gray-500 mt-1">
+                              To book multiple rooms, use the New Booking page
+                            </p>
+                          </div>
+                          <div>
+                            <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">Attendees</h5>
+                            <Input
+                              type="number"
+                              min="1"
+                              value={editedAppointment.attendeesCount || ''}
+                              onChange={(e) => handleInputChange('attendeesCount', Number(e.target.value))}
+                              className="mt-1"
+                            />
+                          </div>
                         </div>
-                        <div>
-                          <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">Attendees</h5>
-                          <Input
-                            type="number"
-                            min="1"
-                            value={editedAppointment.attendeesCount || ''}
-                            onChange={(e) => handleInputChange('attendeesCount', Number(e.target.value))}
-                            className="mt-1"
-                          />
-                        </div>
+                        
+                        {editedAppointment.rooms && 
+                         Array.isArray(editedAppointment.rooms) && 
+                         (editedAppointment.rooms as any[]).length > 1 && (
+                          <div className="mt-4 bg-blue-50 p-4 rounded-md">
+                            <div className="flex items-start">
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-blue-500 mr-2 mt-0.5" viewBox="0 0 20 20" fill="currentColor">
+                                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                              </svg>
+                              <div>
+                                <h6 className="text-sm font-medium text-blue-800">Multiple Rooms Selected</h6>
+                                <p className="text-xs text-blue-700 mt-1">
+                                  This booking includes {(editedAppointment.rooms as any[]).length} rooms. Room changes can be made on the New Booking page.
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                        
                         <div className="sm:col-span-2">
                           <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">Purpose</h5>
                           <Textarea
@@ -653,7 +733,47 @@ export function AppointmentDetailsModal({
                     <div>
                       <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">Cost Breakdown</h5>
                       <div className="mt-1 bg-gray-50 rounded-md p-4">
-                        {appointment.costBreakdown && typeof appointment.costBreakdown === 'object' ? (
+                        {appointment.rooms && Array.isArray(appointment.rooms) && appointment.rooms.length > 0 ? (
+                          <>
+                            {appointment.rooms.map((roomBooking: any, index: number) => (
+                              <div key={index} className="mb-3">
+                                <div className="flex justify-between text-sm">
+                                  <span className="font-medium">{roomBooking.roomName}:</span>
+                                  <span>€{(roomBooking.cost / 100).toFixed(2)}</span>
+                                </div>
+                                <p className="text-xs text-gray-500 ml-4">
+                                  {roomBooking.costType === 'flat' ? 'Flat Rate' : 
+                                   roomBooking.costType === 'hourly' ? 'Hourly Rate' : 
+                                   roomBooking.costType === 'per_attendee' ? 'Per Attendee' : 
+                                   roomBooking.costType}
+                                </p>
+                                {index < appointment.rooms.length - 1 && <Separator className="my-2" />}
+                              </div>
+                            ))}
+                            
+                            <Separator className="my-3" />
+                            
+                            {appointment.costBreakdown && typeof appointment.costBreakdown === 'object' && (
+                              <div className="flex justify-between text-sm text-gray-700">
+                                <span>Base Rate:</span>
+                                <span>€{((appointment.costBreakdown as any).base / 100).toFixed(2)}</span>
+                              </div>
+                            )}
+                            
+                            <div className="flex justify-between font-medium text-sm mt-2">
+                              <span>Total:</span>
+                              <span>€{(appointment.agreedCost / 100).toFixed(2)}</span>
+                            </div>
+                            
+                            {appointment.costBreakdown && 
+                             typeof appointment.costBreakdown === 'object' && 
+                             (appointment.costBreakdown as any).isCustom && (
+                              <p className="text-xs text-gray-500 italic mt-2 text-center">
+                                Custom price applied
+                              </p>
+                            )}
+                          </>
+                        ) : appointment.costBreakdown && typeof appointment.costBreakdown === 'object' ? (
                           <>
                             <div className="flex justify-between text-sm text-gray-700">
                               <span>Base Rate:</span>
