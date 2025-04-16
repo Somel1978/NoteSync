@@ -4,6 +4,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { AppLayout } from "@/components/layout/app-layout";
 import { RoomFormModal } from "@/components/room/room-form-modal";
 import { LocationFormModal } from "@/components/location/location-form-modal";
+import { UserFormModal } from "@/components/user/user-form-modal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
@@ -135,18 +136,44 @@ const UserProfileCard = ({ user }: { user: User }) => {
         </div>
         
         <div className="mt-4 flex justify-end space-x-2">
-          <Button variant="outline" size="sm" className="text-xs">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="text-xs"
+            onClick={() => {
+              // Open user edit modal or implement inline editing
+              alert(`Edit user functionality for ${user.name} will be implemented`);
+            }}
+          >
             <Pencil className="h-3 w-3 mr-1" />
             {t('common.edit')}
           </Button>
           
           {user.deletionRequested ? (
-            <Button variant="outline" size="sm" className="text-xs text-green-600">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="text-xs text-green-600"
+              onClick={() => {
+                if (confirm(t('settings.confirmDeletionApproval'))) {
+                  approveDeleteMutation.mutate(user.id);
+                }
+              }}
+            >
               <CheckCircle className="h-3 w-3 mr-1" />
               {t('settings.approveDeleteRequest')}
             </Button>
           ) : (
-            <Button variant="outline" size="sm" className="text-xs text-red-600">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="text-xs text-red-600"
+              onClick={() => {
+                if (confirm(`${t('common.delete')} ${user.name}?`)) {
+                  deleteUserMutation.mutate(user.id);
+                }
+              }}
+            >
               <Trash className="h-3 w-3 mr-1" />
               {t('common.delete')}
             </Button>
@@ -165,6 +192,8 @@ export default function SettingsPage() {
   const [roomModalOpen, setRoomModalOpen] = useState(false);
   const [selectedLocation, setSelectedLocation] = useState<Location | null>(null);
   const [locationModalOpen, setLocationModalOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [userModalOpen, setUserModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("account");
   
   // Initialize forms
