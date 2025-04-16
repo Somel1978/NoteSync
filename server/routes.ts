@@ -433,8 +433,8 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  // Users administration (admin and director can view)
-  app.get("/api/users", isAdminOrDirector, async (req, res, next) => {
+  // Users administration (all authenticated users can view)
+  app.get("/api/users", isAuthenticated, async (req, res, next) => {
     try {
       const users = await storage.getAllUsers();
       res.json(users);

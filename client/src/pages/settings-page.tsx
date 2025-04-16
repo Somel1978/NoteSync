@@ -754,38 +754,7 @@ export default function SettingsPage() {
                                 
                                 <div className="space-y-3">
                                 {users.filter(user => user.role === "admin").map((user) => (
-                                  <Card key={user.id} className="overflow-hidden">
-                                    <div className="flex items-center justify-between p-4">
-                                      <div className="flex items-center gap-3">
-                                        <div className="bg-purple-100 p-2 rounded-full">
-                                          <ShieldCheck className="h-6 w-6 text-purple-600" />
-                                        </div>
-                                        <div>
-                                          <h4 className="font-medium">{user.name}</h4>
-                                          <p className="text-sm text-gray-500">{user.email}</p>
-                                          <div className="flex gap-2 mt-1">
-                                            <Badge variant="destructive">
-                                              Administrator
-                                            </Badge>
-                                            {user.deletionRequested && (
-                                              <Badge variant="outline" className="text-red-500 border-red-200 bg-red-50">
-                                                Deletion Requested
-                                              </Badge>
-                                            )}
-                                          </div>
-                                        </div>
-                                      </div>
-                                      <div className="flex gap-1">
-                                        <Button 
-                                          variant="ghost" 
-                                          size="icon"
-                                          onClick={() => handleDeleteUser(user.id)}
-                                        >
-                                          <Trash className="h-5 w-5 text-gray-400 hover:text-red-500" />
-                                        </Button>
-                                      </div>
-                                    </div>
-                                  </Card>
+                                  <UserProfileCard key={user.id} user={user} />
                                 ))}
                                 {users.filter(user => user.role === "admin").length === 0 && (
                                   <div className="text-center py-8 bg-gray-50 rounded-lg border border-dashed border-gray-300">
@@ -902,38 +871,7 @@ export default function SettingsPage() {
                                 
                                 <div className="space-y-3">
                                 {users.filter(user => user.role === "director").map((user) => (
-                                  <Card key={user.id} className="overflow-hidden">
-                                    <div className="flex items-center justify-between p-4">
-                                      <div className="flex items-center gap-3">
-                                        <div className="bg-green-100 p-2 rounded-full">
-                                          <CheckCircle className="h-6 w-6 text-green-600" />
-                                        </div>
-                                        <div>
-                                          <h4 className="font-medium">{user.name}</h4>
-                                          <p className="text-sm text-gray-500">{user.email}</p>
-                                          <div className="flex gap-2 mt-1">
-                                            <Badge variant="success">
-                                              Director
-                                            </Badge>
-                                            {user.deletionRequested && (
-                                              <Badge variant="outline" className="text-red-500 border-red-200 bg-red-50">
-                                                Deletion Requested
-                                              </Badge>
-                                            )}
-                                          </div>
-                                        </div>
-                                      </div>
-                                      <div className="flex gap-1">
-                                        <Button 
-                                          variant="ghost" 
-                                          size="icon"
-                                          onClick={() => handleDeleteUser(user.id)}
-                                        >
-                                          <Trash className="h-5 w-5 text-gray-400 hover:text-red-500" />
-                                        </Button>
-                                      </div>
-                                    </div>
-                                  </Card>
+                                  <UserProfileCard key={user.id} user={user} />
                                 ))}
                                 {users.filter(user => user.role === "director").length === 0 && (
                                   <div className="text-center py-8 bg-gray-50 rounded-lg border border-dashed border-gray-300">
@@ -1050,38 +988,7 @@ export default function SettingsPage() {
                                 
                                 <div className="space-y-3">
                                 {users.filter(user => user.role === "guest").map((user) => (
-                                  <Card key={user.id} className="overflow-hidden">
-                                    <div className="flex items-center justify-between p-4">
-                                      <div className="flex items-center gap-3">
-                                        <div className="bg-blue-100 p-2 rounded-full">
-                                          <UserCircle className="h-6 w-6 text-blue-600" />
-                                        </div>
-                                        <div>
-                                          <h4 className="font-medium">{user.name}</h4>
-                                          <p className="text-sm text-gray-500">{user.email}</p>
-                                          <div className="flex gap-2 mt-1">
-                                            <Badge variant="secondary">
-                                              Guest
-                                            </Badge>
-                                            {user.deletionRequested && (
-                                              <Badge variant="outline" className="text-red-500 border-red-200 bg-red-50">
-                                                Deletion Requested
-                                              </Badge>
-                                            )}
-                                          </div>
-                                        </div>
-                                      </div>
-                                      <div className="flex gap-1">
-                                        <Button 
-                                          variant="ghost" 
-                                          size="icon"
-                                          onClick={() => handleDeleteUser(user.id)}
-                                        >
-                                          <Trash className="h-5 w-5 text-gray-400 hover:text-red-500" />
-                                        </Button>
-                                      </div>
-                                    </div>
-                                  </Card>
+                                  <UserProfileCard key={user.id} user={user} />
                                 ))}
                                 {users.filter(user => user.role === "guest").length === 0 && (
                                   <div className="text-center py-8 bg-gray-50 rounded-lg border border-dashed border-gray-300">
