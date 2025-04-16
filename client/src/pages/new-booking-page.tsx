@@ -36,7 +36,7 @@ import { cn } from "@/lib/utils";
 
 // Form schema using zod
 const bookingFormSchema = z.object({
-  title: z.string().min(1, "Title is required"),
+  title: z.string().min(1, "Event name is required"),
   roomId: z.coerce.number().min(1, "Room is required"),
   startTime: z.date({ required_error: "Start time is required" }),
   endTime: z.date({ required_error: "End time is required" }),
@@ -44,6 +44,7 @@ const bookingFormSchema = z.object({
   customerName: z.string().min(1, "Customer name is required"),
   customerEmail: z.string().email("Invalid email format"),
   customerPhone: z.string().optional(),
+  membershipNumber: z.string().optional(),
   attendeesCount: z.coerce.number().min(1, "Must have at least 1 attendee"),
   sendConfirmation: z.boolean().default(false),
   requestedFacilities: z.array(z.string()).default([]),
@@ -69,6 +70,7 @@ export default function NewBookingPage() {
       customerName: "",
       customerEmail: "",
       customerPhone: "",
+      membershipNumber: "",
       attendeesCount: 1,
       sendConfirmation: false,
       requestedFacilities: [],
@@ -192,9 +194,9 @@ export default function NewBookingPage() {
                       name="title"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Title</FormLabel>
+                          <FormLabel>Event Name</FormLabel>
                           <FormControl>
-                            <Input placeholder="Meeting title" {...field} />
+                            <Input placeholder="Enter event name" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -508,6 +510,20 @@ export default function NewBookingPage() {
                           <FormLabel>Phone</FormLabel>
                           <FormControl>
                             <Input type="tel" placeholder="Enter phone number" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={form.control}
+                      name="membershipNumber"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Membership Number</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Enter membership number (optional)" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
