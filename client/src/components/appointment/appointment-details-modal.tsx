@@ -324,331 +324,338 @@ export function AppointmentDetailsModal({
             </div>
           </DialogHeader>
 
-        <Tabs defaultValue="details" value={activeTab} onValueChange={setActiveTab}>
-          <div className="border-b border-gray-200">
-            <TabsList className="w-full justify-start border-none bg-transparent p-0">
-              <TabsTrigger 
-                value="details" 
-                className="data-[state=active]:bg-black data-[state=active]:text-white px-6 py-3 rounded-none"
-              >
-                <div className="flex items-center">
-                  <Eye className="h-5 w-5 mr-2" />
-                  Details
-                </div>
-              </TabsTrigger>
-              <TabsTrigger 
-                value="costs" 
-                className="data-[state=active]:bg-black data-[state=active]:text-white px-6 py-3 rounded-none"
-              >
-                <div className="flex items-center">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  Costs
-                </div>
-              </TabsTrigger>
-              <TabsTrigger 
-                value="contact" 
-                className="data-[state=active]:bg-black data-[state=active]:text-white px-6 py-3 rounded-none"
-              >
-                <div className="flex items-center">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207" />
-                  </svg>
-                  Contact
-                </div>
-              </TabsTrigger>
-              <TabsTrigger 
-                value="history" 
-                className="data-[state=active]:bg-black data-[state=active]:text-white px-6 py-3 rounded-none"
-              >
-                <div className="flex items-center">
-                  <Clock className="h-5 w-5 mr-2" />
-                  History
-                </div>
-              </TabsTrigger>
-            </TabsList>
-          </div>
-
-          {isLoading ? (
-            <div className="flex justify-center items-center h-64">
-              <p>Loading appointment details...</p>
-            </div>
-          ) : appointment ? (
-            <>
-              <TabsContent value="details" className="p-6">
-                <div className="flex items-start justify-between mb-6">
-                  <div className="flex items-start">
-                    <div className="flex-shrink-0 bg-indigo-100 rounded-full p-2">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                    </div>
-                    <div className="ml-4">
-                      <h4 className="text-sm font-medium text-gray-900">Basic Information</h4>
-                    </div>
+          <Tabs defaultValue="details" value={activeTab} onValueChange={setActiveTab}>
+            <div className="border-b border-gray-200">
+              <TabsList className="w-full justify-start border-none bg-transparent p-0">
+                <TabsTrigger 
+                  value="details" 
+                  className="data-[state=active]:bg-black data-[state=active]:text-white px-6 py-3 rounded-none"
+                >
+                  <div className="flex items-center">
+                    <Eye className="h-5 w-5 mr-2" />
+                    Details
                   </div>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={handleToggleEditMode}
-                    className="text-xs"
-                  >
-                    {isEditMode ? (
-                      <>
-                        <Save className="h-4 w-4 mr-2" />
-                        Save
-                      </>
-                    ) : (
-                      <>
-                        <Edit className="h-4 w-4 mr-2" />
-                        Edit
-                      </>
-                    )}
-                  </Button>
-                </div>
-                
-                {!isEditMode ? (
-                  <>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-8">
-                      <div>
-                        <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">Title</h5>
-                        <p className="text-sm text-gray-900">{appointment.title}</p>
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="costs" 
+                  className="data-[state=active]:bg-black data-[state=active]:text-white px-6 py-3 rounded-none"
+                >
+                  <div className="flex items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    Costs
+                  </div>
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="contact" 
+                  className="data-[state=active]:bg-black data-[state=active]:text-white px-6 py-3 rounded-none"
+                >
+                  <div className="flex items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207" />
+                    </svg>
+                    Contact
+                  </div>
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="history" 
+                  className="data-[state=active]:bg-black data-[state=active]:text-white px-6 py-3 rounded-none"
+                >
+                  <div className="flex items-center">
+                    <Clock className="h-5 w-5 mr-2" />
+                    History
+                  </div>
+                </TabsTrigger>
+              </TabsList>
+            </div>
+
+            {isLoading ? (
+              <div className="flex justify-center items-center h-64">
+                <p>Loading appointment details...</p>
+              </div>
+            ) : appointment ? (
+              <>
+                <TabsContent value="details" className="p-6">
+                  <div className="flex items-start justify-between mb-6">
+                    <div className="flex items-start">
+                      <div className="flex-shrink-0 bg-indigo-100 rounded-full p-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
                       </div>
-                      <div>
-                        <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">Status</h5>
-                        <Badge 
-                          variant={
-                            appointment.status === 'approved' ? 'success' :
-                            appointment.status === 'rejected' ? 'destructive' :
-                            appointment.status === 'cancelled' ? 'outline' :
-                            'secondary'
-                          }
-                        >
-                          {appointment.status ? appointment.status.charAt(0).toUpperCase() + appointment.status.slice(1) : 'Unknown'}
-                        </Badge>
-                      </div>
-                      <div>
-                        <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">Order #</h5>
-                        <p className="text-sm text-gray-900">#{appointment.orderNumber}</p>
-                      </div>
-                      <div>
-                        <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">Date & Time</h5>
-                        <p className="text-sm text-gray-900">
-                          {appointment.startTime && appointment.endTime
-                            ? `${format(new Date(appointment.startTime), "MMM d, h:mm a")} - ${format(
-                                new Date(appointment.endTime),
-                                "h:mm a"
-                              )}`
-                            : "N/A"}
-                        </p>
+                      <div className="ml-4">
+                        <h4 className="text-sm font-medium text-gray-900">Basic Information</h4>
                       </div>
                     </div>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={handleToggleEditMode}
+                      className="text-xs"
+                    >
+                      {isEditMode ? (
+                        <>
+                          <Save className="h-4 w-4 mr-2" />
+                          Save
+                        </>
+                      ) : (
+                        <>
+                          <Edit className="h-4 w-4 mr-2" />
+                          Edit
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                  
+                  {!isEditMode ? (
+                    <>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-8">
+                        <div>
+                          <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">Title</h5>
+                          <p className="text-sm text-gray-900">{appointment.title}</p>
+                        </div>
+                        <div>
+                          <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">Status</h5>
+                          <Badge 
+                            variant={
+                              appointment.status === 'approved' ? 'success' :
+                              appointment.status === 'rejected' ? 'destructive' :
+                              appointment.status === 'cancelled' ? 'outline' :
+                              'secondary'
+                            }
+                          >
+                            {appointment.status ? appointment.status.charAt(0).toUpperCase() + appointment.status.slice(1) : 'Unknown'}
+                          </Badge>
+                        </div>
+                        <div>
+                          <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">Order #</h5>
+                          <p className="text-sm text-gray-900">#{appointment.orderNumber}</p>
+                        </div>
+                        <div>
+                          <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">Date & Time</h5>
+                          <p className="text-sm text-gray-900">
+                            {appointment.startTime && appointment.endTime
+                              ? `${format(new Date(appointment.startTime), "MMM d, h:mm a")} - ${format(
+                                  new Date(appointment.endTime),
+                                  "h:mm a"
+                                )}`
+                              : "N/A"}
+                          </p>
+                        </div>
+                      </div>
 
-                    <Separator className="my-6" />
+                      <Separator className="my-6" />
 
-                    <div>
-                      <h4 className="text-sm font-medium text-gray-900 mb-4">Room Details</h4>
+                      <div>
+                        <h4 className="text-sm font-medium text-gray-900 mb-4">Room Details</h4>
 
-                      {getRoomsArray(appointment).length > 0 ? (
-                        <div className="space-y-4 max-h-[350px] overflow-y-auto pr-1">
-                          {getRoomsArray(appointment).map((roomBooking: RoomBooking, index: number) => (
-                            <div key={index} className="border rounded-lg p-3">
-                              <div className="flex justify-between items-center mb-2">
-                                <h5 className="font-medium text-sm">{roomBooking.roomName}</h5>
-                                <Badge variant="outline" className="ml-2">
-                                  €{(roomBooking.cost / 100).toFixed(2)}
-                                </Badge>
-                              </div>
-                              
-                              <div className="grid grid-cols-2 gap-3 text-sm">
-                                <div>
-                                  <h6 className="text-xs font-medium text-gray-500 uppercase mb-1">Cost Type</h6>
-                                  <p className="text-gray-700 text-xs">
-                                    {roomBooking.costType === 'flat' ? 'Flat Rate' : 
-                                     roomBooking.costType === 'hourly' ? 'Hourly Rate' : 
-                                     roomBooking.costType === 'per_attendee' ? 'Per Attendee' : 
-                                     roomBooking.costType}
-                                  </p>
+                        {getRoomsArray(appointment).length > 0 ? (
+                          <div className="space-y-4 max-h-[350px] overflow-y-auto pr-1">
+                            {getRoomsArray(appointment).map((roomBooking: RoomBooking, index: number) => (
+                              <div key={index} className="border rounded-lg p-3">
+                                <div className="flex justify-between items-center mb-2">
+                                  <h5 className="font-medium text-sm">{roomBooking.roomName}</h5>
+                                  <Badge variant="outline" className="ml-2">
+                                    €{(roomBooking.cost / 100).toFixed(2)}
+                                  </Badge>
                                 </div>
                                 
-                                <div>
-                                  <h6 className="text-xs font-medium text-gray-500 uppercase mb-1">Facilities</h6>
-                                  <div className="flex flex-wrap gap-1">
-                                    {roomBooking.requestedFacilities && roomBooking.requestedFacilities.length > 0 ? (
-                                      roomBooking.requestedFacilities.map((facility: string, i: number) => (
-                                        <Badge key={i} variant="secondary" className="text-xs">
-                                          {facility}
-                                        </Badge>
-                                      ))
-                                    ) : (
-                                      <p className="text-gray-500 text-xs">None</p>
-                                    )}
+                                <div className="grid grid-cols-2 gap-3 text-sm">
+                                  <div>
+                                    <h6 className="text-xs font-medium text-gray-500 uppercase mb-1">Cost Type</h6>
+                                    <p className="text-gray-700 text-xs">
+                                      {roomBooking.costType === 'flat' ? 'Flat Rate' : 
+                                       roomBooking.costType === 'hourly' ? 'Hourly Rate' : 
+                                       roomBooking.costType === 'per_attendee' ? 'Per Attendee' : 
+                                       roomBooking.costType}
+                                    </p>
+                                  </div>
+                                  
+                                  <div>
+                                    <h6 className="text-xs font-medium text-gray-500 uppercase mb-1">Facilities</h6>
+                                    <div className="flex flex-wrap gap-1">
+                                      {roomBooking.requestedFacilities && roomBooking.requestedFacilities.length > 0 ? (
+                                        roomBooking.requestedFacilities.map((facility: string, i: number) => (
+                                          <Badge key={i} variant="secondary" className="text-xs">
+                                            {facility}
+                                          </Badge>
+                                        ))
+                                      ) : (
+                                        <p className="text-gray-500 text-xs">None</p>
+                                      )}
+                                    </div>
                                   </div>
                                 </div>
                               </div>
-                            </div>
-                          ))}
-                          
-                          <div className="mt-4 pt-4 border-t">
-                            <div className="flex justify-between items-center">
-                              <span className="text-sm font-medium">Total for all rooms:</span>
-                              <span className="text-sm font-medium">
-                                €{(appointment.agreedCost / 100).toFixed(2)}
-                              </span>
+                            ))}
+                            
+                            <div className="mt-4 pt-4 border-t">
+                              <div className="flex justify-between items-center">
+                                <span className="text-sm font-medium">Total for all rooms:</span>
+                                <span className="text-sm font-medium">
+                                  €{(appointment.agreedCost / 100).toFixed(2)}
+                                </span>
+                              </div>
                             </div>
                           </div>
+                        ) : (
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                            <div>
+                              <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">Room Name</h5>
+                              <p className="text-sm text-gray-900">{room?.name || "Loading..."}</p>
+                            </div>
+                            <div>
+                              <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">Location</h5>
+                              <p className="text-sm text-gray-900">{room?.locationId ? `Location ID: ${room.locationId}` : "N/A"}</p>
+                            </div>
+                            <div>
+                              <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">Requested Facilities</h5>
+                              <div className="flex flex-wrap gap-2 mt-1">
+                                {appointment.requestedFacilities && Array.isArray(appointment.requestedFacilities) && appointment.requestedFacilities.length > 0 ? (
+                                  appointment.requestedFacilities.map((facility: string, index) => (
+                                    <Badge key={index} variant="secondary">
+                                      {facility}
+                                    </Badge>
+                                  ))
+                                ) : (
+                                  <p className="text-sm text-gray-500">None requested</p>
+                                )}
+                              </div>
+                            </div>
+                            <div>
+                              <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">Purpose</h5>
+                              <p className="text-sm text-gray-900">{appointment.purpose || "N/A"}</p>
+                            </div>
+                          </div>
+                        )}
+                        
+                        <div className="mt-4">
+                          <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">Purpose</h5>
+                          <p className="text-sm text-gray-900">{appointment.purpose || "N/A"}</p>
                         </div>
-                      ) : (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                          <div>
-                            <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">Room Name</h5>
-                            <p className="text-sm text-gray-900">{room?.name || "Loading..."}</p>
-                          </div>
-                          <div>
-                            <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">Location</h5>
-                            <p className="text-sm text-gray-900">{room?.locationId ? `Location ID: ${room.locationId}` : "N/A"}</p>
-                          </div>
-                          <div>
-                            <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">Requested Facilities</h5>
-                            <div className="flex flex-wrap gap-2 mt-1">
-                              {appointment.requestedFacilities && Array.isArray(appointment.requestedFacilities) && appointment.requestedFacilities.length > 0 ? (
-                                appointment.requestedFacilities.map((facility: string, index) => (
-                                  <Badge key={index} variant="secondary">
-                                    {facility}
-                                  </Badge>
-                                ))
-                              ) : (
-                                <p className="text-sm text-gray-500">None requested</p>
-                              )}
-                            </div>
-                          </div>
-                          <div>
-                            <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">Purpose</h5>
-                            <p className="text-sm text-gray-900">{appointment.purpose || "N/A"}</p>
-                          </div>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-8">
+                        <div>
+                          <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">Title</h5>
+                          <Input
+                            value={editedAppointment.title || ''}
+                            onChange={(e) => handleInputChange('title', e.target.value)}
+                            className="mt-1"
+                          />
                         </div>
-                      )}
-                      
-                      <div className="mt-4">
-                        <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">Purpose</h5>
-                        <p className="text-sm text-gray-900">{appointment.purpose || "N/A"}</p>
-                      </div>
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-8">
-                      <div>
-                        <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">Title</h5>
-                        <Input
-                          value={editedAppointment.title || ''}
-                          onChange={(e) => handleInputChange('title', e.target.value)}
-                          className="mt-1"
-                        />
-                      </div>
-                      <div>
-                        <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">Status</h5>
-                        <Select
-                          value={editedAppointment.status || 'pending'}
-                          onValueChange={(value) => handleInputChange('status', value)}
-                        >
-                          <SelectTrigger className="w-full mt-1">
-                            <SelectValue placeholder="Select status" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="pending">Pending</SelectItem>
-                            <SelectItem value="approved">Approved</SelectItem>
-                            <SelectItem value="rejected">Rejected</SelectItem>
-                            <SelectItem value="cancelled">Cancelled</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div>
-                        <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">Date</h5>
-                        <Popover>
-                          <PopoverTrigger asChild>
-                            <Button
-                              variant={"outline"}
-                              className="w-full justify-start text-left font-normal mt-1"
-                            >
-                              <CalendarIcon className="mr-2 h-4 w-4" />
-                              {startDate ? format(startDate, "PPP") : (
-                                <span>Pick a date</span>
-                              )}
-                            </Button>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-auto p-0">
-                            <Calendar
-                              mode="single"
-                              selected={startDate}
-                              onSelect={(date) => {
-                                if (date) {
-                                  // Preserve time from old date
-                                  const newDate = new Date(date);
-                                  if (startDate) {
-                                    newDate.setHours(
-                                      startDate.getHours(),
-                                      startDate.getMinutes()
-                                    );
+                        <div>
+                          <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">Status</h5>
+                          <Select
+                            value={editedAppointment.status || 'pending'}
+                            onValueChange={(value) => handleInputChange('status', value)}
+                          >
+                            <SelectTrigger className="w-full mt-1">
+                              <SelectValue placeholder="Select status" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="pending">Pending</SelectItem>
+                              <SelectItem value="approved">Approved</SelectItem>
+                              <SelectItem value="rejected">Rejected</SelectItem>
+                              <SelectItem value="cancelled">Cancelled</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div>
+                          <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">Date</h5>
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <Button
+                                variant={"outline"}
+                                className="w-full justify-start text-left font-normal mt-1"
+                              >
+                                <CalendarIcon className="mr-2 h-4 w-4" />
+                                {startDate ? format(startDate, "PPP") : (
+                                  <span>Pick a date</span>
+                                )}
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0">
+                              <Calendar
+                                mode="single"
+                                selected={startDate}
+                                onSelect={(date) => {
+                                  if (date) {
+                                    // Preserve time from old date
+                                    const newDate = new Date(date);
+                                    if (startDate) {
+                                      newDate.setHours(
+                                        startDate.getHours(),
+                                        startDate.getMinutes()
+                                      );
+                                    }
+                                    setStartDate(newDate);
+                                    
+                                    // If end date exists, also update it to the same day but keep time
+                                    if (endDate) {
+                                      const newEndDate = new Date(date);
+                                      newEndDate.setHours(
+                                        endDate.getHours(),
+                                        endDate.getMinutes()
+                                      );
+                                      setEndDate(newEndDate);
+                                    }
                                   }
+                                }}
+                                initialFocus
+                              />
+                            </PopoverContent>
+                          </Popover>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                          <div>
+                            <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">Start Time</h5>
+                            <Input
+                              type="time"
+                              value={startDate ? format(startDate, "HH:mm") : ""}
+                              onChange={(e) => {
+                                if (startDate) {
+                                  const [hours, minutes] = e.target.value.split(':').map(Number);
+                                  const newDate = new Date(startDate);
+                                  newDate.setHours(hours, minutes);
                                   setStartDate(newDate);
-                                  
-                                  // If end date exists, also update it to the same day but keep time
-                                  if (endDate) {
-                                    const newEndDate = new Date(date);
-                                    newEndDate.setHours(
-                                      endDate.getHours(),
-                                      endDate.getMinutes()
-                                    );
-                                    setEndDate(newEndDate);
-                                  }
+                                } else {
+                                  const today = new Date();
+                                  const [hours, minutes] = e.target.value.split(':').map(Number);
+                                  today.setHours(hours, minutes);
+                                  setStartDate(today);
                                 }
                               }}
-                              initialFocus
+                              className="mt-1"
                             />
-                          </PopoverContent>
-                        </Popover>
-                      </div>
-                      <div>
-                        <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">Time</h5>
-                        <div className="flex gap-2 mt-1">
-                          <Input
-                            type="time"
-                            value={startDate ? format(startDate, "HH:mm") : ""}
-                            onChange={(e) => {
-                              if (startDate && e.target.value) {
-                                const [hours, minutes] = e.target.value.split(':').map(Number);
-                                const newDate = new Date(startDate);
-                                newDate.setHours(hours, minutes);
-                                setStartDate(newDate);
-                              }
-                            }}
-                            className="flex-1"
-                          />
-                          <span className="flex items-center text-gray-400">to</span>
-                          <Input
-                            type="time"
-                            value={endDate ? format(endDate, "HH:mm") : ""}
-                            onChange={(e) => {
-                              if (endDate && e.target.value) {
-                                const [hours, minutes] = e.target.value.split(':').map(Number);
-                                const newDate = new Date(endDate);
-                                newDate.setHours(hours, minutes);
-                                setEndDate(newDate);
-                              }
-                            }}
-                            className="flex-1"
-                          />
+                          </div>
+                          <div>
+                            <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">End Time</h5>
+                            <Input
+                              type="time"
+                              value={endDate ? format(endDate, "HH:mm") : ""}
+                              onChange={(e) => {
+                                if (endDate) {
+                                  const [hours, minutes] = e.target.value.split(':').map(Number);
+                                  const newDate = new Date(endDate);
+                                  newDate.setHours(hours, minutes);
+                                  setEndDate(newDate);
+                                } else if (startDate) {
+                                  const newDate = new Date(startDate);
+                                  const [hours, minutes] = e.target.value.split(':').map(Number);
+                                  newDate.setHours(hours, minutes);
+                                  setEndDate(newDate);
+                                }
+                              }}
+                              className="mt-1"
+                            />
+                          </div>
                         </div>
                       </div>
-                    </div>
-
-                    <Separator className="my-6" />
-
-                    <div>
-                      <h4 className="text-sm font-medium text-gray-900 mb-4">Room Details</h4>
-
+                      
                       <div className="space-y-6">
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                           <div>
@@ -768,333 +775,334 @@ export function AppointmentDetailsModal({
                           />
                         </div>
                       </div>
-                    </div>
-                  </>
-                )}
+                    </>
+                  )}
 
-                {appointment.status === 'pending' && !isEditMode && (
-                  <div className="mt-6 flex justify-end space-x-3">
-                    <Button variant="outline" onClick={handleReject}>
-                      Reject
-                    </Button>
-                    <Button onClick={handleApprove}>
-                      Approve
-                    </Button>
-                  </div>
-                )}
-              </TabsContent>
+                  {appointment.status === 'pending' && !isEditMode && (
+                    <div className="mt-6 flex justify-end space-x-3">
+                      <Button variant="outline" onClick={handleReject}>
+                        Reject
+                      </Button>
+                      <Button onClick={handleApprove}>
+                        Approve
+                      </Button>
+                    </div>
+                  )}
+                </TabsContent>
 
-              <TabsContent value="costs" className="p-6">
-                <div className="flex items-start justify-between mb-6">
-                  <div className="flex items-start">
-                    <div className="flex-shrink-0 bg-yellow-100 rounded-full p-2">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-yellow-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
+                <TabsContent value="costs" className="p-6">
+                  <div className="flex items-start justify-between mb-6">
+                    <div className="flex items-start">
+                      <div className="flex-shrink-0 bg-yellow-100 rounded-full p-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-yellow-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                      </div>
+                      <div className="ml-4">
+                        <h4 className="text-sm font-medium text-gray-900">Cost Information</h4>
+                      </div>
                     </div>
-                    <div className="ml-4">
-                      <h4 className="text-sm font-medium text-gray-900">Cost Information</h4>
-                    </div>
-                  </div>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={handleToggleEditMode}
-                    className="text-xs"
-                  >
-                    {isEditMode ? (
-                      <>
-                        <Save className="h-4 w-4 mr-2" />
-                        Save
-                      </>
-                    ) : (
-                      <>
-                        <Edit className="h-4 w-4 mr-2" />
-                        Edit
-                      </>
-                    )}
-                  </Button>
-                </div>
-
-                {!isEditMode ? (
-                  <div className="space-y-6">
-                    <div>
-                      <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">Cost Type</h5>
-                      <p className="text-sm text-gray-900">
-                        {appointment.costType === 'flat' ? 'Flat Rate' :
-                         appointment.costType === 'hourly' ? 'Hourly Rate' :
-                         appointment.costType === 'per_attendee' ? 'Per Attendee' : 
-                         appointment.costType}
-                      </p>
-                    </div>
-                    <div>
-                      <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">Agreed Cost</h5>
-                      <p className="text-sm text-gray-900">€{(appointment.agreedCost / 100).toFixed(2)}</p>
-                      
-                      {appointment.costBreakdown && 
-                       typeof appointment.costBreakdown === 'object' && 
-                       (appointment.costBreakdown as any).isCustom && (
-                        <Badge className="mt-1" variant="outline">Custom Price</Badge>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={handleToggleEditMode}
+                      className="text-xs"
+                    >
+                      {isEditMode ? (
+                        <>
+                          <Save className="h-4 w-4 mr-2" />
+                          Save
+                        </>
+                      ) : (
+                        <>
+                          <Edit className="h-4 w-4 mr-2" />
+                          Edit
+                        </>
                       )}
-                    </div>
-                    <div>
-                      <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">Cost Breakdown</h5>
-                      <div className="mt-1 bg-gray-50 rounded-md p-4">
-                        {getRoomsArray(appointment).length > 0 ? (
-                          <>
-                            {getRoomsArray(appointment).map((roomBooking: RoomBooking, index: number) => (
-                              <div key={index} className="mb-3">
-                                <div className="flex justify-between text-sm">
-                                  <span className="font-medium">{roomBooking.roomName}:</span>
-                                  <span>€{(roomBooking.cost / 100).toFixed(2)}</span>
+                    </Button>
+                  </div>
+
+                  {!isEditMode ? (
+                    <div className="space-y-6">
+                      <div>
+                        <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">Cost Type</h5>
+                        <p className="text-sm text-gray-900">
+                          {appointment.costType === 'flat' ? 'Flat Rate' :
+                           appointment.costType === 'hourly' ? 'Hourly Rate' :
+                           appointment.costType === 'per_attendee' ? 'Per Attendee' : 
+                           appointment.costType}
+                        </p>
+                      </div>
+                      <div>
+                        <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">Agreed Cost</h5>
+                        <p className="text-sm text-gray-900">€{(appointment.agreedCost / 100).toFixed(2)}</p>
+                        
+                        {appointment.costBreakdown && 
+                         typeof appointment.costBreakdown === 'object' && 
+                         (appointment.costBreakdown as any).isCustom && (
+                          <Badge className="mt-1" variant="outline">Custom Price</Badge>
+                        )}
+                      </div>
+                      <div>
+                        <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">Cost Breakdown</h5>
+                        <div className="mt-1 bg-gray-50 rounded-md p-4">
+                          {getRoomsArray(appointment).length > 0 ? (
+                            <>
+                              {getRoomsArray(appointment).map((roomBooking: RoomBooking, index: number) => (
+                                <div key={index} className="mb-3">
+                                  <div className="flex justify-between text-sm">
+                                    <span className="font-medium">{roomBooking.roomName}:</span>
+                                    <span>€{(roomBooking.cost / 100).toFixed(2)}</span>
+                                  </div>
+                                  <p className="text-xs text-gray-500 ml-4">
+                                    {roomBooking.costType === 'flat' ? 'Flat Rate' : 
+                                     roomBooking.costType === 'hourly' ? 'Hourly Rate' : 
+                                     roomBooking.costType === 'per_attendee' ? 'Per Attendee' : 
+                                     roomBooking.costType}
+                                  </p>
+                                  {index < getRoomsArray(appointment).length - 1 && <Separator className="my-2" />}
                                 </div>
-                                <p className="text-xs text-gray-500 ml-4">
-                                  {roomBooking.costType === 'flat' ? 'Flat Rate' : 
-                                   roomBooking.costType === 'hourly' ? 'Hourly Rate' : 
-                                   roomBooking.costType === 'per_attendee' ? 'Per Attendee' : 
-                                   roomBooking.costType}
-                                </p>
-                                {index < getRoomsArray(appointment).length - 1 && <Separator className="my-2" />}
+                              ))}
+                              
+                              <Separator className="my-3" />
+                              
+                              {appointment.costBreakdown && typeof appointment.costBreakdown === 'object' && (
+                                <div className="flex justify-between text-sm text-gray-700">
+                                  <span>Base Rate:</span>
+                                  <span>€{((appointment.costBreakdown as any).base / 100).toFixed(2)}</span>
+                                </div>
+                              )}
+                              
+                              <div className="flex justify-between font-medium text-sm mt-2">
+                                <span>Total:</span>
+                                <span>€{(appointment.agreedCost / 100).toFixed(2)}</span>
                               </div>
-                            ))}
-                            
-                            <Separator className="my-3" />
-                            
-                            {appointment.costBreakdown && typeof appointment.costBreakdown === 'object' && (
+                              
+                              {appointment.costBreakdown && 
+                               typeof appointment.costBreakdown === 'object' && 
+                               (appointment.costBreakdown as any).isCustom && (
+                                <p className="text-xs text-gray-500 italic mt-2 text-center">
+                                  Custom price applied
+                                </p>
+                              )}
+                            </>
+                          ) : appointment.costBreakdown && typeof appointment.costBreakdown === 'object' ? (
+                            <>
                               <div className="flex justify-between text-sm text-gray-700">
                                 <span>Base Rate:</span>
                                 <span>€{((appointment.costBreakdown as any).base / 100).toFixed(2)}</span>
                               </div>
-                            )}
-                            
-                            <div className="flex justify-between font-medium text-sm mt-2">
-                              <span>Total:</span>
-                              <span>€{(appointment.agreedCost / 100).toFixed(2)}</span>
-                            </div>
-                            
-                            {appointment.costBreakdown && 
-                             typeof appointment.costBreakdown === 'object' && 
-                             (appointment.costBreakdown as any).isCustom && (
-                              <p className="text-xs text-gray-500 italic mt-2 text-center">
-                                Custom price applied
-                              </p>
-                            )}
-                          </>
-                        ) : appointment.costBreakdown && typeof appointment.costBreakdown === 'object' ? (
-                          <>
-                            <div className="flex justify-between text-sm text-gray-700">
-                              <span>Base Rate:</span>
-                              <span>€{((appointment.costBreakdown as any).base / 100).toFixed(2)}</span>
-                            </div>
-                            <Separator className="my-2" />
-                            <div className="flex justify-between font-medium text-sm">
-                              <span>Total:</span>
-                              <span>€{(appointment.agreedCost / 100).toFixed(2)}</span>
-                            </div>
-                          </>
-                        ) : (
-                          <p className="text-sm text-gray-500">No detailed breakdown available</p>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="space-y-6">
-                    <div>
-                      <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">Cost Type</h5>
-                      <Select
-                        value={editedAppointment.costType || 'flat'}
-                        onValueChange={(value) => {
-                          handleInputChange('costType', value);
-                          if (!customPricing) {
-                            const calculatedCost = calculateCost(editedAppointment.roomId || appointment.roomId);
-                            handleInputChange('agreedCost', calculatedCost);
-                          }
-                        }}
-                      >
-                        <SelectTrigger className="w-full mt-1">
-                          <SelectValue placeholder="Select cost type" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="flat">Flat Rate</SelectItem>
-                          <SelectItem value="hourly">Hourly Rate</SelectItem>
-                          <SelectItem value="per_attendee">Per Attendee</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    
-                    <div className="flex items-center space-x-2 p-3 bg-gray-50 rounded-md">
-                      <Switch
-                        id="custom-pricing"
-                        checked={customPricing}
-                        onCheckedChange={handleCustomPricingToggle}
-                      />
-                      <label
-                        htmlFor="custom-pricing"
-                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                      >
-                        Use Custom Price
-                      </label>
-                    </div>
-
-                    <div>
-                      <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">Agreed Cost (in cents)</h5>
-                      <Input
-                        type="number"
-                        value={editedAppointment.agreedCost || 0}
-                        onChange={(e) => handleInputChange('agreedCost', Number(e.target.value))}
-                        disabled={!customPricing}
-                        className="mt-1"
-                      />
-                      <p className="text-xs text-gray-500 mt-1">
-                        Displayed as: €{((editedAppointment.agreedCost || 0) / 100).toFixed(2)}
-                      </p>
-                    </div>
-                    
-                    {!customPricing && (
-                      <div className="bg-gray-50 rounded-md p-4">
-                        <h6 className="text-xs font-medium text-gray-700 mb-2">Automatic Price Calculation</h6>
-                        <p className="text-xs text-gray-500">
-                          Price is calculated based on the selected room, cost type, and duration/attendees.
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </TabsContent>
-
-              <TabsContent value="contact" className="p-6">
-                <div className="flex items-start justify-between mb-6">
-                  <div className="flex items-start">
-                    <div className="flex-shrink-0 bg-green-100 rounded-full p-2">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207" />
-                      </svg>
-                    </div>
-                    <div className="ml-4">
-                      <h4 className="text-sm font-medium text-gray-900">Contact Information</h4>
-                    </div>
-                  </div>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={handleToggleEditMode}
-                    className="text-xs"
-                  >
-                    {isEditMode ? (
-                      <>
-                        <Save className="h-4 w-4 mr-2" />
-                        Save
-                      </>
-                    ) : (
-                      <>
-                        <Edit className="h-4 w-4 mr-2" />
-                        Edit
-                      </>
-                    )}
-                  </Button>
-                </div>
-
-                {!isEditMode ? (
-                  <div className="space-y-6">
-                    <div>
-                      <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">Customer Name</h5>
-                      <p className="text-sm text-gray-900">{appointment.customerName}</p>
-                    </div>
-                    <div>
-                      <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">Email</h5>
-                      <p className="text-sm text-gray-900">{appointment.customerEmail}</p>
-                    </div>
-                    <div>
-                      <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">Phone</h5>
-                      <p className="text-sm text-gray-900">{appointment.customerPhone || "N/A"}</p>
-                    </div>
-
-                  </div>
-                ) : (
-                  <div className="space-y-6">
-                    <div>
-                      <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">Customer Name</h5>
-                      <Input
-                        value={editedAppointment.customerName || ''}
-                        onChange={(e) => handleInputChange('customerName', e.target.value)}
-                        className="mt-1"
-                      />
-                    </div>
-                    <div>
-                      <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">Email</h5>
-                      <Input
-                        type="email"
-                        value={editedAppointment.customerEmail || ''}
-                        onChange={(e) => handleInputChange('customerEmail', e.target.value)}
-                        className="mt-1"
-                      />
-                    </div>
-                    <div>
-                      <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">Phone</h5>
-                      <Input
-                        type="tel"
-                        value={editedAppointment.customerPhone || ''}
-                        onChange={(e) => handleInputChange('customerPhone', e.target.value)}
-                        className="mt-1"
-                      />
-                    </div>
-
-                  </div>
-                )}
-              </TabsContent>
-
-              <TabsContent value="history" className="p-6">
-                <div className="mb-6">
-                  <h4 className="text-sm font-medium text-gray-900">Audit Log</h4>
-                </div>
-
-                {isLogsLoading ? (
-                  <div className="flex justify-center items-center h-36">
-                    <p>Loading audit logs...</p>
-                  </div>
-                ) : auditLogs && Array.isArray(auditLogs) && auditLogs.length > 0 ? (
-                  <div className="border border-gray-200 rounded-md overflow-hidden">
-                    {auditLogs.map((log: any, index) => (
-                      <div key={log.id || index}>
-                        <div className="px-4 py-3 bg-gray-50 text-xs uppercase font-medium text-gray-500">
-                          {format(new Date(log.createdAt), "MMM dd, yyyy h:mm a")}
-                        </div>
-                        <div className="p-4 border-t border-gray-200">
-                          <p className="text-sm text-gray-600 mb-2">Updated by User ID: {log.userId}</p>
-                          <p className="text-sm text-gray-600 capitalize">Action: {log.action}</p>
-                          
-                          {(log.oldData || log.newData) && (
-                            <div className="mt-4 relative">
-                              <div className="h-32 overflow-y-auto text-xs rounded-md bg-gray-50 p-2">
-                                {log.oldData && (
-                                  <p className="mb-2"><span className="text-red-500">-</span> {JSON.stringify(log.oldData)}</p>
-                                )}
-                                {log.newData && (
-                                  <p><span className="text-green-500">+</span> {JSON.stringify(log.newData)}</p>
-                                )}
+                              <Separator className="my-2" />
+                              <div className="flex justify-between font-medium text-sm">
+                                <span>Total:</span>
+                                <span>€{(appointment.agreedCost / 100).toFixed(2)}</span>
                               </div>
-                            </div>
+                            </>
+                          ) : (
+                            <p className="text-sm text-gray-500">No detailed breakdown available</p>
                           )}
                         </div>
                       </div>
-                    ))}
+                    </div>
+                  ) : (
+                    <div className="space-y-6">
+                      <div>
+                        <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">Cost Type</h5>
+                        <Select
+                          value={editedAppointment.costType || 'flat'}
+                          onValueChange={(value) => {
+                            handleInputChange('costType', value);
+                            if (!customPricing) {
+                              const calculatedCost = calculateCost(editedAppointment.roomId || appointment.roomId);
+                              handleInputChange('agreedCost', calculatedCost);
+                            }
+                          }}
+                        >
+                          <SelectTrigger className="w-full mt-1">
+                            <SelectValue placeholder="Select cost type" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="flat">Flat Rate</SelectItem>
+                            <SelectItem value="hourly">Hourly Rate</SelectItem>
+                            <SelectItem value="per_attendee">Per Attendee</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      
+                      <div className="flex items-center space-x-2 p-3 bg-gray-50 rounded-md">
+                        <Switch
+                          id="custom-pricing"
+                          checked={customPricing}
+                          onCheckedChange={handleCustomPricingToggle}
+                        />
+                        <label
+                          htmlFor="custom-pricing"
+                          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                        >
+                          Use Custom Price
+                        </label>
+                      </div>
+
+                      <div>
+                        <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">Agreed Cost (in cents)</h5>
+                        <Input
+                          type="number"
+                          value={editedAppointment.agreedCost || 0}
+                          onChange={(e) => handleInputChange('agreedCost', Number(e.target.value))}
+                          disabled={!customPricing}
+                          className="mt-1"
+                        />
+                        <p className="text-xs text-gray-500 mt-1">
+                          Displayed as: €{((editedAppointment.agreedCost || 0) / 100).toFixed(2)}
+                        </p>
+                      </div>
+                      
+                      {!customPricing && (
+                        <div className="bg-gray-50 rounded-md p-4">
+                          <h6 className="text-xs font-medium text-gray-700 mb-2">Automatic Price Calculation</h6>
+                          <p className="text-xs text-gray-500">
+                            Price is calculated based on the selected room, cost type, and duration/attendees.
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </TabsContent>
+
+                <TabsContent value="contact" className="p-6">
+                  <div className="flex items-start justify-between mb-6">
+                    <div className="flex items-start">
+                      <div className="flex-shrink-0 bg-green-100 rounded-full p-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207" />
+                        </svg>
+                      </div>
+                      <div className="ml-4">
+                        <h4 className="text-sm font-medium text-gray-900">Contact Information</h4>
+                      </div>
+                    </div>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={handleToggleEditMode}
+                      className="text-xs"
+                    >
+                      {isEditMode ? (
+                        <>
+                          <Save className="h-4 w-4 mr-2" />
+                          Save
+                        </>
+                      ) : (
+                        <>
+                          <Edit className="h-4 w-4 mr-2" />
+                          Edit
+                        </>
+                      )}
+                    </Button>
                   </div>
-                ) : (
-                  <div className="text-center py-8 text-gray-500">
-                    <p>No audit logs available</p>
+
+                  {!isEditMode ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                      <div>
+                        <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">Contact Name</h5>
+                        <p className="text-sm text-gray-900">{appointment.customerName || "N/A"}</p>
+                      </div>
+                      <div>
+                        <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">Contact Email</h5>
+                        <p className="text-sm text-gray-900">{appointment.customerEmail || "N/A"}</p>
+                      </div>
+                      <div>
+                        <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">Contact Phone</h5>
+                        <p className="text-sm text-gray-900">{appointment.customerPhone || "N/A"}</p>
+                      </div>
+                      <div>
+                        <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">Attendees</h5>
+                        <p className="text-sm text-gray-900">{appointment.attendeesCount || "N/A"}</p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                      <div>
+                        <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">Contact Name</h5>
+                        <Input
+                          value={editedAppointment.customerName || ''}
+                          onChange={(e) => handleInputChange('customerName', e.target.value)}
+                          className="mt-1"
+                        />
+                      </div>
+                      <div>
+                        <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">Contact Email</h5>
+                        <Input
+                          type="email"
+                          value={editedAppointment.customerEmail || ''}
+                          onChange={(e) => handleInputChange('customerEmail', e.target.value)}
+                          className="mt-1"
+                        />
+                      </div>
+                      <div>
+                        <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">Contact Phone</h5>
+                        <Input
+                          value={editedAppointment.customerPhone || ''}
+                          onChange={(e) => handleInputChange('customerPhone', e.target.value)}
+                          className="mt-1"
+                        />
+                      </div>
+
+                    </div>
+                  )}
+                </TabsContent>
+
+                <TabsContent value="history" className="p-6">
+                  <div className="mb-6">
+                    <h4 className="text-sm font-medium text-gray-900">Audit Log</h4>
                   </div>
-                )}
-              </TabsContent>
-            </>
-          ) : (
-            <div className="flex justify-center items-center h-64">
-              <p>Appointment not found</p>
-            </div>
-          )}
-        </Tabs>
-      </DialogContent>
-    </Dialog>
+
+                  {isLogsLoading ? (
+                    <div className="flex justify-center items-center h-36">
+                      <p>Loading audit logs...</p>
+                    </div>
+                  ) : auditLogs && Array.isArray(auditLogs) && auditLogs.length > 0 ? (
+                    <div className="border border-gray-200 rounded-md overflow-hidden">
+                      {auditLogs.map((log: any, index) => (
+                        <div key={log.id || index}>
+                          <div className="px-4 py-3 bg-gray-50 text-xs uppercase font-medium text-gray-500">
+                            {format(new Date(log.createdAt), "MMM dd, yyyy h:mm a")}
+                          </div>
+                          <div className="p-4 border-t border-gray-200">
+                            <p className="text-sm text-gray-600 mb-2">Updated by User ID: {log.userId}</p>
+                            <p className="text-sm text-gray-600 capitalize">Action: {log.action}</p>
+                            
+                            {(log.oldData || log.newData) && (
+                              <div className="mt-4 relative">
+                                <div className="h-32 overflow-y-auto text-xs rounded-md bg-gray-50 p-2">
+                                  {log.oldData && (
+                                    <p className="mb-2"><span className="text-red-500">-</span> {JSON.stringify(log.oldData)}</p>
+                                  )}
+                                  {log.newData && (
+                                    <p><span className="text-green-500">+</span> {JSON.stringify(log.newData)}</p>
+                                  )}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 text-gray-500">
+                      <p>No audit logs available</p>
+                    </div>
+                  )}
+                </TabsContent>
+              </>
+            ) : (
+              <div className="flex justify-center items-center h-64">
+                <p>Appointment not found</p>
+              </div>
+            )}
+          </Tabs>
+        </DialogContent>
+      </Dialog>
 
       <AlertDialog open={isRejectDialogOpen} onOpenChange={setIsRejectDialogOpen}>
         <AlertDialogContent>
