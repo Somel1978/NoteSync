@@ -46,6 +46,8 @@ const bookingFormSchema = z.object({
   customerName: z.string().min(1, "Customer name is required"),
   customerEmail: z.string().email("Invalid email format"),
   customerPhone: z.string().optional(),
+  customerOrganization: z.string().optional(),
+  notes: z.string().optional(),
   membershipNumber: z.string().optional(),
   attendeesCount: z.coerce.number().min(1, "Must have at least 1 attendee"),
   sendConfirmation: z.boolean().default(false),
@@ -78,6 +80,8 @@ export default function NewBookingPage() {
       customerName: "",
       customerEmail: "",
       customerPhone: "",
+      customerOrganization: "",
+      notes: "",
       membershipNumber: "",
       attendeesCount: 1,
       sendConfirmation: false,
@@ -834,6 +838,20 @@ export default function NewBookingPage() {
                     
                     <FormField
                       control={form.control}
+                      name="customerOrganization"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Organization</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Enter customer organization (optional)" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={form.control}
                       name="membershipNumber"
                       render={({ field }) => (
                         <FormItem>
@@ -897,6 +915,27 @@ export default function NewBookingPage() {
                               Send a booking confirmation email to the customer
                             </FormDescription>
                           </div>
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                  
+                  <div className="mt-5">
+                    <FormField
+                      control={form.control}
+                      name="notes"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Additional Notes</FormLabel>
+                          <FormControl>
+                            <Textarea
+                              placeholder="Enter any additional notes or requirements for this booking"
+                              className="resize-none"
+                              rows={3}
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormMessage />
                         </FormItem>
                       )}
                     />
