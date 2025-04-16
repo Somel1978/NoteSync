@@ -914,108 +914,75 @@ export function AppointmentDetailsModal({
                                   </div>
                                   
                                   <div className="mt-2">
-                                    <h6 className="text-xs font-medium text-gray-500 uppercase mb-1">Add Facility</h6>
-                                    <div className="flex gap-2">
-                                      <Select
-                                        onValueChange={(value) => {
-                                          if (!value) return;
+                                    <h6 className="text-xs font-medium text-gray-500 uppercase mb-1">Available Facilities</h6>
+                                    <div className="grid grid-cols-1 gap-2 p-3 bg-gray-50 rounded-md">
+                                      {(() => {
+                                        const availableFacilities = getAvailableFacilities(roomBooking.roomId);
+                                        return availableFacilities.map((facility: any, i: number) => {
+                                          if (typeof facility !== 'object' || facility === null) return null;
                                           
-                                          // Don't add duplicates
-                                          if (roomBooking.requestedFacilities && 
-                                              roomBooking.requestedFacilities.includes(value)) {
-                                            return;
-                                          }
+                                          const isSelected = roomBooking.requestedFacilities && 
+                                            roomBooking.requestedFacilities.includes(facility.name);
                                           
-                                          const updatedRooms = [...(editedAppointment.rooms as RoomBooking[])];
-                                          const updatedFacilities = [
-                                            ...(roomBooking.requestedFacilities || []), 
-                                            value
-                                          ];
-                                          
-                                          // Calculate new cost that includes facility
-                                          const selectedRoom = rooms && Array.isArray(rooms) ? 
-                                            rooms.find(r => r.id === roomBooking.roomId) : undefined;
-                                            
-                                          if (selectedRoom && selectedRoom.facilities) {
-                                            try {
-                                              // Parse facilities if needed
-                                              let availableFacilities: any[] = [];
-                                              if (typeof selectedRoom.facilities === 'string') {
-                                                availableFacilities = JSON.parse(selectedRoom.facilities);
-                                              } else if (Array.isArray(selectedRoom.facilities)) {
-                                                availableFacilities = selectedRoom.facilities;
-                                              }
-                                              
-                                              // Find the added facility's cost
-                                              const facility = availableFacilities.find((f: any) => 
-                                                (typeof f === 'object' && f !== null && 
-                                                (f.name === value || f.id === value))
-                                              );
-                                              
-                                              if (facility && typeof facility === 'object' && facility.cost) {
-                                                // Add the facility cost to the current room cost
-                                                const facilityCost = facility.cost;
-                                                const newCost = roomBooking.cost + facilityCost;
-                                                
-                                                // Update the room with the new cost and facilities
-                                                updatedRooms[index] = {
-                                                  ...updatedRooms[index],
-                                                  cost: newCost,
-                                                  requestedFacilities: updatedFacilities
-                                                };
-                                                
-                                                // Calculate new total cost
-                                                let totalCost = 0;
-                                                updatedRooms.forEach(room => {
-                                                  totalCost += room.cost;
-                                                });
-                                                
-                                                // Update both rooms and cost information
-                                                handleInputChange('rooms', updatedRooms);
-                                                
-                                                // Update global cost if not using custom pricing
-                                                if (!customPricing) {
-                                                  handleInputChange('agreedCost', totalCost);
-                                                }
-                                                return; // Exit early as we've handled the update
-                                              }
-                                            } catch (e) {
-                                              console.warn('Error calculating facility cost:', e);
-                                            }
-                                          }
-                                          
-                                          // Fallback to just updating the facilities list without cost changes
-                                          updatedRooms[index] = {
-                                            ...updatedRooms[index],
-                                            requestedFacilities: updatedFacilities
-                                          };
-                                          handleInputChange('rooms', updatedRooms);
-                                        }}
-                                      >
-                                        <SelectTrigger className="w-full mt-1">
-                                          <SelectValue placeholder="Select facility" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                          {(() => {
-                                            const availableFacilities = getAvailableFacilities(roomBooking.roomId);
-                                            return availableFacilities.map((facility: any, i: number) => {
-                                              if (typeof facility !== 'object' || facility === null) return null;
-                                              
-                                              // Skip facilities that are already selected
-                                              if (roomBooking.requestedFacilities && 
-                                                  roomBooking.requestedFacilities.includes(facility.name)) {
-                                                return null;
-                                              }
-                                              
-                                              return (
-                                                <SelectItem key={i} value={facility.name}>
-                                                  {facility.name} (€{(facility.cost / 100).toFixed(2)})
-                                                </SelectItem>
-                                              );
-                                            });
-                                          })()}
-                                        </SelectContent>
-                                      </Select>
+                                          return (
+                                            <div key={i} className="flex items-center justify-between p-2 border border-gray-200 rounded bg-white">
+                                              <div className="flex items-center gap-2">
+                                                <input 
+                                                  type="checkbox" 
+                                                  id={`facility-${index}-${i}`}
+                                                  checked={isSelected}
+                                                  className="h-4 w-4 rounded"
+                                                  onChange={() => {
+                                                    const updatedRooms = [...(editedAppointment.rooms as RoomBooking[])];
+                                                    let updatedFacilities = [...(roomBooking.requestedFacilities || [])];
+                                                    
+                                                    // Toggle the facility
+                                                    if (isSelected) {
+                                                      // Remove the facility
+                                                      updatedFacilities = updatedFacilities.filter(f => f !== facility.name);
+                                                      
+                                                      // Subtract the cost
+                                                      const newCost = roomBooking.cost - facility.cost;
+                                                      updatedRooms[index] = {
+                                                        ...updatedRooms[index],
+                                                        cost: newCost,
+                                                        requestedFacilities: updatedFacilities
+                                                      };
+                                                    } else {
+                                                      // Add the facility
+                                                      updatedFacilities.push(facility.name);
+                                                      
+                                                      // Add the cost
+                                                      const newCost = roomBooking.cost + facility.cost;
+                                                      updatedRooms[index] = {
+                                                        ...updatedRooms[index],
+                                                        cost: newCost,
+                                                        requestedFacilities: updatedFacilities
+                                                      };
+                                                    }
+                                                    
+                                                    // Update state
+                                                    handleInputChange('rooms', updatedRooms);
+                                                    
+                                                    // Update total cost if not using custom pricing
+                                                    if (!customPricing) {
+                                                      let totalCost = 0;
+                                                      updatedRooms.forEach(room => {
+                                                        totalCost += room.cost;
+                                                      });
+                                                      handleInputChange('agreedCost', totalCost);
+                                                    }
+                                                  }}
+                                                />
+                                                <label htmlFor={`facility-${index}-${i}`} className="text-sm cursor-pointer">
+                                                  {facility.name}
+                                                </label>
+                                              </div>
+                                              <span className="text-xs text-gray-600">€{(facility.cost / 100).toFixed(2)}</span>
+                                            </div>
+                                          );
+                                        });
+                                      })()}
                                     </div>
                                     
                                     {/* Add a divider between existing facility selector and custom facility form */}
@@ -1036,11 +1003,12 @@ export function AppointmentDetailsModal({
                                       </div>
                                       <div>
                                         <Input
-                                          placeholder="Cost (cents)"
+                                          placeholder="Cost (€)"
                                           type="number"
                                           min="0"
-                                          value={customFacilityCost}
-                                          onChange={(e) => setCustomFacilityCost(Number(e.target.value))}
+                                          step="0.01"
+                                          value={(customFacilityCost / 100).toFixed(2)}
+                                          onChange={(e) => setCustomFacilityCost(Math.round(Number(e.target.value) * 100))}
                                           className="h-9 text-sm"
                                         />
                                       </div>
