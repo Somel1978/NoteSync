@@ -285,11 +285,19 @@ export function registerRoutes(app: Express): Server {
   app.post("/api/appointments", isAuthenticated, async (req, res, next) => {
     try {
       const userId = req.user!.id;
-      const validatedData = insertAppointmentSchema.parse({
+      
+      // Parse dates from ISO strings to Date objects
+      const data = {
         ...req.body,
-        userId
-        // No need to set orderNumber here as storage.createAppointment now handles this
-      });
+        userId,
+        // Convert string dates to Date objects
+        startTime: new Date(req.body.startTime),
+        endTime: new Date(req.body.endTime),
+        orderNumber: await storage.getNextAppointmentOrderNumber()
+      };
+      
+      // Now validate the data with the schema
+      const validatedData = insertAppointmentSchema.parse(data);
       
       // Storage method now includes audit logging internally
       const appointment = await storage.createAppointment(validatedData);
@@ -324,10 +332,22 @@ export function registerRoutes(app: Express): Server {
         return res.status(404).json({ message: "Appointment not found" });
       }
       
-      const validatedData = insertAppointmentSchema.partial().parse({
+      // Process data to convert dates if they exist in the request body
+      const processedData: any = {
         ...req.body,
         userId // Include userId for audit logging
-      });
+      };
+      
+      // Convert string dates to Date objects if present
+      if (req.body.startTime) {
+        processedData.startTime = new Date(req.body.startTime);
+      }
+      
+      if (req.body.endTime) {
+        processedData.endTime = new Date(req.body.endTime);
+      }
+      
+      const validatedData = insertAppointmentSchema.partial().parse(processedData);
       
       // Storage method now handles audit logging internally
       const updatedAppointment = await storage.updateAppointment(id, validatedData);
