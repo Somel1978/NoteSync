@@ -302,21 +302,42 @@ export function AppointmentDetailsModal({
       
       console.log('Toggle off custom pricing, new calculated cost:', calculatedCost);
       
-      // Update cost breakdown to reflect automatic calculation
-      const costBreakdown = {
-        ...(typeof editedAppointment.costBreakdown === 'object' ? editedAppointment.costBreakdown : {}),
-        base: calculatedCost,
-        isCustom: false,
-        total: calculatedCost
-      };
-      
-      handleInputChange('agreedCost', calculatedCost);
-      handleInputChange('costBreakdown', costBreakdown);
+      // Handle multiple rooms case
+      if (editedAppointment.rooms && Array.isArray(editedAppointment.rooms) && editedAppointment.rooms.length > 0) {
+        // Calculate total from all rooms
+        let totalCost = 0;
+        (editedAppointment.rooms as RoomBooking[]).forEach(room => {
+          totalCost += room.cost;
+        });
+        
+        // Update cost breakdown to reflect automatic calculation
+        const costBreakdown = {
+          ...(typeof appointment.costBreakdown === 'object' ? appointment.costBreakdown : {}),
+          base: totalCost,
+          isCustom: false,
+          total: totalCost
+        };
+        
+        handleInputChange('agreedCost', totalCost);
+        handleInputChange('costBreakdown', costBreakdown);
+      } else {
+        // Single room case
+        // Update cost breakdown to reflect automatic calculation
+        const costBreakdown = {
+          ...(typeof appointment.costBreakdown === 'object' ? appointment.costBreakdown : {}),
+          base: calculatedCost,
+          isCustom: false,
+          total: calculatedCost
+        };
+        
+        handleInputChange('agreedCost', calculatedCost);
+        handleInputChange('costBreakdown', costBreakdown);
+      }
     } else if (enabled) {
       // Just mark as custom but keep current price
       const currentCost = editedAppointment.agreedCost || appointment?.agreedCost || 0;
       const costBreakdown = {
-        ...(typeof editedAppointment.costBreakdown === 'object' ? editedAppointment.costBreakdown : {}),
+        ...(typeof appointment.costBreakdown === 'object' ? appointment.costBreakdown : {}),
         base: currentCost,
         isCustom: true,
         total: currentCost
@@ -341,25 +362,20 @@ export function AppointmentDetailsModal({
                 <Button variant="ghost" size="icon" onClick={handleDelete}>
                   <Trash className="h-5 w-5 text-gray-400 hover:text-red-500" />
                 </Button>
-                <DialogClose asChild>
-                  <Button variant="ghost" size="icon">
-                    <X className="h-5 w-5" />
-                  </Button>
-                </DialogClose>
               </div>
             </div>
-            
-            {appointment && appointment.status === 'pending' && !isEditMode && (
-              <div className="mt-4 flex justify-end space-x-3">
-                <Button variant="outline" onClick={handleReject}>
-                  Reject
-                </Button>
-                <Button onClick={handleApprove}>
-                  Approve
-                </Button>
-              </div>
-            )}
           </DialogHeader>
+          
+          {appointment && appointment.status === 'pending' && !isEditMode && (
+            <div className="px-6 mb-4 flex justify-end space-x-3">
+              <Button variant="outline" onClick={handleReject}>
+                Reject
+              </Button>
+              <Button onClick={handleApprove}>
+                Approve
+              </Button>
+            </div>
+          )}
 
           <Tabs defaultValue="details" value={activeTab} onValueChange={setActiveTab}>
             <div className="border-b border-gray-200">
