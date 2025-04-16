@@ -9,6 +9,7 @@ import AppointmentsPage from "@/pages/appointments-page";
 import RoomListPage from "@/pages/room-list-page";
 import NewBookingPage from "@/pages/new-booking-page";
 import SettingsPage from "@/pages/settings-page";
+import LandingPage from "@/pages/landing-page";
 import { ProtectedRoute } from "./lib/protected-route";
 import { AuthProvider } from "./hooks/use-auth";
 import { LanguageProvider } from "./hooks/use-language";
@@ -16,8 +17,9 @@ import { LanguageProvider } from "./hooks/use-language";
 function Router() {
   return (
     <Switch>
+      <Route path="/" component={LandingPage} />
       <Route path="/auth" component={AuthPage} />
-      <ProtectedRoute path="/" component={DashboardPage} />
+      <ProtectedRoute path="/dashboard" component={DashboardPage} />
       <ProtectedRoute path="/appointments" component={AppointmentsPage} />
       <ProtectedRoute path="/rooms" component={RoomListPage} />
       <ProtectedRoute path="/new-booking" component={NewBookingPage} />

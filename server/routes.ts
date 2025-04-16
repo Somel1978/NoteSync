@@ -25,6 +25,87 @@ export function registerRoutes(app: Express): Server {
   // Set up authentication routes
   setupAuth(app);
 
+  // Public API endpoints
+  app.get("/api/public/appointments", async (req, res, next) => {
+    try {
+      const appointments = await storage.getAllAppointments();
+      
+      // Only return certain fields for public view
+      const publicAppointments = appointments.map(appointment => ({
+        id: appointment.id,
+        title: appointment.title,
+        roomId: appointment.roomId,
+        startTime: appointment.startTime,
+        endTime: appointment.endTime,
+        status: appointment.status,
+        orderNumber: appointment.orderNumber,
+        customerName: appointment.customerName,
+        // Only include contact details for approved appointments
+        customerEmail: appointment.status === 'approved' ? appointment.customerEmail : undefined,
+        customerPhone: appointment.status === 'approved' ? appointment.customerPhone : undefined,
+      }));
+      
+      res.json(publicAppointments);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.get("/api/public/locations", async (req, res, next) => {
+    try {
+      const locations = await storage.getAllLocations();
+      res.json(locations);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.get("/api/public/rooms", async (req, res, next) => {
+    try {
+      // By default, only return active rooms for public view
+      const rooms = await storage.getActiveRooms();
+      res.json(rooms);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.get("/api/public/room/:id/availability", async (req, res, next) => {
+    try {
+      const roomId = parseInt(req.params.id);
+      const room = await storage.getRoom(roomId);
+      
+      if (!room) {
+        return res.status(404).json({ message: "Room not found" });
+      }
+      
+      // Get date range for next 90 days
+      const startDate = new Date();
+      const endDate = new Date();
+      endDate.setDate(endDate.getDate() + 90);
+      
+      // Get appointments for this room in the date range
+      const appointments = await storage.getAppointmentsByRoom(roomId);
+      const rangeAppointments = appointments.filter(appointment => {
+        const appointmentDate = new Date(appointment.startTime);
+        return appointmentDate >= startDate && appointmentDate <= endDate;
+      });
+      
+      res.json({
+        room,
+        appointments: rangeAppointments.map(appointment => ({
+          id: appointment.id,
+          title: appointment.title,
+          startTime: appointment.startTime,
+          endTime: appointment.endTime,
+          status: appointment.status
+        }))
+      });
+    } catch (error) {
+      next(error);
+    }
+  });
+
   // Location routes
   app.get("/api/locations", async (req, res, next) => {
     try {
