@@ -740,6 +740,14 @@ export function AppointmentDetailsModal({
                                 <Badge variant="outline" className="ml-2">
                                   €{(roomBooking.cost / 100).toFixed(2)}
                                 </Badge>
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm" 
+                                  className="ml-2 p-0 h-6" 
+                                  onClick={() => setActiveRoomIndex(index)}
+                                >
+                                  {activeRoomIndex === index ? "✓" : "Set Active"}
+                                </Button>
                               </div>
                               
                               <div className="space-y-4">
@@ -1044,7 +1052,7 @@ export function AppointmentDetailsModal({
                                           className="w-full text-xs" 
                                           variant="outline" 
                                           size="sm"
-                                          disabled={!customFacilityName || customFacilityCost <= 0}
+                                          disabled={!customFacilityName || customFacilityCost <= 0 || activeRoomIndex === -1}
                                           onClick={() => {
                                             // Create the custom facility object
                                             const customFacility = {
@@ -1055,16 +1063,17 @@ export function AppointmentDetailsModal({
                                             
                                             // Add it to the room's facilities
                                             const updatedRooms = [...(editedAppointment.rooms as RoomBooking[])];
-                                            const currentIndex = index; // Use the iterator variable from the outer map
-                                            const requestedFacilities = [...(updatedRooms[currentIndex].requestedFacilities || [])];
+                                            // Use the activeRoomIndex instead of the map iterator
+                                            const roomIndex = activeRoomIndex;
+                                            const requestedFacilities = [...(updatedRooms[roomIndex].requestedFacilities || [])];
                                             
                                             // Add facility name to requested facilities
                                             requestedFacilities.push(customFacilityName);
                                             
                                             // Update the room with new cost including the facility
-                                            const newCost = updatedRooms[currentIndex].cost + customFacilityCost;
-                                            updatedRooms[currentIndex] = {
-                                              ...updatedRooms[currentIndex],
+                                            const newCost = updatedRooms[roomIndex].cost + customFacilityCost;
+                                            updatedRooms[roomIndex] = {
+                                              ...updatedRooms[roomIndex],
                                               cost: newCost,
                                               requestedFacilities: requestedFacilities
                                             };
