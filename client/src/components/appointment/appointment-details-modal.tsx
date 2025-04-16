@@ -445,9 +445,50 @@ export function AppointmentDetailsModal({
         });
         
         // Update cost breakdown to reflect automatic calculation
+        // Calculate room and facility costs separately for breakdown
+        let roomBaseCost = 0;
+        let facilitiesCost = 0;
+        
+        updatedRooms.forEach(room => {
+          // Get room details to calculate facility costs
+          const roomDetails = rooms && Array.isArray(rooms) ? 
+            rooms.find(r => r.id === room.roomId) : undefined;
+            
+          if (roomDetails && roomDetails.facilities && 
+              room.requestedFacilities && room.requestedFacilities.length > 0) {
+            try {
+              // Parse facilities if needed
+              let availableFacilities: any[] = [];
+              if (typeof roomDetails.facilities === 'string') {
+                availableFacilities = JSON.parse(roomDetails.facilities);
+              } else if (Array.isArray(roomDetails.facilities)) {
+                availableFacilities = roomDetails.facilities;
+              }
+              
+              // Check each requested facility for costs
+              room.requestedFacilities.forEach(facilityName => {
+                const facility = availableFacilities.find(f => 
+                  (typeof f === 'object' && f !== null && 
+                  ((f as any).name === facilityName || (f as any).id === facilityName))
+                );
+                
+                if (facility && typeof facility === 'object' && (facility as any).cost) {
+                  facilitiesCost += (facility as any).cost;
+                }
+              });
+            } catch (e) {
+              console.warn('Error calculating facility costs for breakdown:', e);
+            }
+          }
+        });
+        
+        // Basic cost is total minus facilities
+        roomBaseCost = totalCost - facilitiesCost;
+        
         const costBreakdown = {
           ...(appointment && typeof appointment.costBreakdown === 'object' ? appointment.costBreakdown : {}),
-          base: totalCost,
+          base: roomBaseCost,
+          facilities: facilitiesCost,
           isCustom: false,
           total: totalCost
         };
@@ -465,9 +506,50 @@ export function AppointmentDetailsModal({
         const calculatedCost = calculateCost(roomId);
         
         // Update cost breakdown to reflect automatic calculation
+        // Get room details
+        const roomDetails = rooms && Array.isArray(rooms) ? 
+          rooms.find(r => r.id === roomId) : undefined;
+        
+        // Calculate facility costs for single room
+        let facilitiesCost = 0;
+        let roomBaseCost = calculatedCost;
+        
+        if (roomDetails && roomDetails.facilities && 
+            editedAppointment.requestedFacilities && 
+            Array.isArray(editedAppointment.requestedFacilities) && 
+            editedAppointment.requestedFacilities.length > 0) {
+          try {
+            // Parse facilities if needed
+            let availableFacilities: any[] = [];
+            if (typeof roomDetails.facilities === 'string') {
+              availableFacilities = JSON.parse(roomDetails.facilities);
+            } else if (Array.isArray(roomDetails.facilities)) {
+              availableFacilities = roomDetails.facilities;
+            }
+            
+            // Check each requested facility for costs
+            editedAppointment.requestedFacilities.forEach((facilityName: string) => {
+              const facility = availableFacilities.find(f => 
+                (typeof f === 'object' && f !== null && 
+                ((f as any).name === facilityName || (f as any).id === facilityName))
+              );
+              
+              if (facility && typeof facility === 'object' && (facility as any).cost) {
+                facilitiesCost += (facility as any).cost;
+              }
+            });
+            
+            // Adjust the base cost and total
+            roomBaseCost = calculatedCost - facilitiesCost;
+          } catch (e) {
+            console.warn('Error calculating facility costs for single room:', e);
+          }
+        }
+        
         const costBreakdown = {
           ...(appointment && typeof appointment.costBreakdown === 'object' ? appointment.costBreakdown : {}),
-          base: calculatedCost,
+          base: roomBaseCost,
+          facilities: facilitiesCost,
           isCustom: false,
           total: calculatedCost
         };
@@ -1150,7 +1232,8 @@ export function AppointmentDetailsModal({
                                           const updatedRooms = [...(editedAppointment.rooms as RoomBooking[])];
                                           
                                           // Get the room data
-                                          const selectedRoom = rooms.find(r => r.id === roomBooking.roomId);
+                                          const selectedRoom = rooms && Array.isArray(rooms) ? 
+                                            rooms.find(r => r.id === roomBooking.roomId) : undefined;
                                           
                                           // Calculate new cost based on selected cost type
                                           let newCost = 0;
@@ -1274,10 +1357,10 @@ export function AppointmentDetailsModal({
                                               return facilities.map((facility, i) => {
                                                 console.log('Facility item:', facility, typeof facility);
                                                 // Handle different types of facility values
-                                                const facilityName = typeof facility === 'object' ? 
-                                                  (facility.name || JSON.stringify(facility)) : String(facility);
-                                                const facilityValue = typeof facility === 'object' ? 
-                                                  (facility.name || JSON.stringify(facility)) : String(facility);
+                                                const facilityName = typeof facility === 'object' && facility !== null ? 
+                                                  ((facility as any).name || JSON.stringify(facility)) : String(facility);
+                                                const facilityValue = typeof facility === 'object' && facility !== null ? 
+                                                  ((facility as any).name || JSON.stringify(facility)) : String(facility);
                                                   
                                                 return (
                                                   <SelectItem key={i} value={facilityValue}>
@@ -1443,10 +1526,20 @@ export function AppointmentDetailsModal({
                               <Separator className="my-3" />
                               
                               {appointment.costBreakdown && typeof appointment.costBreakdown === 'object' && (
-                                <div className="flex justify-between text-sm text-gray-700">
-                                  <span>Base Rate:</span>
-                                  <span>€{((appointment.costBreakdown as any).base / 100).toFixed(2)}</span>
-                                </div>
+                                <>
+                                  <div className="flex justify-between text-sm text-gray-700">
+                                    <span>Base Rate:</span>
+                                    <span>€{((appointment.costBreakdown as any).base / 100).toFixed(2)}</span>
+                                  </div>
+                                  
+                                  {/* Show facilities cost if available */}
+                                  {(appointment.costBreakdown as any).facilities > 0 && (
+                                    <div className="flex justify-between text-sm text-gray-700 mt-1">
+                                      <span>Additional Facilities:</span>
+                                      <span>€{((appointment.costBreakdown as any).facilities / 100).toFixed(2)}</span>
+                                    </div>
+                                  )}
+                                </>
                               )}
                               
                               <div className="flex justify-between font-medium text-sm mt-2">
@@ -1468,6 +1561,15 @@ export function AppointmentDetailsModal({
                                 <span>Base Rate:</span>
                                 <span>€{((appointment.costBreakdown as any).base / 100).toFixed(2)}</span>
                               </div>
+                              
+                              {/* Show facilities cost if available */}
+                              {(appointment.costBreakdown as any).facilities > 0 && (
+                                <div className="flex justify-between text-sm text-gray-700 mt-1">
+                                  <span>Additional Facilities:</span>
+                                  <span>€{((appointment.costBreakdown as any).facilities / 100).toFixed(2)}</span>
+                                </div>
+                              )}
+                              
                               <Separator className="my-2" />
                               <div className="flex justify-between font-medium text-sm">
                                 <span>Total:</span>
