@@ -57,6 +57,9 @@ export function AppointmentDetailsModal({
   const [customPricing, setCustomPricing] = useState(false);
   const [rejectionReason, setRejectionReason] = useState("");
   const [isRejectDialogOpen, setIsRejectDialogOpen] = useState(false);
+  const [customFacilityName, setCustomFacilityName] = useState("");
+  const [customFacilityCost, setCustomFacilityCost] = useState(0);
+  const [activeRoomIndex, setActiveRoomIndex] = useState(0);
 
   const { toast } = useToast();
   
@@ -101,7 +104,7 @@ export function AppointmentDetailsModal({
 
   // Fetch audit logs for the appointment
   const { data: auditLogs, isLoading: isLogsLoading } = useQuery({
-    queryKey: ["/api/auditLogs", appointmentId],
+    queryKey: [`/api/appointments/${appointmentId}/audit`],
     enabled: open && appointmentId > 0 && activeTab === "history",
   });
 
@@ -321,15 +324,23 @@ export function AppointmentDetailsModal({
     const roomCostType = costType || 'flat';
     
     if (roomCostType === 'flat') {
-      baseCost = selectedRoom.flatCost || 0;
+      baseCost = selectedRoom.flatRate || 0;
     } else if (roomCostType === 'hourly') {
-      // Duration in hours
-      const hours = 1; // Default to 1 hour if dates are not set
-      baseCost = (selectedRoom.hourlyCost || 0) * hours;
+      // Calculate duration in hours based on appointment start and end times
+      let hours = 1; // Default to 1 hour
+      
+      if (editedAppointment.startTime && editedAppointment.endTime) {
+        const startTime = new Date(editedAppointment.startTime);
+        const endTime = new Date(editedAppointment.endTime);
+        const durationMs = endTime.getTime() - startTime.getTime();
+        hours = Math.max(1, Math.ceil(durationMs / (1000 * 60 * 60)));
+      }
+      
+      baseCost = (selectedRoom.hourlyRate || 0) * hours;
     } else if (roomCostType === 'per_attendee') {
       // Cost per attendee
       const attendees = editedAppointment.attendeesCount || 1;
-      baseCost = (selectedRoom.perAttendeeCost || 0) * attendees;
+      baseCost = (selectedRoom.attendeeRate || 0) * attendees;
     }
     
     // Calculate facilities cost
