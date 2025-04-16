@@ -79,10 +79,10 @@ export default function DashboardPage() {
   
   return (
     <AppLayout>
-      <div className="p-4 pt-14 sm:p-8">
+      <div className="p-4 pt-8 sm:p-8">
         <header className="mb-6 sm:mb-8">
-          <h1 className="text-xl sm:text-2xl font-semibold text-gray-800 pl-14 sm:pl-0">Dashboard</h1>
-          <p className="text-gray-600 text-sm pl-14 sm:pl-0">Real-time overview of your room management system</p>
+          <h1 className="text-xl sm:text-2xl font-semibold text-gray-800">Dashboard</h1>
+          <p className="text-gray-600 text-sm">Real-time overview of your room management system</p>
         </header>
 
         {/* Stats Grid */}

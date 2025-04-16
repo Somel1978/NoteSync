@@ -199,10 +199,10 @@ export default function AppointmentsPage() {
 
   return (
     <AppLayout>
-      <div className="p-4 pt-14 sm:p-8">
+      <div className="p-4 pt-8 sm:p-8">
         <header className="mb-6 sm:mb-8">
-          <h1 className="text-xl sm:text-2xl font-semibold text-gray-800 pl-14 sm:pl-0">Approve Appointments</h1>
-          <p className="text-gray-600 text-sm pl-14 sm:pl-0">Review and manage appointment requests</p>
+          <h1 className="text-xl sm:text-2xl font-semibold text-gray-800">Approve Appointments</h1>
+          <p className="text-gray-600 text-sm">Review and manage appointment requests</p>
         </header>
 
         <Card className="mb-8">
