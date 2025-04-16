@@ -103,6 +103,7 @@
     "showing": "Showing",
     "of": "of",
     "rooms": "rooms",
+    "room": "Room",
     "noRooms": "No rooms found",
     "noRoomsFound": "No rooms found",
     "addFirstRoom": "Add your first room",
@@ -117,7 +118,9 @@
     "hourlyRate": "Hourly Rate",
     "deleteSuccess": "Room deleted",
     "deleteSuccessDetail": "The room has been successfully deleted.",
-    "deleteError": "Failed to delete room"
+    "deleteError": "Failed to delete room",
+    "availability": "Availability",
+    "availabilityCalendar": "90-Day Availability Calendar"
   },
   "settings": {
     "title": "Settings",
