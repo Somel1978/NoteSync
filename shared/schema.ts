@@ -128,6 +128,7 @@ export const auditLogs = pgTable("audit_logs", {
   action: text("action").notNull(),
   oldData: json("old_data"),
   newData: json("new_data"),
+  changedFields: json("changed_fields").default([]),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -137,6 +138,7 @@ export const insertAuditLogSchema = createInsertSchema(auditLogs).pick({
   action: true,
   oldData: true,
   newData: true,
+  changedFields: true,
 });
 
 // Settings
