@@ -3,6 +3,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { AppLayout } from "@/components/layout/app-layout";
 import { RoomFormModal } from "@/components/room/room-form-modal";
+import { LocationFormModal } from "@/components/location/location-form-modal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
@@ -162,6 +163,8 @@ export default function SettingsPage() {
   const { user } = useAuth();
   const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
   const [roomModalOpen, setRoomModalOpen] = useState(false);
+  const [selectedLocation, setSelectedLocation] = useState<Location | null>(null);
+  const [locationModalOpen, setLocationModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("account");
   
   // Initialize forms
@@ -352,6 +355,29 @@ export default function SettingsPage() {
     onError: (error: Error) => {
       toast({
         title: t('settings.deletionApproveFailed'),
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+  
+  // Location mutations
+  const deleteLocationMutation = useMutation({
+    mutationFn: async (locationId: number) => {
+      const res = await apiRequest("DELETE", `/api/locations/${locationId}`);
+      if (!res.ok) throw new Error("Failed to delete location");
+      return locationId;
+    },
+    onSuccess: (locationId) => {
+      queryClient.invalidateQueries({ queryKey: ['/api/locations'] });
+      toast({
+        title: t('locations.deleteSuccess'),
+        description: t('locations.deleteSuccessDetail'),
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: t('locations.deleteError'),
         description: error.message,
         variant: "destructive",
       });
@@ -808,7 +834,10 @@ export default function SettingsPage() {
                             {t('settings.manageLocations')}
                           </h2>
                           
-                          <Button onClick={() => alert('Add location functionality will be implemented here')}>
+                          <Button onClick={() => {
+                            setSelectedLocation(null);
+                            setLocationModalOpen(true);
+                          }}>
                             <PlusCircle className="h-4 w-4 mr-2" />
                             {t('common.add')} {t('settings.locations')}
                           </Button>
@@ -834,7 +863,15 @@ export default function SettingsPage() {
                                   </div>
                                   
                                   <div className="flex space-x-2">
-                                    <Button variant="outline" size="sm" className="text-xs">
+                                    <Button 
+                                      variant="outline" 
+                                      size="sm" 
+                                      className="text-xs"
+                                      onClick={() => {
+                                        setSelectedLocation(location);
+                                        setLocationModalOpen(true);
+                                      }}
+                                    >
                                       <Pencil className="h-3 w-3 mr-1" />
                                       {t('common.edit')}
                                     </Button>
@@ -845,7 +882,7 @@ export default function SettingsPage() {
                                       className="text-xs text-red-600"
                                       onClick={() => {
                                         if (confirm(`${t('common.delete')} ${location.name}?`)) {
-                                          alert('Delete functionality will be implemented here');
+                                          deleteLocationMutation.mutate(location.id);
                                         }
                                       }}
                                     >
@@ -870,7 +907,10 @@ export default function SettingsPage() {
                                 Get started by creating a new location.
                               </p>
                               <div className="mt-6">
-                                <Button onClick={() => alert('Add location functionality will be implemented here')}>
+                                <Button onClick={() => {
+                                  setSelectedLocation(null);
+                                  setLocationModalOpen(true);
+                                }}>
                                   <PlusCircle className="h-4 w-4 mr-2" />
                                   {t('common.add')} {t('settings.locations')}
                                 </Button>
@@ -892,6 +932,12 @@ export default function SettingsPage() {
         room={selectedRoom || undefined}
         open={roomModalOpen}
         onOpenChange={setRoomModalOpen}
+      />
+      
+      <LocationFormModal
+        location={selectedLocation || undefined}
+        open={locationModalOpen}
+        onOpenChange={setLocationModalOpen}
       />
     </AppLayout>
   );
