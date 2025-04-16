@@ -387,6 +387,13 @@ export default function SettingsPage() {
       return userId;
     },
     onSuccess: (userId) => {
+      // Update local state immediately to remove the user from the UI
+      const currentUsers = queryClient.getQueryData<User[]>(['/api/users']) || [];
+      queryClient.setQueryData(
+        ['/api/users'],
+        currentUsers.filter(u => u.id !== userId)
+      );
+      // Also invalidate the query to ensure we get fresh data from the server
       queryClient.invalidateQueries({ queryKey: ['/api/users'] });
       toast({
         title: t('settings.deletionApproved'),
