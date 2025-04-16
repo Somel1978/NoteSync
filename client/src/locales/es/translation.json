@@ -191,7 +191,13 @@
     "deletionApproved": "Eliminación Aprobada",
     "deletionApproveSuccess": "La solicitud de eliminación ha sido aprobada.",
     "deletionApproveFailed": "Error al Aprobar Eliminación",
-    "approveDeleteRequest": "Aprobar Solicitud de Eliminación"
+    "approveDeleteRequest": "Aprobar Solicitud de Eliminación",
+    "editUser": "Editar Usuario",
+    "userUpdated": "Usuario Actualizado",
+    "userUpdateSuccess": "El usuario ha sido actualizado exitosamente.",
+    "userUpdateFailed": "Error al actualizar usuario",
+    "confirmDeletionApproval": "¿Está seguro de que desea aprobar esta solicitud de eliminación de cuenta? Esto eliminará permanentemente la cuenta del usuario.",
+    "confirmDeleteUser": "¿Está seguro de que desea eliminar este usuario?"
   },
   "languages": {
     "english": "Inglés",

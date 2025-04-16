@@ -196,7 +196,13 @@
     "rooms": "Rooms",
     "locations": "Locations",
     "manageLocations": "Manage Locations",
-    "password": "Password"
+    "password": "Password",
+    "editUser": "Edit User",
+    "userUpdated": "User Updated",
+    "userUpdateSuccess": "The user has been successfully updated.",
+    "userUpdateFailed": "Failed to update user",
+    "confirmDeletionApproval": "Are you sure you want to approve this account deletion request? This will permanently delete the user account.",
+    "confirmDeleteUser": "Are you sure you want to delete this user?"
   },
   "languages": {
     "english": "English",
@@ -204,7 +210,24 @@
     "portuguese": "Portuguese"
   },
   "locations": {
-    "noLocations": "No locations available"
+    "noLocations": "No locations available",
+    "name": "Location Name",
+    "description": "Description",
+    "address": "Address",
+    "addLocation": "Add Location",
+    "editLocation": "Edit Location",
+    "namePlaceholder": "Enter location name",
+    "descriptionPlaceholder": "Enter location description",
+    "addressPlaceholder": "Enter location address",
+    "createSuccess": "Location Created",
+    "createSuccessDetail": "The location has been successfully created.",
+    "updateSuccess": "Location Updated",
+    "updateSuccessDetail": "The location has been successfully updated.",
+    "deleteSuccess": "Location Deleted",
+    "deleteSuccessDetail": "The location has been successfully deleted.",
+    "deleteError": "Failed to delete location",
+    "createError": "Failed to create location",
+    "updateError": "Failed to update location"
   },
   "roles": {
     "admin": "Administrator",

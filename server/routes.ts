@@ -504,15 +504,44 @@ export function registerRoutes(app: Express): Server {
       const currentUserId = req.user!.id;
       
       // Check if this is the user's own account
-      if (id !== currentUserId && req.user!.role !== 'admin') {
-        return res.status(403).json({ message: "You can only request deletion of your own account" });
+      if (id !== currentUserId) {
+        return res.status(403).json({ message: "You can only request deletion for your own account" });
       }
       
-      const updatedUser = await storage.updateUser(id, { deletionRequested: true });
-      if (!updatedUser) {
+      const user = await storage.getUser(id);
+      if (!user) {
         return res.status(404).json({ message: "User not found" });
       }
-      res.json({ message: "Deletion request submitted successfully" });
+      
+      // Mark for deletion
+      const updatedUser = await storage.updateUser(id, { deletionRequested: true });
+      res.json(updatedUser);
+    } catch (error) {
+      next(error);
+    }
+  });
+  
+  // Approve account deletion (admin only)
+  app.post("/api/users/:id/approve-deletion", isAdmin, async (req, res, next) => {
+    try {
+      const id = parseInt(req.params.id);
+      
+      const user = await storage.getUser(id);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      if (!user.deletionRequested) {
+        return res.status(400).json({ message: "This user has not requested deletion" });
+      }
+      
+      // Actually delete the user
+      const success = await storage.deleteUser(id);
+      if (!success) {
+        return res.status(500).json({ message: "Failed to delete user" });
+      }
+      
+      res.json({ success: true, message: "User deleted successfully" });
     } catch (error) {
       next(error);
     }
