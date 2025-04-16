@@ -361,9 +361,22 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getAuditLogsByAppointment(appointmentId: number): Promise<AuditLog[]> {
-    return db.select().from(auditLogs)
-      .where(eq(auditLogs.appointmentId, appointmentId))
-      .orderBy(desc(auditLogs.createdAt));
+    // Join with users table to get the username
+    const result = await db.select({
+      id: auditLogs.id,
+      appointmentId: auditLogs.appointmentId,
+      userId: auditLogs.userId,
+      actionType: auditLogs.actionType,
+      details: auditLogs.details,
+      timestamp: auditLogs.createdAt,
+      username: users.username
+    })
+    .from(auditLogs)
+    .leftJoin(users, eq(auditLogs.userId, users.id))
+    .where(eq(auditLogs.appointmentId, appointmentId))
+    .orderBy(desc(auditLogs.createdAt));
+    
+    return result;
   }
 
   // Settings Operations

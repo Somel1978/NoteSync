@@ -390,7 +390,7 @@ export function AppointmentDetailsModal({
   const handleAddCustomFacility = (roomIndex: number) => {
     if (!customFacilityName || customFacilityCost <= 0 || !editedAppointment.rooms) return;
     
-    // Create the custom facility object
+    // Create the custom facility object - cost is already in cents
     const customFacility = {
       id: `custom-${Date.now()}`,
       name: customFacilityName,
@@ -405,7 +405,8 @@ export function AppointmentDetailsModal({
     requestedFacilities.push(customFacilityName);
     
     // Update the room with new cost including the facility
-    const newCost = updatedRooms[roomIndex].cost + customFacilityCost;
+    // The room.cost is stored in cents, and customFacilityCost is also in cents
+    const newCost = (updatedRooms[roomIndex].cost || 0) + customFacilityCost;
     updatedRooms[roomIndex] = {
       ...updatedRooms[roomIndex],
       cost: newCost,
