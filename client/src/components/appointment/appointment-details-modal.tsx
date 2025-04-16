@@ -1011,6 +1011,91 @@ export function AppointmentDetailsModal({
                                         </SelectContent>
                                       </Select>
                                     </div>
+                                    
+                                    {/* Add a divider between existing facility selector and custom facility form */}
+                                    <div className="mt-4 mb-2">
+                                      <Separator />
+                                      <h6 className="text-xs font-medium text-gray-500 uppercase mt-3 mb-1">Add Custom Facility</h6>
+                                    </div>
+                                    
+                                    {/* Custom facility form */}
+                                    <div className="grid grid-cols-3 gap-2 mt-2">
+                                      <div className="col-span-2">
+                                        <Input
+                                          placeholder="Facility name"
+                                          value={customFacilityName}
+                                          onChange={(e) => setCustomFacilityName(e.target.value)}
+                                          className="h-9 text-sm"
+                                        />
+                                      </div>
+                                      <div>
+                                        <Input
+                                          placeholder="Cost (cents)"
+                                          type="number"
+                                          min="0"
+                                          value={customFacilityCost}
+                                          onChange={(e) => setCustomFacilityCost(Number(e.target.value))}
+                                          className="h-9 text-sm"
+                                        />
+                                      </div>
+                                      
+                                      <div className="col-span-3 mt-1">
+                                        <Button 
+                                          className="w-full text-xs" 
+                                          variant="outline" 
+                                          size="sm"
+                                          disabled={!customFacilityName || customFacilityCost <= 0}
+                                          onClick={() => {
+                                            // Create the custom facility object
+                                            const customFacility = {
+                                              id: `custom-${Date.now()}`,
+                                              name: customFacilityName,
+                                              cost: customFacilityCost
+                                            };
+                                            
+                                            // Add it to the room's facilities
+                                            const updatedRooms = [...(editedAppointment.rooms as RoomBooking[])];
+                                            const currentIndex = index; // Use the iterator variable from the outer map
+                                            const requestedFacilities = [...(updatedRooms[currentIndex].requestedFacilities || [])];
+                                            
+                                            // Add facility name to requested facilities
+                                            requestedFacilities.push(customFacilityName);
+                                            
+                                            // Update the room with new cost including the facility
+                                            const newCost = updatedRooms[currentIndex].cost + customFacilityCost;
+                                            updatedRooms[currentIndex] = {
+                                              ...updatedRooms[currentIndex],
+                                              cost: newCost,
+                                              requestedFacilities: requestedFacilities
+                                            };
+                                            
+                                            // Update the edited appointment state
+                                            handleInputChange('rooms', updatedRooms);
+                                            
+                                            // Update the total cost if not using custom pricing
+                                            if (!customPricing) {
+                                              let totalCost = 0;
+                                              updatedRooms.forEach(room => {
+                                                totalCost += room.cost;
+                                              });
+                                              handleInputChange('agreedCost', totalCost);
+                                            }
+                                            
+                                            // Reset form
+                                            setCustomFacilityName("");
+                                            setCustomFacilityCost(0);
+                                            
+                                            // Show success message
+                                            toast({
+                                              title: "Custom facility added",
+                                              description: `Added ${customFacilityName} (€${(customFacilityCost/100).toFixed(2)})`,
+                                            });
+                                          }}
+                                        >
+                                          Add Custom Facility
+                                        </Button>
+                                      </div>
+                                    </div>
                                   </div>
                                 </div>
                               </div>
