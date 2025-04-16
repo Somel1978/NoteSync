@@ -296,27 +296,44 @@ export function AppointmentDetailsModal({
     
     // Determine which rate to use based on the cost type
     let baseCost = 0;
+    let facilitiesCost = 0;
     let roomCostType = 'flat';
+    let requestedFacilities: string[] = [];
     
     // Check if this room has a specific cost type in edited data
     if (editedAppointment.rooms && Array.isArray(editedAppointment.rooms)) {
       const roomData = editedAppointment.rooms.find(r => r.roomId === roomId);
-      if (roomData && roomData.costType) {
-        roomCostType = roomData.costType;
+      if (roomData) {
+        if (roomData.costType) {
+          roomCostType = roomData.costType;
+        }
+        if (roomData.requestedFacilities && Array.isArray(roomData.requestedFacilities)) {
+          requestedFacilities = roomData.requestedFacilities;
+        }
       }
     } 
     // Fallback to original room data
     else if (appointment && appointment.rooms && Array.isArray(appointment.rooms)) {
       const roomData = appointment.rooms.find(r => r.roomId === roomId);
-      if (roomData && roomData.costType) {
-        roomCostType = roomData.costType;
+      if (roomData) {
+        if (roomData.costType) {
+          roomCostType = roomData.costType;
+        }
+        if (roomData.requestedFacilities && Array.isArray(roomData.requestedFacilities)) {
+          requestedFacilities = roomData.requestedFacilities;
+        }
       }
     }
     // Last resort, use appointment's global cost type
     else {
       roomCostType = editedAppointment.costType || appointment?.costType || 'flat';
+      // Use the global requested facilities as fallback
+      requestedFacilities = editedAppointment.requestedFacilities as string[] || 
+                            (appointment?.requestedFacilities as string[]) || 
+                            [];
     }
     
+    // Calculate base cost based on rate type
     if (roomCostType === 'flat') {
       baseCost = selectedRoom.flatRate || 0;
     } else if (roomCostType === 'hourly') {
@@ -335,8 +352,39 @@ export function AppointmentDetailsModal({
       baseCost = baseCost * attendeesCount;
     }
     
-    console.log(`Calculated cost for room ${roomId} with type ${roomCostType}: ${baseCost}`);
-    return baseCost;
+    // Calculate additional costs for facilities
+    if (selectedRoom.facilities && requestedFacilities.length > 0) {
+      try {
+        // Parse facilities if they are stored as a string
+        let availableFacilities: any[] = [];
+        if (typeof selectedRoom.facilities === 'string') {
+          availableFacilities = JSON.parse(selectedRoom.facilities);
+        } else if (Array.isArray(selectedRoom.facilities)) {
+          availableFacilities = selectedRoom.facilities;
+        }
+        
+        // Check for facility costs - some may be strings, some may be objects with cost properties
+        availableFacilities.forEach(facility => {
+          if (typeof facility === 'object' && facility.id && facility.cost) {
+            // Check if this facility is requested
+            if (requestedFacilities.includes(facility.id) || 
+                requestedFacilities.includes(facility.name)) {
+              facilitiesCost += facility.cost;
+            }
+          }
+        });
+      } catch (e) {
+        console.warn('Error calculating facility costs:', e);
+      }
+    }
+    
+    const totalCost = baseCost + facilitiesCost;
+    console.log(`Calculated cost for room ${roomId} with type ${roomCostType}:`);
+    console.log(`- Base cost: ${baseCost}`);
+    console.log(`- Facilities cost: ${facilitiesCost}`);
+    console.log(`- Total cost: ${totalCost}`);
+    
+    return totalCost;
   };
   
   // Calculate cost considering all rooms in the appointment
