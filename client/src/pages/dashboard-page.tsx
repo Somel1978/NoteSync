@@ -72,7 +72,7 @@ export default function DashboardPage() {
   }
 
   const getRoomName = (roomId: number) => {
-    if (!rooms) return `Room #${roomId}`;
+    if (!rooms || !Array.isArray(rooms)) return `Room #${roomId}`;
     const room = rooms.find((r: any) => r.id === roomId);
     return room ? room.name : `Room #${roomId}`;
   };
@@ -86,7 +86,7 @@ export default function DashboardPage() {
         </header>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8">
           <StatsCard
             title="Total Bookings"
             value={data?.totalAppointments || 0}
@@ -125,7 +125,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Two Column Layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-8">
           {/* Recent Bookings */}
           <Card>
             <CardHeader className="pb-3">

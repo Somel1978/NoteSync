@@ -1,5 +1,5 @@
 import { useAuth } from "@/hooks/use-auth";
-import { Link, useLocation } from "wouter";
+import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import {
@@ -11,11 +11,17 @@ import {
   Store,
   CheckCircle,
   Globe,
+  Menu,
+  X,
 } from "lucide-react";
+import { useState, useEffect } from "react";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export function Sidebar() {
   const { user, logoutMutation } = useAuth();
-  const [location] = useLocation();
+  const [location, navigate] = useLocation();
+  const [isOpen, setIsOpen] = useState(false);
+  const isMobile = useIsMobile();
 
   const handleLogout = () => {
     logoutMutation.mutate();
@@ -25,104 +31,92 @@ export function Sidebar() {
     return location === path;
   };
 
+  // Close sidebar when navigating on mobile
+  useEffect(() => {
+    if (isMobile) {
+      setIsOpen(false);
+    }
+  }, [location, isMobile]);
+
   if (!user) return null;
 
-  return (
-    <aside className="bg-primary w-64 h-full flex flex-col fixed left-0 top-0">
+  const NavItem = ({ href, icon, label }: { href: string; icon: React.ReactNode; label: string }) => {
+    const handleClick = (e: React.MouseEvent) => {
+      e.preventDefault();
+      navigate(href);
+    };
+
+    return (
+      <li className="mb-2">
+        <button
+          onClick={handleClick}
+          className={cn(
+            "flex items-center text-gray-300 hover:bg-primary-hover px-4 py-3 rounded-md transition-colors w-full text-left",
+            {
+              "bg-primary-hover border-l-3 border-green-500 text-white": isActive(href),
+            }
+          )}
+        >
+          {icon}
+          <span>{label}</span>
+        </button>
+      </li>
+    );
+  };
+
+  const sidebarContent = (
+    <>
       {/* Logo */}
-      <div className="p-6 flex items-center justify-center border-b border-gray-700">
-        <div className="bg-white p-2 rounded-md w-16 h-16 flex items-center justify-center">
-          <div className="text-2xl font-bold text-primary">AC</div>
+      <div className="p-4 flex items-center justify-between border-b border-gray-700">
+        <div className="flex items-center">
+          <div className="bg-white p-2 rounded-md w-10 h-10 flex items-center justify-center">
+            <div className="text-xl font-bold text-primary">AC</div>
+          </div>
+          <div className="ml-3 text-white">
+            <div className="font-semibold text-sm">ACRDSC</div>
+            <div className="text-xs">Reservas</div>
+          </div>
         </div>
-        <div className="ml-3 text-white">
-          <div className="font-semibold">ACRDSC</div>
-          <div className="text-xs">Reservas</div>
-        </div>
+        {isMobile && (
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setIsOpen(false)}
+            className="text-white"
+          >
+            <X className="h-5 w-5" />
+          </Button>
+        )}
       </div>
 
       {/* Navigation Links */}
-      <nav className="flex-1 mt-6">
+      <nav className="flex-1 mt-4">
         <ul className="px-2">
-          <li className="mb-2">
-            <Link href="/">
-              <a
-                className={cn(
-                  "flex items-center text-gray-300 hover:bg-primary-hover px-4 py-3 rounded-md transition-colors",
-                  {
-                    "bg-primary-hover border-l-3 border-green-500 text-white":
-                      isActive("/"),
-                  }
-                )}
-              >
-                <LayoutGrid className="h-5 w-5 mr-3" />
-                <span>Dashboard</span>
-              </a>
-            </Link>
-          </li>
-          <li className="mb-2">
-            <Link href="/appointments">
-              <a
-                className={cn(
-                  "flex items-center text-gray-300 hover:bg-primary-hover px-4 py-3 rounded-md transition-colors",
-                  {
-                    "bg-primary-hover border-l-3 border-green-500 text-white":
-                      isActive("/appointments"),
-                  }
-                )}
-              >
-                <CheckCircle className="h-5 w-5 mr-3" />
-                <span>Appointments</span>
-              </a>
-            </Link>
-          </li>
-          <li className="mb-2">
-            <Link href="/rooms">
-              <a
-                className={cn(
-                  "flex items-center text-gray-300 hover:bg-primary-hover px-4 py-3 rounded-md transition-colors",
-                  {
-                    "bg-primary-hover border-l-3 border-green-500 text-white":
-                      isActive("/rooms"),
-                  }
-                )}
-              >
-                <Store className="h-5 w-5 mr-3" />
-                <span>Available Rooms</span>
-              </a>
-            </Link>
-          </li>
-          <li className="mb-2">
-            <Link href="/new-booking">
-              <a
-                className={cn(
-                  "flex items-center text-gray-300 hover:bg-primary-hover px-4 py-3 rounded-md transition-colors",
-                  {
-                    "bg-primary-hover border-l-3 border-green-500 text-white":
-                      isActive("/new-booking"),
-                  }
-                )}
-              >
-                <PlusCircle className="h-5 w-5 mr-3" />
-                <span>New Booking</span>
-              </a>
-            </Link>
-          </li>
-          <li className="mb-2">
-            <Link href="/settings">
-              <a
-                className={cn(
-                  "flex items-center text-gray-300 hover:bg-primary-hover px-4 py-3 rounded-md transition-colors",
-                  {
-                    "bg-primary-hover border-l-3 border-green-500 text-white":
-                      isActive("/settings"),
-                  }
-                )}
-              >
-                <Settings className="h-5 w-5 mr-3" />
-                <span>Settings</span>
-              </a>
-            </Link>
-          </li>
+          <NavItem
+            href="/"
+            icon={<LayoutGrid className="h-5 w-5 mr-3" />}
+            label="Dashboard"
+          />
+          <NavItem
+            href="/appointments"
+            icon={<CheckCircle className="h-5 w-5 mr-3" />}
+            label="Appointments"
+          />
+          <NavItem
+            href="/rooms"
+            icon={<Store className="h-5 w-5 mr-3" />}
+            label="Available Rooms"
+          />
+          <NavItem
+            href="/new-booking"
+            icon={<PlusCircle className="h-5 w-5 mr-3" />}
+            label="New Booking"
+          />
+          <NavItem
+            href="/settings"
+            icon={<Settings className="h-5 w-5 mr-3" />}
+            label="Settings"
+          />
         </ul>
       </nav>
 
@@ -141,6 +135,47 @@ export function Sidebar() {
           <span className="ml-2 text-sm text-gray-400">English</span>
         </div>
       </div>
+    </>
+  );
+
+  // Mobile menu toggle
+  if (isMobile) {
+    return (
+      <>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => setIsOpen(true)}
+          className="fixed top-4 left-4 z-50 rounded-full bg-primary text-white shadow-lg"
+        >
+          <Menu className="h-5 w-5" />
+        </Button>
+        
+        {/* Mobile sidebar */}
+        <aside
+          className={cn(
+            "bg-primary w-64 h-full flex flex-col fixed left-0 top-0 z-50 transform transition-transform duration-300 ease-in-out",
+            isOpen ? "translate-x-0" : "-translate-x-full"
+          )}
+        >
+          {sidebarContent}
+        </aside>
+        
+        {/* Backdrop */}
+        {isOpen && (
+          <div 
+            className="fixed inset-0 bg-black bg-opacity-50 z-40"
+            onClick={() => setIsOpen(false)}
+          />
+        )}
+      </>
+    );
+  }
+
+  // Desktop sidebar
+  return (
+    <aside className="bg-primary w-64 h-full flex flex-col fixed left-0 top-0 z-40 hidden md:flex">
+      {sidebarContent}
     </aside>
   );
 }
