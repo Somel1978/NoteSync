@@ -297,6 +297,7 @@ const EmailSettingsForm = () => {
   
   // Form submission
   const onSubmit = (data: EmailSettingsFormValues) => {
+    console.log("Submitting email settings:", data);
     saveEmailSettingsMutation.mutate(data);
   };
   
