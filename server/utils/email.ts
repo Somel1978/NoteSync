@@ -177,6 +177,16 @@ export class EmailNotificationService {
       const startDate = new Date(appointment.startTime).toLocaleString();
       const endDate = new Date(appointment.endTime).toLocaleString();
       
+      // Status Portuguese display
+      const statusInPortuguese = {
+        'pending': 'Pendente',
+        'approved': 'Aprovado',
+        'rejected': 'Rejeitado',
+        'cancelled': 'Cancelado'
+      };
+      
+      const statusDisplay = statusInPortuguese[appointment.status as keyof typeof statusInPortuguese] || appointment.status;
+      
       // Get custom email template and replace placeholders
       let customTemplate = settings.emailTemplateBookingCreated || '';
       customTemplate = customTemplate
@@ -185,7 +195,7 @@ export class EmailNotificationService {
         .replace(/{locationName}/g, location.name)
         .replace(/{startTime}/g, startDate)
         .replace(/{endTime}/g, endDate)
-        .replace(/{status}/g, appointment.status)
+        .replace(/{status}/g, statusDisplay)
         .replace(/{cost}/g, `€${(appointment.agreedCost / 100).toFixed(2)}`);
       
       
