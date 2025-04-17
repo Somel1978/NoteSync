@@ -728,18 +728,67 @@ export function AppointmentDetailsModal({
         if (appointment?.customFacilities && appointment.customFacilities[cacheKey]) {
           facilityData = appointment.customFacilities[cacheKey];
           facilityCost = Number(facilityData.cost || 0);
+          
+          // Ensure valid cost - if invalid, use default and fix the value
+          if (isNaN(facilityCost) || facilityCost <= 0) {
+            console.warn(`Found invalid cost for facility ${facilityName} in database, setting default of 1500 cents (€15.00)`);
+            facilityCost = 1500; // Default to €15
+            
+            // Fix value in memory
+            if (editedAppointment.customFacilities) {
+              editedAppointment.customFacilities[cacheKey] = {
+                ...facilityData,
+                cost: facilityCost
+              };
+            }
+          }
+          
           console.log(`Facility ${facilityName} found in appointment.customFacilities with cost ${facilityCost / 100}`);
         } 
         // 2. Check in editedAppointment.customFacilities (from current editing session)
         else if (editedAppointment.customFacilities && editedAppointment.customFacilities[cacheKey]) {
           facilityData = editedAppointment.customFacilities[cacheKey];
           facilityCost = Number(facilityData.cost || 0);
+          
+          // Ensure valid cost - if invalid, use default and fix the value
+          if (isNaN(facilityCost) || facilityCost <= 0) {
+            console.warn(`Found invalid cost for facility ${facilityName} in edited data, setting default of 1500 cents (€15.00)`);
+            facilityCost = 1500; // Default to €15
+            
+            // Fix value in memory
+            editedAppointment.customFacilities[cacheKey] = {
+              ...facilityData,
+              cost: facilityCost
+            };
+          }
+          
           console.log(`Facility ${facilityName} found in editedAppointment.customFacilities with cost ${facilityCost / 100}`);
         } 
         // 3. Check in window.customFacilities (temporary cache)
         else if (window.customFacilities && window.customFacilities[cacheKey]) {
           facilityData = window.customFacilities[cacheKey];
           facilityCost = Number(facilityData.cost || 0);
+          
+          // Ensure valid cost - if invalid, use default and fix the value
+          if (isNaN(facilityCost) || facilityCost <= 0) {
+            console.warn(`Found invalid cost for facility ${facilityName} in cache, setting default of 1500 cents (€15.00)`);
+            facilityCost = 1500; // Default to €15
+            
+            // Fix values in both locations
+            window.customFacilities[cacheKey] = {
+              ...facilityData,
+              cost: facilityCost
+            };
+            
+            // Also fix in editedAppointment if available
+            if (editedAppointment.customFacilities) {
+              editedAppointment.customFacilities[cacheKey] = {
+                ...facilityData,
+                cost: facilityCost
+              };
+            }
+          }
+          
           console.log(`Facility ${facilityName} found in window.customFacilities with cost ${facilityCost / 100}`);
         } 
         // 4. Check standard facilities from the room
@@ -870,8 +919,11 @@ export function AppointmentDetailsModal({
       window.customFacilities = {};
     }
     
-    // Store the custom facility in the global cache
-    window.customFacilities[cacheKey] = customFacility;
+    // Store the custom facility in the global cache with guaranteed number value for cost
+    window.customFacilities[cacheKey] = {
+      ...customFacility,
+      cost: Number(facilityCost) // Ensure cost is stored as a number
+    };
     
     // Make sure we have a customFacilities field on the appointment
     if (!editedAppointment.customFacilities) {
@@ -879,7 +931,11 @@ export function AppointmentDetailsModal({
     }
     
     // Also store it in the appointment.customFacilities to ensure persistence
-    editedAppointment.customFacilities[cacheKey] = customFacility;
+    // Make a deep copy to ensure no reference issues
+    editedAppointment.customFacilities[cacheKey] = {
+      ...customFacility,
+      cost: Number(facilityCost) // Ensure cost is stored as a number
+    };
     
     // Add it to the room's facilities
     const updatedRooms = [...(editedAppointment.rooms as RoomBooking[])];
