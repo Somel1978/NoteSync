@@ -147,18 +147,25 @@ export function AppointmentDetailsModal({
   // Mutation for rejecting appointments
   const rejectMutation = useMutation({
     mutationFn: async ({ id, reason }: { id: number; reason: string }) => {
+      console.log(`Rejecting appointment ${id} with reason: ${reason}`);
       const res = await apiRequest("PUT", `/api/appointments/${id}/reject`, { reason });
       return await res.json();
     },
-    onSuccess: () => {
-      toast({ title: "Appointment rejected" });
+    onSuccess: (data) => {
+      console.log("Appointment rejection successful:", data);
+      toast({ 
+        title: t('appointments.rejectSuccess', 'Appointment rejected'),
+        description: t('appointments.rejectSuccessDetail', 'The appointment has been successfully rejected.')
+      });
       queryClient.invalidateQueries({ queryKey: ["/api/appointments"] });
+      queryClient.invalidateQueries({ queryKey: [`/api/appointments/${data.id}`] });
       onOpenChange(false);
       setRejectionReason("");
     },
     onError: (error: Error) => {
+      console.error("Appointment rejection failed:", error);
       toast({
-        title: "Error rejecting appointment",
+        title: t('appointments.rejectError', 'Error rejecting appointment'),
         description: error.message,
         variant: "destructive",
       });
