@@ -541,7 +541,8 @@ export function registerAppointmentRoutes(app: Express): void {
   app.get("/api/stats", isAdminOrDirector, async (req: Request, res: Response, next: Function) => {
     try {
       // Get basic stats
-      const totalAppointments = (await storage.getAllAppointments()).length;
+      const allAppointments = await storage.getAllAppointments();
+      const totalAppointments = allAppointments.length;
       const recentAppointments = (await storage.getRecentAppointments(10)).length;
       const activeRooms = (await storage.getActiveRooms()).length;
       const totalUsers = (await storage.getAllUsers()).length;
@@ -575,6 +576,46 @@ export function registerAppointmentRoutes(app: Express): void {
       // Get recent bookings
       const recentBookingsList = await storage.getRecentAppointments(5);
       
+      // Calculate booking status counts
+      const statusCounts = {
+        approved: 0,
+        pending: 0,
+        rejected: 0,
+        cancelled: 0
+      };
+      
+      allAppointments.forEach(appointment => {
+        if (appointment.status === 'approved') statusCounts.approved++;
+        else if (appointment.status === 'pending') statusCounts.pending++;
+        else if (appointment.status === 'rejected') statusCounts.rejected++;
+        else if (appointment.status === 'cancelled') statusCounts.cancelled++;
+      });
+      
+      // Generate monthly utilization data for the past 6 months
+      const monthlyUtilization = [];
+      const monthLabels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      
+      for (let i = 5; i >= 0; i--) {
+        const monthStartDate = new Date(now);
+        monthStartDate.setMonth(now.getMonth() - i);
+        monthStartDate.setDate(1);
+        monthStartDate.setHours(0, 0, 0, 0);
+        
+        const monthEndDate = new Date(monthStartDate);
+        monthEndDate.setMonth(monthStartDate.getMonth() + 1);
+        monthEndDate.setDate(0);
+        monthEndDate.setHours(23, 59, 59, 999);
+        
+        const monthUtilization = await storage.getOverallUtilization(monthStartDate, monthEndDate);
+        const avgUtilization = monthUtilization.reduce((total, curr) => total + curr.utilization, 0) / 
+                              (monthUtilization.length || 1);
+        
+        monthlyUtilization.push({
+          month: monthLabels[monthStartDate.getMonth()],
+          utilization: avgUtilization
+        });
+      }
+      
       res.json({
         totalAppointments,
         recentAppointments,
@@ -582,7 +623,9 @@ export function registerAppointmentRoutes(app: Express): void {
         totalUsers,
         utilization,
         popularRooms,
-        recentBookings: recentBookingsList
+        recentBookings: recentBookingsList,
+        statusCounts,
+        monthlyUtilization
       });
     } catch (error) {
       next(error);
