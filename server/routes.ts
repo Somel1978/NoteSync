@@ -754,16 +754,32 @@ export function registerRoutes(app: Express): Server {
 
   app.post("/api/settings/email", isAdmin, async (req, res, next) => {
     try {
-      const emailSettings = req.body as EmailSettings;
+      let emailSettings = req.body as EmailSettings;
       
       // Validate emailSettings against schema
       if (!emailSettings) {
         return res.status(400).json({ error: "Email settings are required" });
       }
       
+      // Ensure we have all required fields with defaults if missing
+      emailSettings = {
+        enabled: emailSettings.enabled ?? false,
+        mailjetApiKey: emailSettings.mailjetApiKey ?? "",
+        mailjetSecretKey: emailSettings.mailjetSecretKey ?? "",
+        systemEmail: emailSettings.systemEmail ?? "",
+        systemName: emailSettings.systemName ?? "ACRDSC Reservas",
+        notifyOnCreate: emailSettings.notifyOnCreate ?? true,
+        notifyOnUpdate: emailSettings.notifyOnUpdate ?? true,
+        notifyOnStatusChange: emailSettings.notifyOnStatusChange ?? true,
+        emailTemplateBookingCreated: emailSettings.emailTemplateBookingCreated ?? "",
+        emailTemplateBookingUpdated: emailSettings.emailTemplateBookingUpdated ?? "",
+        emailTemplateBookingStatusChanged: emailSettings.emailTemplateBookingStatusChanged ?? ""
+      };
+      
       const setting = await storage.createOrUpdateSetting('email_settings', emailSettings);
       res.json(setting.value as EmailSettings);
     } catch (error) {
+      console.error("Error saving email settings:", error);
       next(error);
     }
   });
