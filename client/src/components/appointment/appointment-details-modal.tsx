@@ -990,6 +990,9 @@ export function AppointmentDetailsModal({
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Appointment Details</DialogTitle>
+          </DialogHeader>
           <div className="flex justify-center items-center h-40">
             <p>Loading appointment details...</p>
           </div>
@@ -1003,6 +1006,11 @@ export function AppointmentDetailsModal({
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>
+              {appointment?.title || "Appointment Details"}
+            </DialogTitle>
+          </DialogHeader>
           <DialogHeader>
             <DialogTitle className="text-xl font-bold">
               {appointment?.title || "Appointment Details"}
