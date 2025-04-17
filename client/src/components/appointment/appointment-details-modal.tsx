@@ -708,8 +708,12 @@ export function AppointmentDetailsModal({
   };
 
   const handleConfirmReject = () => {
+    // Sempre use o motivo de rejeição inserido pelo usuário
     if (onReject && appointmentId) {
-      onReject(appointmentId);
+      // Precisamos passar o motivo da rejeição para o callback
+      console.log(`Rejeitando ${appointmentId} com motivo: ${rejectionReason}`);
+      // O callback não aceita o motivo, então usamos diretamente a mutação
+      rejectMutation.mutate({ id: appointmentId, reason: rejectionReason });
     } else {
       rejectMutation.mutate({ id: appointmentId, reason: rejectionReason });
     }

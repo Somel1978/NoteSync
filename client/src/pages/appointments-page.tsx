@@ -271,10 +271,7 @@ export default function AppointmentsPage() {
               }
             }}
             onApprove={handleApprove}
-            onReject={(id) => {
-              // Passe id e motivo da rejeição para a mutação
-              rejectAppointmentMutation.mutate({ id, reason: "" });
-            }}
+            onReject={undefined}
             showRejectDialog={showRejectDialog}
           />
         )}
