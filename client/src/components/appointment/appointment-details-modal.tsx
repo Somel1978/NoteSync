@@ -1107,46 +1107,46 @@ export function AppointmentDetailsModal({
                   {!isEditMode ? (
                     <div className="space-y-6">
                       <div>
-                        <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">Title</h5>
+                        <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">{t('appointments.detailsModal.appointmentTitle')}</h5>
                         <p className="text-sm text-gray-900">{appointment.title}</p>
                       </div>
                       <div>
-                        <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">Description</h5>
-                        <p className="text-sm text-gray-900">{appointment.description || "No description provided"}</p>
+                        <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">{t('appointments.detailsModal.description')}</h5>
+                        <p className="text-sm text-gray-900">{appointment.description || t('appointments.detailsModal.noDescription')}</p>
                       </div>
                       <div className="grid grid-cols-2 gap-6">
                         <div>
-                          <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">Date</h5>
+                          <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">{t('appointments.detailsModal.date')}</h5>
                           <p className="text-sm text-gray-900">
-                            {appointment.startTime ? format(new Date(appointment.startTime), "MMMM d, yyyy") : "Not set"}
+                            {appointment.startTime ? format(new Date(appointment.startTime), "MMMM d, yyyy") : t('appointments.detailsModal.notSet')}
                           </p>
                         </div>
                         <div>
-                          <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">Time</h5>
+                          <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">{t('appointments.detailsModal.time')}</h5>
                           <p className="text-sm text-gray-900">
                             {appointment.startTime && appointment.endTime ? (
                               <>
                                 {format(new Date(appointment.startTime), "h:mm a")} - {format(new Date(appointment.endTime), "h:mm a")}
                               </>
                             ) : (
-                              "Not set"
+                              t('appointments.detailsModal.notSet')
                             )}
                           </p>
                         </div>
                       </div>
                       <div>
-                        <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">Attendees</h5>
+                        <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">{t('appointments.detailsModal.attendees')}</h5>
                         <p className="text-sm text-gray-900">{appointment.attendeesCount || 0} people</p>
                       </div>
                       <div>
-                        <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">Order Number</h5>
-                        <p className="text-sm text-gray-900">{appointment.orderNumber || "Not assigned"}</p>
+                        <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">{t('appointments.detailsModal.orderNumber')}</h5>
+                        <p className="text-sm text-gray-900">{appointment.orderNumber || t('appointments.detailsModal.notSet')}</p>
                       </div>
                     </div>
                   ) : (
                     <div className="space-y-6">
                       <div>
-                        <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">Title</h5>
+                        <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">{t('appointments.detailsModal.appointmentTitle')}</h5>
                         <Input
                           value={editedAppointment.title || ""}
                           onChange={(e) => handleInputChange('title', e.target.value)}
@@ -1154,7 +1154,7 @@ export function AppointmentDetailsModal({
                         />
                       </div>
                       <div>
-                        <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">Description</h5>
+                        <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">{t('appointments.detailsModal.description')}</h5>
                         <Textarea
                           value={editedAppointment.description || ""}
                           onChange={(e) => handleInputChange('description', e.target.value)}
@@ -1164,7 +1164,7 @@ export function AppointmentDetailsModal({
                       </div>
                       <div className="grid grid-cols-2 gap-6">
                         <div>
-                          <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">Start Time</h5>
+                          <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">{t('appointments.detailsModal.startTime')}</h5>
                           <Input
                             type="datetime-local"
                             value={editedAppointment.startTime ? new Date(editedAppointment.startTime).toISOString().slice(0, 16) : ""}
@@ -1173,7 +1173,7 @@ export function AppointmentDetailsModal({
                           />
                         </div>
                         <div>
-                          <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">End Time</h5>
+                          <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">{t('appointments.detailsModal.endTime')}</h5>
                           <Input
                             type="datetime-local"
                             value={editedAppointment.endTime ? new Date(editedAppointment.endTime).toISOString().slice(0, 16) : ""}
@@ -1183,7 +1183,7 @@ export function AppointmentDetailsModal({
                         </div>
                       </div>
                       <div>
-                        <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">Attendees</h5>
+                        <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">{t('appointments.detailsModal.attendees')}</h5>
                         <Input
                           type="number"
                           value={editedAppointment.attendeesCount || 0}
@@ -1194,13 +1194,13 @@ export function AppointmentDetailsModal({
                       </div>
                       {rooms && (
                         <div>
-                          <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">Primary Room</h5>
+                          <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">{t('appointments.detailsModal.primaryRoom')}</h5>
                           <Select
                             value={editedAppointment.roomId?.toString() || ""}
                             onValueChange={(value) => handleRoomChange(Number(value))}
                           >
                             <SelectTrigger className="w-full mt-1">
-                              <SelectValue placeholder="Select a room" />
+                              <SelectValue placeholder={t('appointments.detailsModal.selectRoom')} />
                             </SelectTrigger>
                             <SelectContent>
                               {rooms.map((room) => (
@@ -1265,17 +1265,17 @@ export function AppointmentDetailsModal({
                               
                               <div className="space-y-4">
                                 <div>
-                                  <h6 className="text-xs font-medium text-gray-500 uppercase mb-1">Cost Type</h6>
+                                  <h6 className="text-xs font-medium text-gray-500 uppercase mb-1">{t('appointments.detailsModal.costType')}</h6>
                                   <p className="text-sm text-gray-900">
-                                    {roomBooking.costType === 'flat' ? 'Flat Rate' : 
-                                     roomBooking.costType === 'hourly' ? 'Hourly Rate' : 
-                                     roomBooking.costType === 'per_attendee' ? 'Per Attendee' : 
+                                    {roomBooking.costType === 'flat' ? t('appointments.detailsModal.flatRate') : 
+                                     roomBooking.costType === 'hourly' ? t('appointments.detailsModal.hourlyRate') : 
+                                     roomBooking.costType === 'per_attendee' ? t('appointments.detailsModal.perAttendee') : 
                                      roomBooking.costType}
                                   </p>
                                 </div>
                                 
                                 <div>
-                                  <h6 className="text-xs font-medium text-gray-500 uppercase mb-1">Facilities</h6>
+                                  <h6 className="text-xs font-medium text-gray-500 uppercase mb-1">{t('appointments.detailsModal.facilities')}</h6>
                                   {roomBooking.requestedFacilities && roomBooking.requestedFacilities.length > 0 ? (
                                     <div className="flex flex-wrap gap-1 p-2 bg-gray-50 rounded-md">
                                       {roomBooking.requestedFacilities.map((facility: string, i: number) => (
@@ -1288,7 +1288,7 @@ export function AppointmentDetailsModal({
                                       ))}
                                     </div>
                                   ) : (
-                                    <p className="text-sm text-gray-500">No additional facilities requested</p>
+                                    <p className="text-sm text-gray-500">{t('appointments.detailsModal.noFacilities')}</p>
                                   )}
                                 </div>
                               </div>
