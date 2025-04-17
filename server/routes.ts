@@ -429,7 +429,8 @@ export function registerRoutes(app: Express): Server {
     }
   });
   
-  app.patch("/api/appointments/:id", isAuthenticated, async (req, res, next) => {
+  // Common function for handling both PATCH and PUT appointment updates
+  const updateAppointment = async (req: Request, res: Response, next: Function) => {
     try {
       const id = parseInt(req.params.id);
       const appointment = await storage.getAppointment(id);
@@ -447,31 +448,55 @@ export function registerRoutes(app: Express): Server {
       const statusChanged = req.body.status && req.body.status !== appointment.status;
       const oldAppointment = { ...appointment };
       
-      // Update the appointment
-      const updatedAppointment = await storage.updateAppointment(id, req.body);
-      
-      // Create audit log entry
-      await storage.createAuditLog({
-        appointmentId: id,
-        userId: req.user?.id as number,
-        action: statusChanged ? `status-changed-to-${req.body.status}` : "updated",
-        details: statusChanged 
-          ? `Status changed from ${oldAppointment.status} to ${req.body.status}`
-          : "Appointment details updated"
-      });
-      
-      // Send appropriate email notification
-      if (statusChanged) {
-        await EmailNotificationService.appointmentStatusChanged(updatedAppointment!, req.user!, oldAppointment.status);
-      } else {
-        await EmailNotificationService.appointmentUpdated(updatedAppointment!, req.user!, oldAppointment);
+      // Update the appointment with proper error handling
+      try {
+        const updatedAppointment = await storage.updateAppointment(id, req.body);
+        
+        if (!updatedAppointment) {
+          return res.status(500).json({ message: "Failed to update appointment" });
+        }
+        
+        // Create audit log entry
+        await storage.createAuditLog({
+          appointmentId: id,
+          userId: req.user?.id as number,
+          action: statusChanged ? `status-changed-to-${req.body.status}` : "updated",
+          details: statusChanged 
+            ? `Status changed from ${oldAppointment.status} to ${req.body.status}`
+            : "Appointment details updated"
+        });
+        
+        // Try to send notifications but don't fail if email sending fails
+        try {
+          // Send appropriate email notification
+          if (statusChanged) {
+            await EmailNotificationService.appointmentStatusChanged(updatedAppointment, req.user!, oldAppointment.status);
+          } else {
+            await EmailNotificationService.appointmentUpdated(updatedAppointment, req.user!, oldAppointment);
+          }
+        } catch (emailError) {
+          console.error("Error sending email notification:", emailError);
+          // Continue without failing the request
+        }
+        
+        return res.json(updatedAppointment);
+      } catch (updateError) {
+        console.error("Error updating appointment:", updateError);
+        return res.status(500).json({ 
+          message: "Error updating appointment", 
+          error: updateError instanceof Error ? updateError.message : String(updateError) 
+        });
       }
-      
-      res.json(updatedAppointment);
     } catch (error) {
       next(error);
     }
-  });
+  };
+
+  // PATCH endpoint for partial updates
+  app.patch("/api/appointments/:id", isAuthenticated, updateAppointment);
+  
+  // PUT endpoint for full updates (to support frontend using PUT)
+  app.put("/api/appointments/:id", isAuthenticated, updateAppointment);
   
   app.delete("/api/appointments/:id", isAuthenticated, async (req, res, next) => {
     try {
