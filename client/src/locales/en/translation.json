@@ -109,11 +109,17 @@
       "rejected": "Rejected",
       "cancelled": "Cancelled"
     },
-    "detailsModal.status:appointments.status.pending": "Status: Pending",
-    "detailsModal.status:appointments.status.approved": "Status: Approved",
-    "detailsModal.status:appointments.status.rejected": "Status: Rejected",
-    "detailsModal.status:appointments.status.cancelled": "Status: Cancelled",
     "detailsModal": {
+      "status": {
+        "pending": "Status: Pending",
+        "approved": "Status: Approved",
+        "rejected": "Status: Rejected",
+        "cancelled": "Status: Cancelled"
+      },
+      "statusPending": "Status: Pending",
+      "statusApproved": "Status: Approved",
+      "statusRejected": "Status: Rejected",
+      "statusCancelled": "Status: Cancelled",
       "title": "Appointment Details",
       "tabs": {
         "details": "Details",
