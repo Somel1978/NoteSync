@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, UseMutationResult } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { ImageUpload } from '@/components/ui/file-upload/image-upload';
 import { AppLayout } from "@/components/layout/app-layout";
 import { RoomFormModal } from "@/components/room/room-form-modal";
 import { LocationFormModal } from "@/components/location/location-form-modal";
@@ -303,20 +304,65 @@ const AppearanceSettingsForm = () => {
             <form onSubmit={appearanceSettingsForm.handleSubmit(onSubmit)} className="space-y-4">
               <FormField
                 control={appearanceSettingsForm.control}
-                name="logoText"
+                name="useLogoImage"
                 render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t('settings.logoText')}</FormLabel>
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4 mb-4">
+                    <div className="space-y-0.5">
+                      <FormLabel className="text-base">
+                        {t('settings.useLogoImage')}
+                      </FormLabel>
+                      <FormDescription>
+                        {t('settings.useLogoImageDescription') || "Use an image instead of text for the logo"}
+                      </FormDescription>
+                    </div>
                     <FormControl>
-                      <Input placeholder="AC" {...field} maxLength={2} />
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
                     </FormControl>
-                    <FormDescription>
-                      {t('settings.logoTextDescription')}
-                    </FormDescription>
-                    <FormMessage />
                   </FormItem>
                 )}
               />
+              
+              {!appearanceSettingsForm.watch("useLogoImage") ? (
+                <FormField
+                  control={appearanceSettingsForm.control}
+                  name="logoText"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t('settings.logoText')}</FormLabel>
+                      <FormControl>
+                        <Input placeholder="AC" {...field} maxLength={2} />
+                      </FormControl>
+                      <FormDescription>
+                        {t('settings.logoTextDescription') || "Short text to display as logo (max 2 characters)"}
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              ) : (
+                <FormField
+                  control={appearanceSettingsForm.control}
+                  name="logoUrl"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t('settings.logoImage')}</FormLabel>
+                      <FormControl>
+                        <ImageUpload 
+                          value={field.value} 
+                          onChange={field.onChange}
+                        />
+                      </FormControl>
+                      <FormDescription>
+                        {t('settings.logoImageDescription') || "Upload an image to use as logo (max 2MB)"}
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
               
               <FormField
                 control={appearanceSettingsForm.control}
@@ -355,9 +401,19 @@ const AppearanceSettingsForm = () => {
               <div className="flex items-center justify-between pt-4">
                 <div className="bg-gray-100 p-4 rounded-md border">
                   <div className="flex items-center">
-                    <div className="bg-primary text-white p-2 rounded-md w-10 h-10 flex items-center justify-center">
-                      <div className="text-sm font-bold">{appearanceSettingsForm.watch("logoText")}</div>
-                    </div>
+                    {appearanceSettingsForm.watch("useLogoImage") && appearanceSettingsForm.watch("logoUrl") ? (
+                      <div className="w-10 h-10 flex items-center justify-center overflow-hidden rounded-md">
+                        <img 
+                          src={appearanceSettingsForm.watch("logoUrl")} 
+                          alt="Logo preview" 
+                          className="object-contain max-w-full max-h-full"
+                        />
+                      </div>
+                    ) : (
+                      <div className="bg-primary text-white p-2 rounded-md w-10 h-10 flex items-center justify-center">
+                        <div className="text-sm font-bold">{appearanceSettingsForm.watch("logoText")}</div>
+                      </div>
+                    )}
                     <div className="ml-3">
                       <div className="font-semibold text-sm">{appearanceSettingsForm.watch("title")}</div>
                       <div className="text-xs">{appearanceSettingsForm.watch("subtitle")}</div>
