@@ -105,10 +105,17 @@ const emailSettingsSchema = z.object({
   emailTemplateBookingStatusChanged: z.string().optional()
 });
 
+const appearanceSettingsSchema = z.object({
+  logoText: z.string().min(1, "Logo text is required").max(2, "Logo text must be at most 2 characters"),
+  title: z.string().min(1, "Title is required").max(20, "Title must be at most 20 characters"),
+  subtitle: z.string().min(1, "Subtitle is required").max(20, "Subtitle must be at most 20 characters")
+});
+
 type ProfileFormValues = z.infer<typeof profileSchema>;
 type ChangePasswordFormValues = z.infer<typeof changePasswordSchema>;
 type NewUserFormValues = z.infer<typeof newUserSchema>;
 type EmailSettingsFormValues = z.infer<typeof emailSettingsSchema>;
+type AppearanceSettingsFormValues = z.infer<typeof appearanceSettingsSchema>;
 
 // UserProfileCard component
 const UserProfileCard = ({ 
@@ -212,6 +219,167 @@ const UserProfileCard = ({
         </div>
       </CardContent>
     </Card>
+  );
+};
+
+// Appearance Settings Form component
+const AppearanceSettingsForm = () => {
+  const { t } = useTranslation();
+  const { toast } = useToast();
+  
+  // Initialize and fetch appearance settings
+  const { data: appearanceSettingsData, isLoading } = useQuery<AppearanceSettingsFormValues>({
+    queryKey: ['/api/settings/appearance'],
+    enabled: true,
+  });
+  
+  const appearanceSettingsForm = useForm<AppearanceSettingsFormValues>({
+    resolver: zodResolver(appearanceSettingsSchema),
+    defaultValues: {
+      logoText: "AC",
+      title: "ACRDSC",
+      subtitle: "Reservas"
+    },
+  });
+  
+  // Update form when data is fetched
+  useEffect(() => {
+    if (appearanceSettingsData) {
+      appearanceSettingsForm.reset(appearanceSettingsData);
+    }
+  }, [appearanceSettingsData, appearanceSettingsForm]);
+  
+  // Save appearance settings mutation
+  const saveAppearanceSettingsMutation = useMutation({
+    mutationFn: async (data: AppearanceSettingsFormValues) => {
+      const res = await apiRequest("POST", "/api/settings/appearance", data);
+      if (!res.ok) {
+        const errorText = await res.text();
+        throw new Error(`Failed to save appearance settings: ${errorText}`);
+      }
+      return await res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/settings/appearance'] });
+      toast({
+        title: t('settings.appearanceSettingsSaved'),
+        description: t('settings.appearanceSettingsSaveSuccess'),
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: t('settings.appearanceSettingsSaveError'),
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+  
+  // Form submission
+  const onSubmit = (data: AppearanceSettingsFormValues) => {
+    saveAppearanceSettingsMutation.mutate(data);
+  };
+  
+  if (isLoading) {
+    return <div className="flex items-center justify-center p-8"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
+  }
+  
+  return (
+    <div className="grid grid-cols-1 gap-6">
+      <Card>
+        <CardHeader>
+          <CardTitle>{t('settings.appearanceSettings')}</CardTitle>
+          <CardDescription>
+            {t('settings.manageAppearanceSettings')}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Form {...appearanceSettingsForm}>
+            <form onSubmit={appearanceSettingsForm.handleSubmit(onSubmit)} className="space-y-4">
+              <FormField
+                control={appearanceSettingsForm.control}
+                name="logoText"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t('settings.logoText')}</FormLabel>
+                    <FormControl>
+                      <Input placeholder="AC" {...field} maxLength={2} />
+                    </FormControl>
+                    <FormDescription>
+                      {t('settings.logoTextDescription')}
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={appearanceSettingsForm.control}
+                name="title"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t('settings.title')}</FormLabel>
+                    <FormControl>
+                      <Input placeholder="ACRDSC" {...field} />
+                    </FormControl>
+                    <FormDescription>
+                      {t('settings.titleDescription')}
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={appearanceSettingsForm.control}
+                name="subtitle"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t('settings.subtitle')}</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Reservas" {...field} />
+                    </FormControl>
+                    <FormDescription>
+                      {t('settings.subtitleDescription')}
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <div className="flex items-center justify-between pt-4">
+                <div className="bg-gray-100 p-4 rounded-md border">
+                  <div className="flex items-center">
+                    <div className="bg-primary text-white p-2 rounded-md w-10 h-10 flex items-center justify-center">
+                      <div className="text-sm font-bold">{appearanceSettingsForm.watch("logoText")}</div>
+                    </div>
+                    <div className="ml-3">
+                      <div className="font-semibold text-sm">{appearanceSettingsForm.watch("title")}</div>
+                      <div className="text-xs">{appearanceSettingsForm.watch("subtitle")}</div>
+                    </div>
+                  </div>
+                </div>
+                
+                <Button 
+                  type="submit" 
+                  disabled={saveAppearanceSettingsMutation.isPending}
+                  className="ml-auto"
+                >
+                  {saveAppearanceSettingsMutation.isPending ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      {t('common.saving')}
+                    </>
+                  ) : (
+                    t('common.save')
+                  )}
+                </Button>
+              </div>
+            </form>
+          </Form>
+        </CardContent>
+      </Card>
+    </div>
   );
 };
 

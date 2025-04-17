@@ -90,11 +90,11 @@ export function Sidebar() {
       <div className="p-4 flex items-center justify-between border-b border-gray-700">
         <div className="flex items-center">
           <div className="bg-white p-2 rounded-md w-12.5 h-12.5 flex items-center justify-center">
-            <div className="text-2xl font-bold text-primary">AC</div>
+            <div className="text-2xl font-bold text-primary">{logoText}</div>
           </div>
           <div className="ml-3 text-white">
-            <div className="font-semibold text-sm">ACRDSC</div>
-            <div className="text-xs">Reservas</div>
+            <div className="font-semibold text-sm">{title}</div>
+            <div className="text-xs">{subtitle}</div>
           </div>
         </div>
         {isMobile && (
