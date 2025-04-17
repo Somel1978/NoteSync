@@ -243,10 +243,43 @@ export class DatabaseStorage implements IStorage {
       insertAppointment.orderNumber = await this.getNextAppointmentOrderNumber();
     }
     
-    // Ensure all date fields are properly Date objects
-    const processedAppointment = { ...insertAppointment };
+    // Helper function to recursively process date strings
+    const processDateStrings = (obj: any) => {
+      if (!obj || typeof obj !== 'object') return obj;
+      
+      // Process Arrays
+      if (Array.isArray(obj)) {
+        return obj.map(item => processDateStrings(item));
+      }
+      
+      // Process Objects
+      const result: any = {};
+      
+      for (const key in obj) {
+        const value = obj[key];
+        
+        // If it's a date-like string, convert it to Date
+        if (typeof value === 'string' && 
+            /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{3})?Z$/.test(value)) {
+          result[key] = new Date(value);
+        }
+        // If it's a nested object, process it recursively
+        else if (value && typeof value === 'object') {
+          result[key] = processDateStrings(value);
+        }
+        // Otherwise, keep the original value
+        else {
+          result[key] = value;
+        }
+      }
+      
+      return result;
+    };
     
-    // Process date fields - ensure they're Date objects
+    // Create a clean copy with dates properly processed
+    const processedAppointment = processDateStrings({ ...insertAppointment });
+    
+    // Double-check the main date fields
     if (processedAppointment.startTime && !(processedAppointment.startTime instanceof Date)) {
       processedAppointment.startTime = new Date(processedAppointment.startTime);
     }
@@ -254,8 +287,6 @@ export class DatabaseStorage implements IStorage {
     if (processedAppointment.endTime && !(processedAppointment.endTime instanceof Date)) {
       processedAppointment.endTime = new Date(processedAppointment.endTime);
     }
-    
-    // Set any necessary default values - createdAt will be handled by the database
     
     // Log the processed appointment for debugging
     console.log("Storage: createAppointment with processed data:", JSON.stringify(processedAppointment, (key, value) => {
@@ -295,10 +326,43 @@ export class DatabaseStorage implements IStorage {
     // Create a more detailed audit trail by collecting field changes and their values
     const fieldChanges: Record<string, { oldValue: any, newValue: any }> = {};
     
-    // Ensure all date fields are properly Date objects
-    const processedUpdates = { ...updates };
+    // Helper function to recursively process date strings
+    const processDateStrings = (obj: any) => {
+      if (!obj || typeof obj !== 'object') return obj;
+      
+      // Process Arrays
+      if (Array.isArray(obj)) {
+        return obj.map(item => processDateStrings(item));
+      }
+      
+      // Process Objects
+      const result: any = {};
+      
+      for (const key in obj) {
+        const value = obj[key];
+        
+        // If it's a date-like string, convert it to Date
+        if (typeof value === 'string' && 
+            /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{3})?Z$/.test(value)) {
+          result[key] = new Date(value);
+        }
+        // If it's a nested object, process it recursively
+        else if (value && typeof value === 'object') {
+          result[key] = processDateStrings(value);
+        }
+        // Otherwise, keep the original value
+        else {
+          result[key] = value;
+        }
+      }
+      
+      return result;
+    };
     
-    // Process date fields - ensure they're proper Date objects
+    // Create a clean copy of updates with dates properly processed
+    const processedUpdates = processDateStrings({ ...updates });
+    
+    // Make extra sure the main date fields are Date objects 
     if (processedUpdates.startTime && !(processedUpdates.startTime instanceof Date)) {
       processedUpdates.startTime = new Date(processedUpdates.startTime);
     }
@@ -307,7 +371,7 @@ export class DatabaseStorage implements IStorage {
       processedUpdates.endTime = new Date(processedUpdates.endTime);
     }
     
-    // Prepare update data with all processed fields and always set updatedAt
+    // Set updatedAt to current timestamp
     const updateData = { 
       ...processedUpdates,
       updatedAt: new Date() 
