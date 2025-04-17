@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from "react";
+import { useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { Appointment } from "@shared/schema";
 import { Calendar } from "@/components/ui/calendar";
@@ -16,7 +16,6 @@ export function RoomAvailabilityCalendar({
   locale
 }: RoomAvailabilityCalendarProps) {
   const { t } = useTranslation();
-  const [selectedDate, setSelectedDate] = useState<Date | null>(new Date());
   
   // Current date for calculations
   const today = new Date();
@@ -90,9 +89,7 @@ export function RoomAvailabilityCalendar({
   return (
     <div className="space-y-4">
       <Calendar
-        mode="single"
-        selected={selectedDate}
-        onSelect={setSelectedDate}
+        mode="default"
         className="rounded-md border"
         locale={locale}
         fromDate={today}

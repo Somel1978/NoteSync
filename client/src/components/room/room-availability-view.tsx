@@ -35,6 +35,24 @@ export function RoomAvailabilityView() {
   const { data: room, isLoading: isRoomLoading } = useQuery<Room>({
     queryKey: ["/api/public/rooms", roomId],
     enabled: !!roomId,
+    queryFn: async () => {
+      if (!roomId) return null;
+      // Buscar todas as salas e filtrar pelo ID
+      const res = await fetch('/api/public/rooms', {
+        credentials: "include",
+      });
+      if (!res.ok) {
+        throw new Error(`Error fetching rooms: ${res.status}`);
+      }
+      const rooms = await res.json();
+      const selectedRoom = rooms.find((r: Room) => r.id === roomId);
+      
+      if (!selectedRoom) {
+        throw new Error(`Room with ID ${roomId} not found`);
+      }
+      
+      return selectedRoom;
+    },
   });
   
   // Fetch all rooms if no ID is provided
