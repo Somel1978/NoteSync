@@ -108,6 +108,8 @@ const emailSettingsSchema = z.object({
 
 const appearanceSettingsSchema = z.object({
   logoText: z.string().min(1, "Logo text is required").max(2, "Logo text must be at most 2 characters"),
+  logoUrl: z.string().nullable(),
+  useLogoImage: z.boolean().default(false),
   title: z.string().min(1, "Title is required").max(20, "Title must be at most 20 characters"),
   subtitle: z.string().min(1, "Subtitle is required").max(20, "Subtitle must be at most 20 characters")
 });
@@ -238,6 +240,8 @@ const AppearanceSettingsForm = () => {
     resolver: zodResolver(appearanceSettingsSchema),
     defaultValues: {
       logoText: "AC",
+      logoUrl: null,
+      useLogoImage: false,
       title: "ACRDSC",
       subtitle: "Reservas"
     },

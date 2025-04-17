@@ -216,6 +216,8 @@ export type EmailSettings = {
 
 export type AppearanceSettings = {
   logoText: string;
+  logoUrl: string | null;
+  useLogoImage: boolean;
   title: string;
   subtitle: string;
 };

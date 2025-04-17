@@ -255,6 +255,8 @@ export function registerSettingsRoutes(app: Express): void {
       if (!appearanceSetting || !appearanceSetting.value) {
         return res.json({
           logoText: "AC",
+          logoUrl: null,
+          useLogoImage: false,
           title: "ACRDSC",
           subtitle: "Reservas"
         });
