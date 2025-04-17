@@ -91,6 +91,12 @@
     "approved": "Aprovado",
     "rejected": "Rejeitado",
     "cancelled": "Cancelado",
+    "status": {
+      "pending": "Pendente",
+      "approved": "Aprovado",
+      "rejected": "Rejeitado",
+      "cancelled": "Cancelado"
+    },
     "orderNumber": "Pedido #",
     "dateTime": "Data e Hora",
     "details": "Detalhes",
@@ -113,6 +119,7 @@
         "contact": "Contato",
         "history": "Histórico"
       },
+      "status": "Status",
       "setActive": "Ativar",
       "appointmentInfo": "Informações do Agendamento",
       "bookedRooms": "Salas Reservadas",
