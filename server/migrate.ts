@@ -28,6 +28,13 @@ async function migrateSchema() {
     `);
     console.log('Updated appointments table with rooms column');
     
+    // Add custom_facilities column to appointments table for storing custom facility data
+    await db.execute(sql`
+      ALTER TABLE IF EXISTS appointments 
+      ADD COLUMN IF NOT EXISTS custom_facilities jsonb DEFAULT '{}'::jsonb;
+    `);
+    console.log('Updated appointments table with custom_facilities column');
+    
     console.log('Schema migration completed successfully');
   } catch (error) {
     console.error('Error during schema migration:', error);

@@ -95,6 +95,7 @@ export const appointments = pgTable("appointments", {
   costType: text("cost_type").notNull(), // flat, hourly, or per_attendee
   agreedCost: integer("agreed_cost").notNull(), // Stored in cents
   costBreakdown: json("cost_breakdown").notNull().default({}),
+  customFacilities: json("custom_facilities").default({}), // Custom facilities with their costs
   orderNumber: integer("order_number").notNull(),
   rejectionReason: text("rejection_reason"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -122,6 +123,7 @@ export const insertAppointmentSchema = createInsertSchema(appointments).pick({
   costType: true,
   agreedCost: true,
   costBreakdown: true,
+  customFacilities: true,
   orderNumber: true,
   rejectionReason: true,
 });

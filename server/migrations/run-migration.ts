@@ -12,7 +12,7 @@ async function runMigration() {
     console.log('Running custom migrations...');
     
     // Read the SQL file
-    const migrationFile = path.join(__dirname, 'add_customer_organization_notes.sql');
+    const migrationFile = path.join(__dirname, 'add_custom_facilities.sql');
     console.log('Migration file path:', migrationFile);
     const sql = fs.readFileSync(migrationFile, 'utf8');
     
