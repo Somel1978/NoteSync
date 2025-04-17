@@ -773,36 +773,41 @@ export function registerRoutes(app: Express): Server {
 
   app.post("/api/settings/email", isAdmin, async (req, res, next) => {
     try {
-      // Check the already parsed body first
-      console.log("API ROUTE: Received raw request body:", req.body);
+      // Check if a direct POST request was made using curl
+      console.log("API ROUTE: Received POST to /api/settings/email");
+      console.log("Headers:", req.headers);
       
-      // Verify content-type was application/json
-      const contentType = req.get('Content-Type');
-      console.log("Content-Type:", contentType);
+      // Log the body in different formats to debug
+      console.log("Body as received:", req.body);
+      console.log("Body type:", typeof req.body);
+      console.log("Body stringified:", JSON.stringify(req.body));
+      console.log("Body keys:", Object.keys(req.body));
       
-      // Use directly provided data or populate with defaults
-      const emailSettings: EmailSettings = {
-        enabled: req.body?.enabled === true,
-        mailjetApiKey: req.body?.mailjetApiKey || "test-key",
-        mailjetSecretKey: req.body?.mailjetSecretKey || "test-secret",
-        systemEmail: req.body?.systemEmail || "test@example.com",
-        systemName: req.body?.systemName || "ACRDSC Reservas",
-        notifyOnCreate: req.body?.notifyOnCreate === true || true,
-        notifyOnUpdate: req.body?.notifyOnUpdate === true || true,
-        notifyOnStatusChange: req.body?.notifyOnStatusChange === true || true,
-        emailTemplateBookingCreated: req.body?.emailTemplateBookingCreated || "Template Created",
-        emailTemplateBookingUpdated: req.body?.emailTemplateBookingUpdated || "Template Updated",
-        emailTemplateBookingStatusChanged: req.body?.emailTemplateBookingStatusChanged || "Template Status Changed"
-      };
-      
-      console.log("Constructed email settings:", JSON.stringify(emailSettings, null, 2));
+      // We'll now pass the data directly to storage and let it handle defaults
       
       // Save settings to database
-      const setting = await storage.createOrUpdateSetting('email', emailSettings);
+      const setting = await storage.createOrUpdateSetting('email', req.body);
       console.log("Setting saved to database:", JSON.stringify(setting));
       
-      // Return the email settings (not the entire setting object)
-      res.json(emailSettings);
+      // Return the setting value (the email settings)
+      if (setting && setting.value) {
+        res.json(setting.value);
+      } else {
+        // Fallback to default values if something went wrong
+        res.json({
+          enabled: false,
+          mailjetApiKey: "",
+          mailjetSecretKey: "",
+          systemEmail: "",
+          systemName: "ACRDSC Reservas",
+          notifyOnCreate: true,
+          notifyOnUpdate: true,
+          notifyOnStatusChange: true,
+          emailTemplateBookingCreated: "",
+          emailTemplateBookingUpdated: "",
+          emailTemplateBookingStatusChanged: ""
+        });
+      }
     } catch (error) {
       console.error("Error saving email settings:", error);
       next(error);
