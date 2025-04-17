@@ -16,7 +16,8 @@ import {
   Pencil, 
   Trash, 
   UserCircle, 
-  ShieldCheck, 
+  ShieldCheck,
+  Palette,
   CheckCircle,
   UserCog, 
   Settings,
@@ -1040,6 +1041,13 @@ export default function SettingsPage() {
                       <TabsTrigger value="email">
                         <Mail className="h-4 w-4 mr-2" />
                         {t('settings.emailNotifications')}
+                      </TabsTrigger>
+                    )}
+                    
+                    {user?.role === 'admin' && (
+                      <TabsTrigger value="appearance">
+                        <Palette className="h-4 w-4 mr-2" />
+                        {t('settings.appearance')}
                       </TabsTrigger>
                     )}
                   </TabsList>
