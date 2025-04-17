@@ -404,7 +404,7 @@ const AppearanceSettingsForm = () => {
                     {appearanceSettingsForm.watch("useLogoImage") && appearanceSettingsForm.watch("logoUrl") ? (
                       <div className="w-10 h-10 flex items-center justify-center overflow-hidden rounded-md">
                         <img 
-                          src={appearanceSettingsForm.watch("logoUrl")} 
+                          src={appearanceSettingsForm.watch("logoUrl") || ""} 
                           alt="Logo preview" 
                           className="object-contain max-w-full max-h-full"
                         />
