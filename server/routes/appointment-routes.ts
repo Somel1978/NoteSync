@@ -403,6 +403,7 @@ export function registerAppointmentRoutes(app: Express): void {
   app.put("/api/appointments/:id/reject", isAuthenticated, async (req: Request, res: Response, next: Function) => {
     try {
       const id = parseInt(req.params.id);
+      console.log(`Received rejection request for appointment ${id}. Full request body:`, req.body);
       const { reason } = req.body;
       
       console.log(`Rejection request for appointment ${id} with reason:`, reason);

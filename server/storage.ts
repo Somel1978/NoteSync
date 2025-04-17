@@ -409,6 +409,14 @@ export class DatabaseStorage implements IStorage {
       updatedAt: new Date()
     };
     
+    // Fix specific case for rejectionReason mapping to rejection_reason in the database
+    if (updates.rejectionReason !== undefined) {
+      console.log("Explicitly setting rejection_reason field to:", updates.rejectionReason);
+      finalData.rejection_reason = updates.rejectionReason;
+      // Remove the camelCase version to avoid duplicate column issue
+      delete finalData.rejectionReason;
+    }
+    
     // Safely handle startTime
     if (updates.startTime) {
       try {
