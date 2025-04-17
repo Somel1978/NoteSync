@@ -122,13 +122,6 @@ export function RoomAvailabilityView() {
   // Estado para controlar o carregamento do mês
   const [isMonthChanging, setIsMonthChanging] = useState(false);
   
-  // Reseta o estado quando o carregamento é concluído
-  useEffect(() => {
-    if (!isFetching && isMonthChanging) {
-      setIsMonthChanging(false);
-    }
-  }, [isFetching, isMonthChanging]);
-  
   // Fetch appointments for the specific room only for the selected month
   const { data: appointments = [], isLoading: isAppointmentsLoading, isFetching } = useQuery<Appointment[]>({
     queryKey: ["/api/public/appointments/room", roomId, format(startOfCurrentMonth, 'yyyy-MM')],
@@ -168,6 +161,13 @@ export function RoomAvailabilityView() {
       }
     },
   });
+  
+  // Reseta o estado quando o carregamento é concluído
+  useEffect(() => {
+    if (!isFetching && isMonthChanging) {
+      setIsMonthChanging(false);
+    }
+  }, [isFetching, isMonthChanging]);
   
   // Find the location name for the current room
   const getLocationName = (locationId: number) => {
