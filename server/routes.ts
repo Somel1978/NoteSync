@@ -2,7 +2,8 @@ import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth } from "./auth";
-import { insertRoomSchema, insertLocationSchema, insertAppointmentSchema } from "@shared/schema";
+import { insertRoomSchema, insertLocationSchema, insertAppointmentSchema, EmailSettings } from "@shared/schema";
+import { EmailNotificationService } from "./utils/email";
 import { z } from "zod";
 
 // Middleware to check if user is authenticated
@@ -329,6 +330,14 @@ export function registerRoutes(app: Express): Server {
       // Storage method now includes audit logging internally
       const appointment = await storage.createAppointment(validatedData);
       
+      // Send email notification
+      try {
+        await EmailNotificationService.appointmentCreated(appointment, req.user!);
+      } catch (emailError) {
+        console.error("Error sending email notification:", emailError);
+        // Continue even if email fails
+      }
+      
       res.status(201).json(appointment);
     } catch (error) {
       console.error("Error creating appointment:", error);
@@ -393,6 +402,28 @@ export function registerRoutes(app: Express): Server {
       const updatedAppointment = await storage.updateAppointment(id, validatedData);
       if (!updatedAppointment) {
         return res.status(404).json({ message: "Failed to update appointment" });
+      }
+      
+      // Send email notification
+      try {
+        // If status changed, send status change notification
+        if (req.body.status && originalAppointment.status !== req.body.status) {
+          await EmailNotificationService.appointmentStatusChanged(
+            updatedAppointment,
+            req.user!,
+            originalAppointment.status
+          );
+        } else {
+          // Otherwise send general update notification
+          await EmailNotificationService.appointmentUpdated(
+            updatedAppointment,
+            req.user!,
+            originalAppointment
+          );
+        }
+      } catch (emailError) {
+        console.error("Error sending email notification:", emailError);
+        // Continue even if email fails
       }
       
       res.json(updatedAppointment);
@@ -713,7 +744,9 @@ export function registerRoutes(app: Express): Server {
         });
       }
       
-      res.json(emailSettings.value);
+      // Cast to EmailSettings type
+      const settings = emailSettings.value as EmailSettings;
+      res.json(settings);
     } catch (error) {
       next(error);
     }
@@ -739,7 +772,13 @@ export function registerRoutes(app: Express): Server {
     try {
       const emailSettings = await storage.getSetting('email_settings');
       
-      if (!emailSettings || !emailSettings.value.enabled) {
+      if (!emailSettings) {
+        return res.status(400).json({ error: "Email settings not found" });
+      }
+      
+      const settings = emailSettings.value as EmailSettings;
+      
+      if (!settings || !settings.enabled) {
         return res.status(400).json({ error: "Email notifications are not enabled" });
       }
       
@@ -751,8 +790,6 @@ export function registerRoutes(app: Express): Server {
       } catch (error) {
         return res.status(500).json({ error: "Failed to load Mailjet library" });
       }
-      
-      const settings = emailSettings.value;
       
       // Setup Mailjet client
       const mailjet = new Mailjet({

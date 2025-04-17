@@ -9,10 +9,16 @@ import { log } from '../vite';
 export class EmailNotificationService {
   private static async getEmailSettings(): Promise<EmailSettings | null> {
     const emailSettingsRecord = await storage.getSetting('email_settings');
-    if (!emailSettingsRecord || !emailSettingsRecord.value.enabled) {
+    if (!emailSettingsRecord) {
       return null;
     }
-    return emailSettingsRecord.value as EmailSettings;
+    
+    const settings = emailSettingsRecord.value as EmailSettings;
+    if (!settings || !settings.enabled) {
+      return null;
+    }
+    
+    return settings;
   }
 
   private static async sendEmail(
