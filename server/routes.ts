@@ -754,7 +754,7 @@ export function registerRoutes(app: Express): Server {
 
   app.post("/api/settings/email", isAdmin, async (req, res, next) => {
     try {
-      const emailSettings = req.body;
+      const emailSettings = req.body as EmailSettings;
       
       // Validate emailSettings against schema
       if (!emailSettings) {
@@ -762,7 +762,7 @@ export function registerRoutes(app: Express): Server {
       }
       
       const setting = await storage.createOrUpdateSetting('email_settings', emailSettings);
-      res.json(setting.value);
+      res.json(setting.value as EmailSettings);
     } catch (error) {
       next(error);
     }
