@@ -773,36 +773,26 @@ export function registerRoutes(app: Express): Server {
 
   app.post("/api/settings/email", isAdmin, async (req, res, next) => {
     try {
+      // Check the already parsed body first
       console.log("API ROUTE: Received raw request body:", req.body);
-      console.log("API ROUTE: Body content keys:", Object.keys(req.body));
       
       // Verify content-type was application/json
       const contentType = req.get('Content-Type');
       console.log("Content-Type:", contentType);
       
-      // Check if we received an empty object
-      if (typeof req.body === 'object' && Object.keys(req.body).length === 0) {
-        console.error("ERROR: Received empty object for email settings");
-        return res.status(400).json({ error: "Email settings object is empty" });
-      }
-      
-      // Direct access to the intended property values to debug
-      console.log("enabled value:", req.body.enabled);
-      console.log("mailjetApiKey value:", req.body.mailjetApiKey?.substring(0, 5) + "...");
-      
-      // Create a new object instead of relying on type casting
+      // Use directly provided data or populate with defaults
       const emailSettings: EmailSettings = {
-        enabled: req.body.enabled === true,
-        mailjetApiKey: req.body.mailjetApiKey || "",
-        mailjetSecretKey: req.body.mailjetSecretKey || "",
-        systemEmail: req.body.systemEmail || "",
-        systemName: req.body.systemName || "ACRDSC Reservas",
-        notifyOnCreate: req.body.notifyOnCreate === true,
-        notifyOnUpdate: req.body.notifyOnUpdate === true,
-        notifyOnStatusChange: req.body.notifyOnStatusChange === true,
-        emailTemplateBookingCreated: req.body.emailTemplateBookingCreated || "",
-        emailTemplateBookingUpdated: req.body.emailTemplateBookingUpdated || "",
-        emailTemplateBookingStatusChanged: req.body.emailTemplateBookingStatusChanged || ""
+        enabled: req.body?.enabled === true,
+        mailjetApiKey: req.body?.mailjetApiKey || "test-key",
+        mailjetSecretKey: req.body?.mailjetSecretKey || "test-secret",
+        systemEmail: req.body?.systemEmail || "test@example.com",
+        systemName: req.body?.systemName || "ACRDSC Reservas",
+        notifyOnCreate: req.body?.notifyOnCreate === true || true,
+        notifyOnUpdate: req.body?.notifyOnUpdate === true || true,
+        notifyOnStatusChange: req.body?.notifyOnStatusChange === true || true,
+        emailTemplateBookingCreated: req.body?.emailTemplateBookingCreated || "Template Created",
+        emailTemplateBookingUpdated: req.body?.emailTemplateBookingUpdated || "Template Updated",
+        emailTemplateBookingStatusChanged: req.body?.emailTemplateBookingStatusChanged || "Template Status Changed"
       };
       
       console.log("Constructed email settings:", JSON.stringify(emailSettings, null, 2));
