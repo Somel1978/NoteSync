@@ -5,13 +5,15 @@ import { insertRoomSchema, Room, Facility, Location } from "@shared/schema";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogFooter,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import {
   Form,
@@ -20,6 +22,7 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+  FormDescription,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -60,6 +63,7 @@ interface RoomFormModalProps {
 
 export function RoomFormModal({ room, open, onOpenChange }: RoomFormModalProps) {
   const { toast } = useToast();
+  const { t } = useTranslation();
   const [newFacility, setNewFacility] = useState({ name: "", cost: "" });
   
   const { data: locations } = useQuery<Location[]>({
@@ -69,20 +73,50 @@ export function RoomFormModal({ room, open, onOpenChange }: RoomFormModalProps) 
   const form = useForm<RoomFormValues>({
     resolver: zodResolver(roomFormSchema),
     defaultValues: {
-      name: room?.name || "",
-      locationId: room?.locationId || 0,
-      description: room?.description || "",
-      capacity: room?.capacity || 0,
-      flatRate: room?.flatRate ? room.flatRate / 100 : undefined,
-      hourlyRate: room?.hourlyRate ? room.hourlyRate / 100 : undefined,
-      attendeeRate: room?.attendeeRate ? room.attendeeRate / 100 : undefined,
-      active: room?.active ?? true,
-      facilities: ((room?.facilities as unknown as Facility[]) || []).map(facility => ({
-        ...facility,
-        cost: facility.cost / 100,
-      })),
+      name: "",
+      locationId: 0,
+      description: "",
+      capacity: 0,
+      flatRate: undefined,
+      hourlyRate: undefined,
+      attendeeRate: undefined,
+      active: true,
+      facilities: [],
     },
   });
+  
+  // This effect updates the form when a room is provided for editing
+  useEffect(() => {
+    if (room) {
+      console.log("Setting form values from room:", room);
+      form.reset({
+        name: room.name,
+        locationId: room.locationId,
+        description: room.description || "",
+        capacity: room.capacity,
+        flatRate: room.flatRate ? room.flatRate / 100 : undefined,
+        hourlyRate: room.hourlyRate ? room.hourlyRate / 100 : undefined,
+        attendeeRate: room.attendeeRate ? room.attendeeRate / 100 : undefined,
+        active: room.active ?? true,
+        facilities: ((room.facilities as unknown as Facility[]) || []).map(facility => ({
+          ...facility,
+          cost: facility.cost / 100,
+        })),
+      });
+    } else {
+      form.reset({
+        name: "",
+        locationId: 0,
+        description: "",
+        capacity: 0,
+        flatRate: undefined,
+        hourlyRate: undefined,
+        attendeeRate: undefined,
+        active: true,
+        facilities: [],
+      });
+    }
+  }, [room, form]);
 
   const createRoomMutation = useMutation({
     mutationFn: async (formData: RoomFormValues) => {
@@ -191,11 +225,78 @@ export function RoomFormModal({ room, open, onOpenChange }: RoomFormModalProps) 
 
   const isPending = createRoomMutation.isPending || updateRoomMutation.isPending;
 
+  // Update toast messages
+  const createSuccessToast = () => {
+    toast({
+      title: t('rooms.createSuccess', 'Room created'),
+      description: t('rooms.createSuccessDetail', 'The room has been successfully created.'),
+    });
+  };
+
+  const updateSuccessToast = () => {
+    toast({
+      title: t('rooms.updateSuccess', 'Room updated'),
+      description: t('rooms.updateSuccessDetail', 'The room has been successfully updated.'),
+    });
+  };
+
+  // Update mutation handlers with translated messages
+  useEffect(() => {
+    createMutation.mutate = createRoomMutation.mutate;
+    createMutation.isPending = createRoomMutation.isPending;
+    updateMutation.mutate = updateRoomMutation.mutate;
+    updateMutation.isPending = updateRoomMutation.isPending;
+  }, [createRoomMutation.mutate, createRoomMutation.isPending, updateRoomMutation.mutate, updateRoomMutation.isPending]);
+
+  const createMutation = useMutation({
+    mutationFn: createRoomMutation.mutationFn,
+    onSuccess: () => {
+      createSuccessToast();
+      queryClient.invalidateQueries({ queryKey: ["/api/rooms"] });
+      onOpenChange(false);
+    },
+    onError: (error) => {
+      toast({
+        title: t('rooms.createError', 'Failed to create room'),
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: updateRoomMutation.mutationFn,
+    onSuccess: () => {
+      updateSuccessToast();
+      queryClient.invalidateQueries({ queryKey: ["/api/rooms"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/rooms", room?.id] });
+      onOpenChange(false);
+    },
+    onError: (error) => {
+      toast({
+        title: t('rooms.updateError', 'Failed to update room'),
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>{room ? "Edit Room" : "Add Room"}</DialogTitle>
+          <DialogTitle>
+            {room 
+              ? t('rooms.editRoom', 'Edit Room')
+              : t('rooms.addRoom', 'Add Room')
+            }
+          </DialogTitle>
+          <DialogDescription>
+            {room 
+              ? t('rooms.editRoomDesc', 'Update room details and facilities')
+              : t('rooms.addRoomDesc', 'Add a new room to your location')
+            }
+          </DialogDescription>
         </DialogHeader>
         
         <Form {...form}>
@@ -205,9 +306,9 @@ export function RoomFormModal({ room, open, onOpenChange }: RoomFormModalProps) 
               name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Name</FormLabel>
+                  <FormLabel>{t('rooms.name', 'Name')}</FormLabel>
                   <FormControl>
-                    <Input placeholder="Room name" {...field} />
+                    <Input placeholder={t('rooms.namePlaceholder', 'Room name')} {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -219,14 +320,14 @@ export function RoomFormModal({ room, open, onOpenChange }: RoomFormModalProps) 
               name="locationId"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Location</FormLabel>
+                  <FormLabel>{t('rooms.location', 'Location')}</FormLabel>
                   <Select
                     onValueChange={field.onChange}
-                    defaultValue={field.value ? String(field.value) : undefined}
+                    value={field.value ? String(field.value) : undefined}
                   >
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="Select a location" />
+                        <SelectValue placeholder={t('rooms.selectLocation', 'Select a location')} />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
@@ -247,7 +348,7 @@ export function RoomFormModal({ room, open, onOpenChange }: RoomFormModalProps) 
               name="capacity"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Capacity</FormLabel>
+                  <FormLabel>{t('rooms.capacity', 'Capacity')}</FormLabel>
                   <FormControl>
                     <Input type="number" min="1" {...field} />
                   </FormControl>
@@ -261,9 +362,9 @@ export function RoomFormModal({ room, open, onOpenChange }: RoomFormModalProps) 
               name="description"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Description</FormLabel>
+                  <FormLabel>{t('locations.description', 'Description')}</FormLabel>
                   <FormControl>
-                    <Textarea placeholder="Room description" {...field} />
+                    <Textarea placeholder={t('rooms.descriptionPlaceholder', 'Room description')} {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -276,7 +377,7 @@ export function RoomFormModal({ room, open, onOpenChange }: RoomFormModalProps) 
                 name="hourlyRate"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Hourly Rate (€)</FormLabel>
+                    <FormLabel>{t('rooms.hourlyRate', 'Hourly Rate')} (€)</FormLabel>
                     <FormControl>
                       <Input type="number" step="0.01" min="0" {...field} />
                     </FormControl>
@@ -290,7 +391,7 @@ export function RoomFormModal({ room, open, onOpenChange }: RoomFormModalProps) 
                 name="flatRate"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Flat Rate (€)</FormLabel>
+                    <FormLabel>{t('rooms.flatRate', 'Flat Rate')} (€)</FormLabel>
                     <FormControl>
                       <Input type="number" step="0.01" min="0" {...field} />
                     </FormControl>
@@ -304,7 +405,7 @@ export function RoomFormModal({ room, open, onOpenChange }: RoomFormModalProps) 
                 name="attendeeRate"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Rate per Attendee (€)</FormLabel>
+                    <FormLabel>{t('appointments.detailsModal.perAttendeeLabel', 'Rate per Attendee')} (€)</FormLabel>
                     <FormControl>
                       <Input type="number" step="0.01" min="0" {...field} />
                     </FormControl>
@@ -315,7 +416,7 @@ export function RoomFormModal({ room, open, onOpenChange }: RoomFormModalProps) 
             </div>
             
             <div>
-              <h4 className="text-sm font-medium mb-4">Facilities</h4>
+              <h4 className="text-sm font-medium mb-4">{t('rooms.facilities', 'Facilities')}</h4>
               
               <div className="space-y-3">
                 {form.watch("facilities").map((facility, index) => (
@@ -344,6 +445,7 @@ export function RoomFormModal({ room, open, onOpenChange }: RoomFormModalProps) 
                         variant="ghost"
                         size="icon"
                         onClick={() => removeFacility(facility.id)}
+                        title={t('common.remove', 'Remove')}
                       >
                         <Trash className="h-4 w-4 text-red-500" />
                       </Button>
@@ -354,7 +456,7 @@ export function RoomFormModal({ room, open, onOpenChange }: RoomFormModalProps) 
                 <div className="flex items-center justify-between mt-4">
                   <div className="flex-1 mr-2">
                     <Input
-                      placeholder="Add facility"
+                      placeholder={t('appointments.detailsModal.facilityName', 'Facility name')}
                       value={newFacility.name}
                       onChange={(e) => setNewFacility({ ...newFacility, name: e.target.value })}
                     />
@@ -365,7 +467,7 @@ export function RoomFormModal({ room, open, onOpenChange }: RoomFormModalProps) 
                       type="number"
                       step="0.01"
                       min="0"
-                      placeholder="Cost"
+                      placeholder={t('appointments.detailsModal.customFacility.cost', 'Cost')}
                       className="w-16 rounded-l-none"
                       value={newFacility.cost}
                       onChange={(e) => setNewFacility({ ...newFacility, cost: e.target.value })}
@@ -376,7 +478,7 @@ export function RoomFormModal({ room, open, onOpenChange }: RoomFormModalProps) 
                     size="sm"
                     onClick={addFacility}
                   >
-                    Add
+                    {t('common.add', 'Add')}
                   </Button>
                 </div>
               </div>
@@ -394,9 +496,9 @@ export function RoomFormModal({ room, open, onOpenChange }: RoomFormModalProps) 
                     />
                   </FormControl>
                   <div className="space-y-1 leading-none">
-                    <FormLabel>Active</FormLabel>
+                    <FormLabel>{t('rooms.active', 'Active')}</FormLabel>
                     <p className="text-sm text-muted-foreground">
-                      This room is available for booking
+                      {t('rooms.activeDescription', 'This room is available for booking')}
                     </p>
                   </div>
                 </FormItem>
@@ -409,10 +511,15 @@ export function RoomFormModal({ room, open, onOpenChange }: RoomFormModalProps) 
                 variant="outline"
                 onClick={() => onOpenChange(false)}
               >
-                Cancel
+                {t('common.cancel', 'Cancel')}
               </Button>
               <Button type="submit" disabled={isPending}>
-                {isPending ? "Saving..." : room ? "Save Changes" : "Create Room"}
+                {isPending 
+                  ? t('common.saving', 'Saving...') 
+                  : room 
+                    ? t('common.saveChanges', 'Save Changes')
+                    : t('common.create', 'Create')
+                }
               </Button>
             </DialogFooter>
           </form>
