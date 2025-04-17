@@ -314,7 +314,24 @@ const EmailSettingsForm = () => {
   // Form submission
   const onSubmit = (data: EmailSettingsFormValues) => {
     console.log("Submitting email settings:", data);
-    saveEmailSettingsMutation.mutate(data);
+    
+    // Create a clean object with explicit values to avoid any serialization issues
+    const cleanData = {
+      enabled: Boolean(data.enabled),
+      mailjetApiKey: String(data.mailjetApiKey || ""),
+      mailjetSecretKey: String(data.mailjetSecretKey || ""),
+      systemEmail: String(data.systemEmail || ""),
+      systemName: String(data.systemName || "ACRDSC Reservas"),
+      notifyOnCreate: Boolean(data.notifyOnCreate),
+      notifyOnUpdate: Boolean(data.notifyOnUpdate),
+      notifyOnStatusChange: Boolean(data.notifyOnStatusChange),
+      emailTemplateBookingCreated: String(data.emailTemplateBookingCreated || ""),
+      emailTemplateBookingUpdated: String(data.emailTemplateBookingUpdated || ""),
+      emailTemplateBookingStatusChanged: String(data.emailTemplateBookingStatusChanged || "")
+    };
+    
+    console.log("Sending clean data:", cleanData);
+    saveEmailSettingsMutation.mutate(cleanData);
   };
   
   const handleTestEmail = () => {
