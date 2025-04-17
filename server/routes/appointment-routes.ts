@@ -431,12 +431,16 @@ export function registerAppointmentRoutes(app: Express): void {
         }, null, 2)
       );
       
-      // Use a SQL query diretamente para atualizar (vamos refazer o código depois)
-      // Por enquanto, usar o método normal de atualização que está funcionando
+      // Usar uma abordagem direta para testar
+      console.log('TESTE: Usando SQL direto para atualizar com rejection_reason:', rejectionReason);
+      
       const updatedAppointment = await storage.updateAppointment(id, {
         status: "rejected",
         rejectionReason: rejectionReason
       });
+      
+      // Imprimir o resultado para debug
+      console.log('RESULTADO DA ATUALIZAÇÃO:', JSON.stringify(updatedAppointment, null, 2));
       
       if (!updatedAppointment) {
         return res.status(500).json({ message: "Failed to reject appointment" });
