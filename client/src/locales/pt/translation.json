@@ -457,7 +457,20 @@
     "testEmail": "Enviar Email de Teste",
     "testEmailSent": "Email de Teste Enviado",
     "testEmailSuccess": "Um email de teste foi enviado com sucesso.",
-    "testEmailError": "Falha ao enviar email de teste"
+    "testEmailError": "Falha ao enviar email de teste",
+    
+    "appearance": "Aparência",
+    "appearanceSettings": "Configurações de Aparência",
+    "manageAppearanceSettings": "Personalizar a aparência da aplicação",
+    "logoText": "Texto do Logo",
+    "logoTextDescription": "1-2 caracteres exibidos no logo (normalmente iniciais)",
+    "title": "Título",
+    "titleDescription": "Título principal exibido na barra lateral",
+    "subtitle": "Subtítulo",
+    "subtitleDescription": "Subtítulo exibido abaixo do título principal",
+    "appearanceSettingsSaved": "Configurações de Aparência Salvas",
+    "appearanceSettingsSaveSuccess": "As configurações de aparência foram salvas com sucesso.",
+    "appearanceSettingsSaveError": "Falha ao salvar configurações de aparência"
   },
   "languages": {
     "english": "Inglês",

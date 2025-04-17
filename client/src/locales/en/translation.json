@@ -465,7 +465,20 @@
     "testEmail": "Send Test Email",
     "testEmailSent": "Test Email Sent",
     "testEmailSuccess": "A test email has been sent successfully.",
-    "testEmailError": "Failed to send test email"
+    "testEmailError": "Failed to send test email",
+    
+    "appearance": "Appearance",
+    "appearanceSettings": "Appearance Settings",
+    "manageAppearanceSettings": "Customize application appearance",
+    "logoText": "Logo Text",
+    "logoTextDescription": "1-2 characters displayed in the logo (usually initials)",
+    "title": "Title",
+    "titleDescription": "Main title displayed in the sidebar",
+    "subtitle": "Subtitle",
+    "subtitleDescription": "Subtitle displayed under the main title",
+    "appearanceSettingsSaved": "Appearance Settings Saved",
+    "appearanceSettingsSaveSuccess": "Appearance settings have been successfully saved.",
+    "appearanceSettingsSaveError": "Failed to save appearance settings"
   },
   "languages": {
     "english": "English",
