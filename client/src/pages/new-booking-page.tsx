@@ -416,6 +416,19 @@ export default function NewBookingPage() {
                                           : "border-gray-200 hover:border-gray-300"
                                       } ${showAvailability && !isAvailable ? 'opacity-60' : ''}`}
                                       onClick={() => {
+                                        // First check if dates are selected
+                                        const startTime = form.getValues('startTime');
+                                        const endTime = form.getValues('endTime');
+                                        
+                                        if (!startTime || !endTime) {
+                                          toast({
+                                            title: "Dates Required",
+                                            description: "Please select start and end dates before choosing rooms",
+                                            variant: "destructive"
+                                          });
+                                          return;
+                                        }
+                                        
                                         // If room is not available at selected time, show warning
                                         if (showAvailability && !isAvailable) {
                                           toast({
