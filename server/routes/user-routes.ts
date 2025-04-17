@@ -13,18 +13,17 @@ export function registerUserRoutes(app: Express): void {
     }
   });
   
-  // Get a specific user
+  // Get a specific user (admin or self)
   app.get("/api/users/:id", isAuthenticated, async (req: Request, res: Response, next: Function) => {
     try {
       const id = parseInt(req.params.id);
       
-      // Regular users can only view their own profile
-      if (req.user?.role !== 'admin' && req.user?.id !== id) {
+      // Users can only view their own profile unless they're an admin
+      if (req.user?.id !== id && req.user?.role !== "admin") {
         return res.status(403).json({ message: "Forbidden - You can only view your own profile" });
       }
       
       const user = await storage.getUser(id);
-      
       if (!user) {
         return res.status(404).json({ message: "User not found" });
       }
@@ -35,129 +34,92 @@ export function registerUserRoutes(app: Express): void {
     }
   });
   
-  // Update a user
+  // Update user (admin or self)
   app.patch("/api/users/:id", isAuthenticated, async (req: Request, res: Response, next: Function) => {
     try {
       const id = parseInt(req.params.id);
       
-      // Regular users can only update their own profile
-      if (req.user?.role !== 'admin' && req.user?.id !== id) {
+      // Users can only update their own profile unless they're an admin
+      if (req.user?.id !== id && req.user?.role !== "admin") {
         return res.status(403).json({ message: "Forbidden - You can only update your own profile" });
       }
       
-      // For non-admin users, restrict what fields they can update
-      if (req.user?.role !== 'admin') {
-        const allowedFields = ['name', 'email'];
-        const updates = Object.keys(req.body).reduce((filtered: any, key) => {
-          if (allowedFields.includes(key)) {
-            filtered[key] = req.body[key];
-          }
-          return filtered;
-        }, {});
-        
-        const updatedUser = await storage.updateUser(id, updates);
-        
-        if (!updatedUser) {
-          return res.status(404).json({ message: "User not found" });
-        }
-        
-        return res.json(updatedUser);
-      } else {
-        // Admins can update any fields including role
-        const updatedUser = await storage.updateUser(id, req.body);
-        
-        if (!updatedUser) {
-          return res.status(404).json({ message: "User not found" });
-        }
-        
-        res.json(updatedUser);
+      // Don't allow role changes unless the user is an admin
+      if (req.body.role && req.user?.role !== "admin") {
+        delete req.body.role;
       }
+      
+      const user = await storage.updateUser(id, req.body);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      res.json(user);
     } catch (error) {
       next(error);
     }
   });
   
-  // Update password
+  // Change password (self only)
   app.patch("/api/users/:id/password", isAuthenticated, async (req: Request, res: Response, next: Function) => {
     try {
       const id = parseInt(req.params.id);
       
-      // Regular users can only update their own password
-      if (req.user?.role !== 'admin' && req.user?.id !== id) {
-        return res.status(403).json({ message: "Forbidden - You can only update your own password" });
+      // Users can only change their own password
+      if (req.user?.id !== id && req.user?.role !== "admin") {
+        return res.status(403).json({ message: "Forbidden - You can only change your own password" });
       }
       
-      // Make sure both old and new password are provided for regular users
-      if (req.user?.role !== 'admin' && (!req.body.oldPassword || !req.body.newPassword)) {
-        return res.status(400).json({ message: "Both old and new password are required" });
+      // Check if currentPassword and newPassword are provided
+      if (!req.body.currentPassword || !req.body.newPassword) {
+        return res.status(400).json({ message: "Current password and new password are required" });
       }
       
-      // Admin can reset password without old password
-      if (req.user?.role === 'admin' && !req.body.newPassword) {
-        return res.status(400).json({ message: "New password is required" });
-      }
+      // Additional validation can be added here
       
-      // Let the storage handle password update logic
-      const result = await storage.updatePassword(
-        id,
-        req.body.oldPassword,
+      // Update password with or without admin override
+      const isAdmin = req.user?.role === "admin" && req.user?.id !== id;
+      const updated = await storage.updatePassword(
+        id, 
+        req.body.currentPassword, 
         req.body.newPassword,
-        req.user?.role === 'admin'
+        isAdmin // Admin override if admin is changing another user's password
       );
       
-      if (!result) {
-        return res.status(400).json({ message: "Password update failed. Old password might be incorrect." });
+      if (!updated) {
+        return res.status(400).json({ message: "Invalid current password" });
       }
       
-      res.json({ message: "Password updated successfully" });
+      res.json({ success: true });
     } catch (error) {
       next(error);
     }
   });
   
-  // Delete a user (mark for deletion)
+  // Delete user (admin only)
   app.delete("/api/users/:id", isAuthenticated, async (req: Request, res: Response, next: Function) => {
     try {
       const id = parseInt(req.params.id);
       
-      // Regular users can only delete their own account
-      if (req.user?.role !== 'admin' && req.user?.id !== id) {
+      // Users can only delete their own account unless they're an admin
+      if (req.user?.id !== id && req.user?.role !== "admin") {
         return res.status(403).json({ message: "Forbidden - You can only delete your own account" });
       }
       
-      // For non-admin users, mark account for deletion instead of actual deletion
-      if (req.user?.role !== 'admin') {
-        const updatedUser = await storage.updateUser(id, { deletionRequested: true });
-        
-        if (!updatedUser) {
-          return res.status(404).json({ message: "User not found" });
+      // Don't allow deleting the last admin user
+      if (req.user?.id === id && req.user?.role === "admin") {
+        const admins = (await storage.getAllUsers()).filter(u => u.role === "admin");
+        if (admins.length <= 1) {
+          return res.status(400).json({ message: "Cannot delete the last admin user" });
         }
-        
-        // Log out the user if they requested their own deletion
-        if (req.user?.id === id) {
-          req.logout((err) => {
-            if (err) return next(err);
-          });
-        }
-        
-        return res.json({ message: "Account marked for deletion and awaiting admin approval" });
-      } else {
-        // Admins can delete accounts immediately
-        const result = await storage.deleteUser(id);
-        
-        if (!result) {
-          return res.status(404).json({ message: "User not found" });
-        }
-        
-        // Log out the user if they deleted their own account
-        if (req.user?.id === id) {
-          req.logout((err) => {
-            if (err) return next(err);
-          });
-        }
-        
-        res.status(204).end();
       }
+      
+      const result = await storage.deleteUser(id);
+      if (!result) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      res.status(204).end();
     } catch (error) {
       next(error);
     }
