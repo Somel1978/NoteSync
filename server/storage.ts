@@ -430,8 +430,13 @@ export class DatabaseStorage implements IStorage {
       value = {}; // Default to empty object if value is null or undefined
     }
     
+    // Make sure value isn't an empty object when we have real data
+    if (typeof value === 'object' && Object.keys(value).length === 0) {
+      console.warn(`WARNING: Empty object detected when saving ${key} - this might indicate a client-side issue`);
+    }
+    
     // For debugging
-    console.log(`Creating/updating setting ${key} with value:`, JSON.stringify(value));
+    console.log(`Creating/updating setting ${key} with value:`, JSON.stringify(value, null, 2));
     
     try {
       // Try to update

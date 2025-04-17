@@ -773,7 +773,16 @@ export function registerRoutes(app: Express): Server {
 
   app.post("/api/settings/email", isAdmin, async (req, res, next) => {
     try {
-      console.log("Received email settings data:", JSON.stringify(req.body));
+      console.log("API ROUTE: Received raw request body:", req.body);
+      console.log("API ROUTE: Body type:", typeof req.body);
+      console.log("API ROUTE: Received email settings data:", JSON.stringify(req.body));
+      
+      // Check if we received an empty object
+      if (typeof req.body === 'object' && Object.keys(req.body).length === 0) {
+        console.error("ERROR: Received empty object for email settings");
+        return res.status(400).json({ error: "Email settings object is empty" });
+      }
+      
       let emailSettings = req.body as EmailSettings;
       
       // Validate emailSettings against schema

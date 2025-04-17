@@ -253,8 +253,24 @@ const EmailSettingsForm = () => {
   // Save email settings mutation
   const saveEmailSettingsMutation = useMutation({
     mutationFn: async (data: EmailSettingsFormValues) => {
+      console.log("Client sending email settings:", JSON.stringify(data, null, 2));
+      
+      // Make sure we have actual data to send
+      const hasValidData = Object.values(data).some(val => 
+        (typeof val === 'boolean') || 
+        (typeof val === 'string' && val !== "") ||
+        (val !== null && val !== undefined)
+      );
+      
+      if (!hasValidData) {
+        throw new Error("No valid email settings data to save");
+      }
+      
       const res = await apiRequest("POST", "/api/settings/email", data);
-      if (!res.ok) throw new Error("Failed to save email settings");
+      if (!res.ok) {
+        const errorText = await res.text();
+        throw new Error(`Failed to save email settings: ${errorText}`);
+      }
       return await res.json();
     },
     onSuccess: () => {
