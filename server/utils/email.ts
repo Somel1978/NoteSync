@@ -313,7 +313,7 @@ export class EmailNotificationService {
       return await this.sendEmail(
         { email: settings.systemEmail, name: settings.systemName },
         recipients,
-        `Booking Confirmation: ${appointment.title}`,
+        `Confirmação de Reserva: ${appointment.title}`,
         htmlContent,
         settings
       );
@@ -494,7 +494,7 @@ export class EmailNotificationService {
       return await this.sendEmail(
         { email: settings.systemEmail, name: settings.systemName },
         recipients,
-        `Booking Update: ${appointment.title}`,
+        `Reserva Atualizada: ${appointment.title}`,
         htmlContent,
         settings
       );
@@ -549,6 +549,17 @@ export class EmailNotificationService {
         .replace(/{status}/g, appointment.status)
         .replace(/{cost}/g, `€${(appointment.agreedCost / 100).toFixed(2)}`);
       
+      // Map status to Portuguese terms
+      const statusInPortuguese = {
+        'pending': 'Pendente',
+        'approved': 'Aprovado',
+        'rejected': 'Rejeitado',
+        'cancelled': 'Cancelado'
+      };
+
+      const oldStatusDisplay = statusInPortuguese[oldStatus as keyof typeof statusInPortuguese] || oldStatus;
+      const newStatusDisplay = statusInPortuguese[appointment.status as keyof typeof statusInPortuguese] || appointment.status;
+      
       // Generate status change banner
       const statusBanner = `
         <div style="margin: 20px 0; padding: 15px; border-radius: 5px; 
@@ -564,7 +575,7 @@ export class EmailNotificationService {
             Alteração de Estado da Reserva
           </h3>
           <p style="margin-bottom: 0; font-size: 16px;">
-            O estado da sua reserva mudou de <strong>${oldStatus}</strong> para <strong>${appointment.status}</strong>.
+            O estado da sua reserva mudou de <strong>${oldStatusDisplay}</strong> para <strong>${newStatusDisplay}</strong>.
           </p>
         </div>
       `;
@@ -601,7 +612,7 @@ export class EmailNotificationService {
                    appointment.status === 'rejected' ? 'color: #b91c1c;' :
                    appointment.status === 'cancelled' ? 'color: #b45309;' :
                    'color: #1e40af;'}">
-                ${appointment.status}
+                ${newStatusDisplay}
               </td>
             </tr>
             <tr>
@@ -680,13 +691,13 @@ export class EmailNotificationService {
       }
       
       // Customize subject based on status
-      let subject = `Booking Status Update: ${appointment.title}`;
+      let subject = `Atualização de Reserva: ${appointment.title}`;
       if (appointment.status === 'approved') {
-        subject = `Booking Approved: ${appointment.title}`;
+        subject = `Reserva Aprovada: ${appointment.title}`;
       } else if (appointment.status === 'rejected') {
-        subject = `Booking Rejected: ${appointment.title}`;
+        subject = `Reserva Rejeitada: ${appointment.title}`;
       } else if (appointment.status === 'cancelled') {
-        subject = `Booking Cancelled: ${appointment.title}`;
+        subject = `Reserva Cancelada: ${appointment.title}`;
       }
       
       // Send email
@@ -786,12 +797,24 @@ export class EmailNotificationService {
    * Generate HTML table showing changes between old and new appointment
    */
   private static generateChangesTableHtml(newAppointment: Appointment, oldAppointment: Appointment): string {
+    // Status Portuguese display
+    const statusInPortuguese = {
+      'pending': 'Pendente',
+      'approved': 'Aprovado',
+      'rejected': 'Rejeitado',
+      'cancelled': 'Cancelado'
+    };
+
     // Fields to compare
     const fieldsToCompare = [
       { key: 'title', label: 'Evento' },
       { key: 'startTime', label: 'Data/Hora Início', formatter: (val: string) => new Date(val).toLocaleString() },
       { key: 'endTime', label: 'Data/Hora Fim', formatter: (val: string) => new Date(val).toLocaleString() },
-      { key: 'status', label: 'Estado' },
+      { 
+        key: 'status', 
+        label: 'Estado', 
+        formatter: (val: string) => statusInPortuguese[val as keyof typeof statusInPortuguese] || val 
+      },
       { key: 'purpose', label: 'Finalidade' },
       { key: 'attendeesCount', label: 'Nº de Participantes' },
       { key: 'agreedCost', label: 'Custo Total', formatter: (val: number) => `€${(val / 100).toFixed(2)}` },
