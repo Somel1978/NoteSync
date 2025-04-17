@@ -1225,7 +1225,7 @@ export function AppointmentDetailsModal({
                         </svg>
                       </div>
                       <div className="ml-4">
-                        <h4 className="text-sm font-medium text-gray-900">Booked Rooms</h4>
+                        <h4 className="text-sm font-medium text-gray-900">{t('appointments.detailsModal.bookedRooms')}</h4>
                       </div>
                     </div>
                     <Button 
