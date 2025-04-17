@@ -1161,10 +1161,10 @@ export function AppointmentDetailsModal({
                     }`}>
                       <h3 className="font-medium">
                         {t('appointments.detailsModal.status')}: {
-                          appointment.status === "approved" ? t('appointments.status.approved') : 
-                          appointment.status === "rejected" ? t('appointments.status.rejected') : 
-                          appointment.status === "cancelled" ? t('appointments.status.cancelled') : 
-                          appointment.status
+                          appointment.status === "approved" ? t('appointments.approved') : 
+                          appointment.status === "rejected" ? t('appointments.rejected') : 
+                          appointment.status === "cancelled" ? t('appointments.cancelled') : 
+                          t('appointments.pending')
                         }
                       </h3>
                       
