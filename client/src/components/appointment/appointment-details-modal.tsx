@@ -55,6 +55,7 @@ interface AppointmentDetailsModalProps {
   onOpenChange: (open: boolean) => void;
   onApprove?: (id: number) => void;
   onReject?: (id: number) => void;
+  showRejectDialog?: boolean; // Nova propriedade para controlar a exibição do diálogo de rejeição
 }
 
 export function AppointmentDetailsModal({
@@ -63,6 +64,7 @@ export function AppointmentDetailsModal({
   onOpenChange,
   onApprove,
   onReject,
+  showRejectDialog = false, // Valor padrão é false
 }: AppointmentDetailsModalProps) {
   const [activeTab, setActiveTab] = useState("details");
   const [isEditMode, setIsEditMode] = useState(false);
@@ -372,8 +374,16 @@ export function AppointmentDetailsModal({
       setActiveTab("details");
       setEditedAppointment({});
       setCustomPricing(false);
+      setIsRejectDialogOpen(false);
     }
   }, [open]);
+  
+  // Abre o diálogo de rejeição automaticamente quando showRejectDialog é true e o modal está aberto
+  useEffect(() => {
+    if (open && showRejectDialog && appointment?.status === "pending") {
+      setIsRejectDialogOpen(true);
+    }
+  }, [open, showRejectDialog, appointment]);
 
   // Get available facilities for a room
   const getAvailableFacilities = (roomId: number, includeCustom: boolean = true) => {

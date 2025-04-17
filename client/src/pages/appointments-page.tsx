@@ -100,12 +100,15 @@ export default function AppointmentsPage() {
     approveAppointmentMutation.mutate(id);
   };
 
+  // Necessitamos de uma maneira de controlar se devemos mostrar o diálogo de rejeição
+  // quando o modal de detalhes for aberto
+  const [showRejectDialog, setShowRejectDialog] = useState(false);
+  
   const handleReject = (id: number) => {
-    // Em vez de usar confirm, use o modal de detalhes que já possui um diálogo de rejeição
-    // O modal tem um diálogo próprio para coletar o motivo da rejeição
+    // Abra o modal de detalhes e sinalize que o diálogo de rejeição deve ser exibido
     setSelectedAppointmentId(id);
+    setShowRejectDialog(true); // Isso será passado para o modal como prop
     setModalOpen(true);
-    // O handleConfirmReject no modal vai chamar o rejectMutation
   };
 
   const columns: ColumnDef<Appointment>[] = [
@@ -260,9 +263,19 @@ export default function AppointmentsPage() {
           <AppointmentDetailsModal
             appointmentId={selectedAppointmentId}
             open={modalOpen}
-            onOpenChange={setModalOpen}
+            onOpenChange={(open) => {
+              setModalOpen(open);
+              // Quando o modal é fechado, resete o estado de showRejectDialog
+              if (!open) {
+                setShowRejectDialog(false);
+              }
+            }}
             onApprove={handleApprove}
-            onReject={handleReject}
+            onReject={(id) => {
+              // Passe id e motivo da rejeição para a mutação
+              rejectAppointmentMutation.mutate({ id, reason: "" });
+            }}
+            showRejectDialog={showRejectDialog}
           />
         )}
       </div>
