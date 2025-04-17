@@ -1250,7 +1250,7 @@ export function AppointmentDetailsModal({
 
                   {!isEditMode ? (
                     <div>
-                      <h4 className="text-sm font-medium text-gray-900 mb-4">Booked Rooms</h4>
+                      <h4 className="text-sm font-medium text-gray-900 mb-4">{t('appointments.detailsModal.bookedRooms')}</h4>
                       
                       {getRoomsArray(appointment).length > 0 ? (
                         <div className="space-y-4 overflow-y-auto pr-1">
@@ -1304,7 +1304,7 @@ export function AppointmentDetailsModal({
                     </div>
                   ) : (
                     <div>
-                      <h4 className="text-sm font-medium text-gray-900 mb-4">Booked Rooms</h4>
+                      <h4 className="text-sm font-medium text-gray-900 mb-4">{t('appointments.detailsModal.bookedRooms')}</h4>
                       
                       {editedAppointment.rooms && Array.isArray(editedAppointment.rooms) && (editedAppointment.rooms as RoomBooking[]).length > 0 ? (
                         <div className="space-y-4 overflow-y-auto pr-1 border rounded-md p-4 max-h-[400px]">
@@ -1616,7 +1616,7 @@ export function AppointmentDetailsModal({
                         </svg>
                       </div>
                       <div className="ml-4">
-                        <h4 className="text-sm font-medium text-gray-900">Cost Information</h4>
+                        <h4 className="text-sm font-medium text-gray-900">{t('appointments.detailsModal.costInformation')}</h4>
                       </div>
                     </div>
                     <Button 
@@ -1680,9 +1680,9 @@ export function AppointmentDetailsModal({
                                             // Use the actual room cost from booking data
                                             const baseCost = (roomBooking.cost / 100).toFixed(2);
                                             const flatRate = (room.flatRate / 100).toFixed(2);
-                                            return `Flat Rate (One-time fee): €${flatRate}`;
+                                            return `${t('appointments.detailsModal.flatRateWithFee')}: €${flatRate}`;
                                           }
-                                          return 'Flat Rate (One-time fee)';
+                                          return t('appointments.detailsModal.flatRateWithFee');
                                         })()}
                                       </p>
                                     )}
@@ -1700,9 +1700,9 @@ export function AppointmentDetailsModal({
                                               const hourlyRate = (room.hourlyRate / 100).toFixed(2);
                                               // Calculate base cost without facilities - should be 1 hour × €15.00 = €15.00
                                               const baseTotal = (hours * room.hourlyRate / 100);
-                                              return `Hourly Rate: ${hours} ${hours === 1 ? 'hour' : 'hours'} × €${hourlyRate} per hour = €${baseTotal.toFixed(2)}`;
+                                              return `${t('appointments.detailsModal.hourlyRateLabel')}: ${hours} ${hours === 1 ? t('appointments.detailsModal.hour') : t('appointments.detailsModal.hours')} × €${hourlyRate} ${t('appointments.detailsModal.perHour')} = €${baseTotal.toFixed(2)}`;
                                             }
-                                            return `Hourly Rate: ${hours} ${hours === 1 ? 'hour' : 'hours'}`;
+                                            return `${t('appointments.detailsModal.hourlyRateLabel')}: ${hours} ${hours === 1 ? t('appointments.detailsModal.hour') : t('appointments.detailsModal.hours')}`;
                                           })()
                                         ) : (
                                           <>Hourly Rate</>
