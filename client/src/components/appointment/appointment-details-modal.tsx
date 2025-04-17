@@ -424,28 +424,91 @@ export function AppointmentDetailsModal({
   // Handlers
   const handleToggleEditMode = () => {
     if (isEditMode) {
-      // Before saving, make sure we store the custom facilities data in a way
-      // that will be persisted with the appointment
+      // Saving changes - validate and prepare data
+      console.log("Saving appointment changes");
+      
+      // Before saving, make sure we store the custom facilities data and recalculate costs
       const appointmentToSave = JSON.parse(JSON.stringify(editedAppointment)); // Deep clone
       
-      // Make sure we have a customFacilities field
+      // Make sure we have a customFacilities field to store additional facilities
       if (!appointmentToSave.customFacilities) {
         appointmentToSave.customFacilities = {};
       }
       
-      // Store window.customFacilities data in the appointment itself
+      // Store window.customFacilities data in the appointment itself for persistence
       if (window.customFacilities) {
         appointmentToSave.customFacilities = { ...window.customFacilities };
+      }
+      
+      // If not using custom pricing, ensure we recalculate costs based on all current data
+      if (!customPricing && appointmentToSave.rooms) {
+        console.log("Recalculating all costs before saving");
+        
+        // Recalculate each room's cost from database values
+        const updatedRooms = (appointmentToSave.rooms as RoomBooking[]).map(room => {
+          const result = calculateRoomCost(
+            room.roomId,
+            room.costType,
+            room.requestedFacilities
+          );
+          
+          return {
+            ...room,
+            cost: result.totalCost
+          };
+        });
+        
+        // Set updated room costs
+        appointmentToSave.rooms = updatedRooms;
+        
+        // Calculate total appointment cost
+        let totalCost = 0;
+        updatedRooms.forEach(room => {
+          totalCost += Number(room.cost || 0);
+        });
+        
+        // Update the agreed cost
+        appointmentToSave.agreedCost = totalCost;
+        console.log(`Final calculated cost: €${(totalCost / 100).toFixed(2)}`);
+      }
+      
+      // For custom pricing, ensure the costBreakdown reflects this
+      if (customPricing) {
+        appointmentToSave.costBreakdown = {
+          ...(typeof appointmentToSave.costBreakdown === 'object' ? appointmentToSave.costBreakdown : {}),
+          isCustom: true
+        };
       }
       
       // Save changes - onSuccess handler will update cache and local state
       updateMutation.mutate(appointmentToSave);
     } else {
-      // Just entering edit mode - no saving needed
+      // Just entering edit mode - ensure we have fresh data
       if (appointment) {
+        console.log("Entering edit mode with fresh appointment data");
+        
+        // Deep clone to prevent issues with reference types
+        const freshAppointment = JSON.parse(JSON.stringify(appointment));
+        
+        // Set up window.customFacilities with data from the appointment
+        if (freshAppointment.customFacilities) {
+          window.customFacilities = { ...freshAppointment.customFacilities };
+        } else {
+          window.customFacilities = {};
+        }
+        
         // Make sure editedAppointment is synchronized with appointment
         // This prevents issues with stale data when toggling edit mode multiple times
-        setEditedAppointment({...appointment});
+        setEditedAppointment(freshAppointment);
+        
+        // Set custom pricing flag based on stored appointment data
+        if (freshAppointment.costBreakdown && 
+            typeof freshAppointment.costBreakdown === 'object' && 
+            (freshAppointment.costBreakdown as any).isCustom) {
+          setCustomPricing(true);
+        } else {
+          setCustomPricing(false);
+        }
       }
       
       // Enter edit mode
@@ -454,10 +517,61 @@ export function AppointmentDetailsModal({
   };
 
   const handleInputChange = (field: string, value: any) => {
-    setEditedAppointment((prev) => ({
-      ...prev,
-      [field]: value,
-    }));
+    setEditedAppointment((prev) => {
+      const updatedAppointment = {
+        ...prev,
+        [field]: value,
+      };
+      
+      // For fields that affect cost calculation, auto-update costs only if not using custom pricing
+      if (!customPricing && ['startTime', 'endTime', 'attendeesCount'].includes(field) && updatedAppointment.rooms) {
+        console.log(`Field ${field} changed, auto-updating room costs`);
+        
+        // For multi-room appointments, recalculate each affected room
+        if (Array.isArray(updatedAppointment.rooms)) {
+          const rooms = updatedAppointment.rooms as RoomBooking[];
+          const updatedRooms = rooms.map(room => {
+            // Only recalculate rooms with cost types that depend on the changed field
+            if ((field === 'attendeesCount' && room.costType === 'per_attendee') ||
+                (['startTime', 'endTime'].includes(field) && room.costType === 'hourly')) {
+              
+              // First update the edited appointment temporarily so calculateRoomCost uses new values
+              const tempEditedAppointment = editedAppointment;
+              tempEditedAppointment[field] = value;
+              
+              // Calculate new cost with updated field value
+              const newCost = calculateRoomCost(
+                room.roomId,
+                room.costType, 
+                room.requestedFacilities
+              ).totalCost;
+              
+              console.log(`Recalculated ${room.roomName} cost: ${newCost / 100} (${room.costType})`);
+              
+              return {
+                ...room,
+                cost: newCost
+              };
+            }
+            return room;
+          });
+          
+          // Calculate new total cost
+          let newTotalCost = 0;
+          updatedRooms.forEach(room => {
+            newTotalCost += Number(room.cost || 0);
+          });
+          
+          console.log(`New total cost: ${newTotalCost / 100}`);
+          
+          // Update the edited appointment with new room costs and total
+          updatedAppointment.rooms = updatedRooms;
+          updatedAppointment.agreedCost = newTotalCost;
+        }
+      }
+      
+      return updatedAppointment;
+    });
   };
 
   const handleApprove = () => {
@@ -530,7 +644,10 @@ export function AppointmentDetailsModal({
     }
   };
 
-  // Calculate cost for a room based on type, facilities, etc.
+  /**
+   * Calculate cost for a room based on type, facilities, and stored data
+   * This ensures consistent calculation using values from the database
+   */
   const calculateRoomCost = (roomId: number, costType?: string, requestedFacilities?: string[]) => {
     if (!rooms || !Array.isArray(rooms)) {
       return { baseCost: 0, facilitiesCost: 0, totalCost: 0 };
@@ -546,7 +663,9 @@ export function AppointmentDetailsModal({
     const roomCostType = costType || 'flat';
     
     if (roomCostType === 'flat') {
+      // Flat rate is a one-time fee that doesn't depend on duration or attendees
       baseCost = selectedRoom.flatRate || 0;
+      console.log(`Room ${selectedRoom.name} flat rate: ${baseCost / 100}`);
     } else if (roomCostType === 'hourly') {
       // Calculate duration in hours based on appointment start and end times
       let hours = 1; // Default to 1 hour
@@ -559,31 +678,47 @@ export function AppointmentDetailsModal({
       }
       
       baseCost = (selectedRoom.hourlyRate || 0) * hours;
+      console.log(`Room ${selectedRoom.name} hourly rate: ${(selectedRoom.hourlyRate || 0) / 100} × ${hours} hours = ${baseCost / 100}`);
     } else if (roomCostType === 'per_attendee') {
       // Cost per attendee
       const attendees = editedAppointment.attendeesCount || 1;
       baseCost = (selectedRoom.attendeeRate || 0) * attendees;
+      console.log(`Room ${selectedRoom.name} per attendee rate: ${(selectedRoom.attendeeRate || 0) / 100} × ${attendees} attendees = ${baseCost / 100}`);
     }
     
     // Calculate facilities cost
     let facilitiesCost = 0;
+    let facilitiesCostDetails: Array<{name: string, cost: number}> = [];
     const facilities = requestedFacilities || [];
     
     if (facilities.length > 0) {
-      // First check for custom facilities (which might not be in the room's standard facilities)
+      // Process all facilities ensuring we always use values from the database
       facilities.forEach(facilityName => {
         const cacheKey = `${roomId}-${facilityName}`;
-        const customFacility = window.customFacilities?.[cacheKey] || 
-                               (editedAppointment.customFacilities ? 
-                                editedAppointment.customFacilities[cacheKey] : undefined);
+        let facilityData = null;
+        let facilityCost = 0;
         
-        if (customFacility && typeof customFacility === 'object' && customFacility.cost) {
-          facilitiesCost += Number(customFacility.cost);
-          return; // Skip checking standard facilities for this one
-        }
-        
-        // If not a custom facility, check standard facilities
-        if (selectedRoom.facilities) {
+        // Priority order for facility data:
+        // 1. Check in appointment.customFacilities (from database)
+        if (appointment?.customFacilities && appointment.customFacilities[cacheKey]) {
+          facilityData = appointment.customFacilities[cacheKey];
+          facilityCost = Number(facilityData.cost || 0);
+          console.log(`Facility ${facilityName} found in appointment.customFacilities with cost ${facilityCost / 100}`);
+        } 
+        // 2. Check in editedAppointment.customFacilities (from current editing session)
+        else if (editedAppointment.customFacilities && editedAppointment.customFacilities[cacheKey]) {
+          facilityData = editedAppointment.customFacilities[cacheKey];
+          facilityCost = Number(facilityData.cost || 0);
+          console.log(`Facility ${facilityName} found in editedAppointment.customFacilities with cost ${facilityCost / 100}`);
+        } 
+        // 3. Check in window.customFacilities (temporary cache)
+        else if (window.customFacilities && window.customFacilities[cacheKey]) {
+          facilityData = window.customFacilities[cacheKey];
+          facilityCost = Number(facilityData.cost || 0);
+          console.log(`Facility ${facilityName} found in window.customFacilities with cost ${facilityCost / 100}`);
+        } 
+        // 4. Check standard facilities from the room
+        else if (selectedRoom.facilities) {
           try {
             let availableFacilities: any[] = [];
             
@@ -597,32 +732,86 @@ export function AppointmentDetailsModal({
               (typeof f === 'object' && f !== null && f.name === facilityName)
             );
             
-            if (facility && typeof facility === 'object' && facility.cost) {
-              facilitiesCost += Number(facility.cost);
+            if (facility && typeof facility === 'object' && facility.cost !== undefined) {
+              facilityData = facility;
+              facilityCost = Number(facility.cost || 0);
+              console.log(`Facility ${facilityName} found in standard room facilities with cost ${facilityCost / 100}`);
             }
           } catch (e) {
-            console.error('Error calculating facilities cost:', e);
+            console.error('Error parsing standard facilities during cost calculation:', e);
           }
+        }
+        
+        // Add to total facilities cost
+        if (facilityCost > 0) {
+          facilitiesCost += facilityCost;
+          facilitiesCostDetails.push({ name: facilityName, cost: facilityCost });
         }
       });
     }
     
     const totalCost = baseCost + facilitiesCost;
-    return { baseCost, facilitiesCost, totalCost };
+    console.log(`Room ${selectedRoom.name} total cost: ${baseCost / 100} + ${facilitiesCost / 100} = ${totalCost / 100}`);
+    
+    return { 
+      baseCost, 
+      facilitiesCost, 
+      totalCost,
+      facilitiesCostDetails 
+    };
   };
 
-  // Calculate cost for the appointment (sum of all rooms)
-  const calculateCost = () => {
+  /**
+   * Calculate the total cost for the appointment by summing all room costs
+   * This function ensures accurate calculation using the most up-to-date data
+   */
+  const calculateCost = (forceRecalculate = false) => {
+    console.log("Calculating total appointment cost");
+    
     // If we have multiple rooms
     if (editedAppointment.rooms && Array.isArray(editedAppointment.rooms)) {
       let totalCost = 0;
       
-      editedAppointment.rooms.forEach(room => {
-        // Each room has its own cost stored
-        totalCost += Number(room.cost || 0);
-      });
-      
-      return totalCost;
+      // If forceRecalculate is true, we calculate each room from scratch
+      if (forceRecalculate) {
+        console.log("Forcing recalculation of all rooms");
+        
+        editedAppointment.rooms.forEach((room, index) => {
+          // Recalculate each room's cost from scratch
+          const recalculatedCost = calculateRoomCost(
+            room.roomId, 
+            room.costType,
+            room.requestedFacilities
+          ).totalCost;
+          
+          console.log(`Room ${room.roomName} recalculated cost: ${recalculatedCost / 100}`);
+          
+          // Update the room cost in the editedAppointment object
+          const updatedRooms = [...(editedAppointment.rooms as RoomBooking[])];
+          updatedRooms[index] = {
+            ...updatedRooms[index],
+            cost: recalculatedCost
+          };
+          
+          // Update edited appointment with recalculated costs
+          if (!customPricing) {
+            handleInputChange('rooms', updatedRooms);
+          }
+          
+          totalCost += recalculatedCost;
+        });
+        
+        return totalCost;
+      } else {
+        // Use existing room costs
+        (editedAppointment.rooms as RoomBooking[]).forEach(room => {
+          // Ensure we're using numeric values by applying Number()
+          totalCost += Number(room.cost || 0);
+          console.log(`Room ${room.roomName} stored cost: ${Number(room.cost || 0) / 100}`);
+        });
+        
+        return totalCost;
+      }
     }
     
     // If just a single room
@@ -1584,9 +1773,28 @@ export function AppointmentDetailsModal({
                           <p className="text-xs text-gray-600">
                             The price is automatically calculated based on selected rooms, facilities, duration and number of attendees.
                           </p>
-                          <p className="text-xs text-gray-600 mt-1">
-                            Current total: €{((calculateCost() || 0) / 100).toFixed(2)}
-                          </p>
+                          <div className="flex justify-between items-center mt-2">
+                            <p className="text-xs text-gray-600">
+                              Current total: €{((calculateCost() || 0) / 100).toFixed(2)}
+                            </p>
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              onClick={() => {
+                                // Force recalculation of all costs
+                                const recalculatedCost = calculateCost(true);
+                                handleInputChange('agreedCost', recalculatedCost);
+                                toast({ 
+                                  title: "Costs recalculated", 
+                                  description: `Updated total: €${(recalculatedCost / 100).toFixed(2)}`
+                                });
+                              }}
+                              className="text-xs"
+                            >
+                              <RefreshCw className="h-3 w-3 mr-1" />
+                              Recalculate
+                            </Button>
+                          </div>
                         </div>
                       )}
                     </div>
