@@ -1,7 +1,7 @@
 import type { Express, Request, Response } from "express";
 import { storage } from "../storage";
 import { isAdmin } from "./index";
-import { EmailSettings } from "@shared/schema";
+import { EmailSettings, AppearanceSettings } from "@shared/schema";
 import Mailjet from 'node-mailjet';
 
 export function registerSettingsRoutes(app: Express): void {
@@ -240,6 +240,41 @@ export function registerSettingsRoutes(app: Express): void {
         res.json(setting.value);
       } else {
         res.status(500).json({ message: "Failed to update general settings" });
+      }
+    } catch (error) {
+      next(error);
+    }
+  });
+  
+  // Get appearance settings
+  app.get("/api/settings/appearance", async (req: Request, res: Response, next: Function) => {
+    try {
+      const appearanceSetting = await storage.getSetting('appearance');
+      
+      // Return default settings if none exist
+      if (!appearanceSetting || !appearanceSetting.value) {
+        return res.json({
+          logoText: "AC",
+          title: "ACRDSC",
+          subtitle: "Reservas"
+        });
+      }
+      
+      res.json(appearanceSetting.value);
+    } catch (error) {
+      next(error);
+    }
+  });
+  
+  // Update appearance settings
+  app.post("/api/settings/appearance", isAdmin, async (req: Request, res: Response, next: Function) => {
+    try {
+      const setting = await storage.createOrUpdateSetting('appearance', req.body);
+      
+      if (setting && setting.value) {
+        res.json(setting.value);
+      } else {
+        res.status(500).json({ message: "Failed to update appearance settings" });
       }
     } catch (error) {
       next(error);

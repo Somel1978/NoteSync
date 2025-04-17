@@ -19,6 +19,8 @@ import { useState, useEffect } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useTranslation } from "react-i18next";
 import { LanguageSelector } from "./language-selector";
+import { useQuery } from "@tanstack/react-query";
+import { AppearanceSettings } from "@shared/schema";
 
 export function Sidebar() {
   const { t } = useTranslation();
@@ -26,6 +28,16 @@ export function Sidebar() {
   const [location, navigate] = useLocation();
   const [isOpen, setIsOpen] = useState(false);
   const isMobile = useIsMobile();
+  
+  // Fetch appearance settings
+  const { data: appearanceSettings } = useQuery<AppearanceSettings>({
+    queryKey: ['/api/settings/appearance'],
+    refetchOnWindowFocus: false
+  });
+
+  const logoText = appearanceSettings?.logoText || "AC";
+  const title = appearanceSettings?.title || "ACRDSC";
+  const subtitle = appearanceSettings?.subtitle || "Reservas";
 
   const handleLogout = () => {
     logoutMutation.mutate(undefined, {
@@ -77,8 +89,8 @@ export function Sidebar() {
       {/* Logo */}
       <div className="p-4 flex items-center justify-between border-b border-gray-700">
         <div className="flex items-center">
-          <div className="bg-white p-2 rounded-md w-10 h-10 flex items-center justify-center">
-            <div className="text-xl font-bold text-primary">AC</div>
+          <div className="bg-white p-2 rounded-md w-12.5 h-12.5 flex items-center justify-center">
+            <div className="text-2xl font-bold text-primary">AC</div>
           </div>
           <div className="ml-3 text-white">
             <div className="font-semibold text-sm">ACRDSC</div>
@@ -98,7 +110,7 @@ export function Sidebar() {
       </div>
 
       {/* Navigation Links - Role-based access */}
-      <nav className="flex-1 mt-4">
+      <nav className="flex-1 mt-6">
         <ul className="px-2">
           {/* Dashboard - Only for Admin and Director */}
           {(user.role === 'admin' || user.role === 'director') && (
@@ -147,7 +159,7 @@ export function Sidebar() {
       <div className="mt-auto border-t border-gray-700 p-4">
         <Button
           variant="ghost"
-          className="text-gray-300 hover:text-white w-full justify-start px-4 py-2 mb-2"
+          className="text-gray-300 hover:bg-transparent w-full justify-start px-4 py-2 mb-2"
           onClick={() => navigate("/")}
         >
           <Home className="h-5 w-5 mr-3" />
@@ -156,7 +168,7 @@ export function Sidebar() {
         
         <Button
           variant="ghost"
-          className="text-gray-300 hover:text-white w-full justify-start px-4 py-2"
+          className="text-gray-300 hover:bg-transparent w-full justify-start px-4 py-2"
           onClick={handleLogout}
         >
           <LogOut className="h-5 w-5 mr-3" />

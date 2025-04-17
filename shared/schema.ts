@@ -213,3 +213,9 @@ export type EmailSettings = {
   emailTemplateBookingUpdated: string;
   emailTemplateBookingStatusChanged: string;
 };
+
+export type AppearanceSettings = {
+  logoText: string;
+  title: string;
+  subtitle: string;
+};
