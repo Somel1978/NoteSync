@@ -118,71 +118,67 @@ export function RoomFormModal({ room, open, onOpenChange }: RoomFormModalProps) 
     }
   }, [room, form]);
 
+  // Prepare the data for submission - convert currency from decimal to cents
+  const prepareDataForSubmission = (formData: RoomFormValues) => {
+    return {
+      ...formData,
+      flatRate: formData.flatRate !== undefined ? Math.round(formData.flatRate * 100) : undefined,
+      hourlyRate: formData.hourlyRate !== undefined ? Math.round(formData.hourlyRate * 100) : undefined,
+      attendeeRate: formData.attendeeRate !== undefined ? Math.round(formData.attendeeRate * 100) : undefined,
+      facilities: formData.facilities.map(facility => ({
+        ...facility,
+        cost: Math.round(facility.cost * 100),
+      })),
+    };
+  };
+  
+  // Create room mutation
   const createRoomMutation = useMutation({
     mutationFn: async (formData: RoomFormValues) => {
-      // Convert currency values from decimal to cents for storage
-      const dataToSend = {
-        ...formData,
-        flatRate: formData.flatRate !== undefined ? Math.round(formData.flatRate * 100) : undefined,
-        hourlyRate: formData.hourlyRate !== undefined ? Math.round(formData.hourlyRate * 100) : undefined,
-        attendeeRate: formData.attendeeRate !== undefined ? Math.round(formData.attendeeRate * 100) : undefined,
-        facilities: formData.facilities.map(facility => ({
-          ...facility,
-          cost: Math.round(facility.cost * 100),
-        })),
-      };
-      
+      const dataToSend = prepareDataForSubmission(formData);
       const res = await apiRequest("POST", "/api/rooms", dataToSend);
       return await res.json();
     },
     onSuccess: () => {
       toast({
-        title: "Room created",
-        description: "The room has been successfully created.",
+        title: t('rooms.createSuccess', 'Room created'),
+        description: t('rooms.createSuccessDetail', 'The room has been successfully created.'),
       });
       queryClient.invalidateQueries({ queryKey: ["/api/rooms"] });
       onOpenChange(false);
     },
     onError: (error) => {
       toast({
-        title: "Failed to create room",
+        title: t('rooms.createError', 'Failed to create room'),
         description: error.message,
         variant: "destructive",
       });
     },
   });
 
+  // Update room mutation
   const updateRoomMutation = useMutation({
     mutationFn: async (formData: RoomFormValues) => {
       if (!room) throw new Error("Room is undefined");
       
-      // Convert currency values from decimal to cents for storage
-      const dataToSend = {
-        ...formData,
-        flatRate: formData.flatRate !== undefined ? Math.round(formData.flatRate * 100) : undefined,
-        hourlyRate: formData.hourlyRate !== undefined ? Math.round(formData.hourlyRate * 100) : undefined,
-        attendeeRate: formData.attendeeRate !== undefined ? Math.round(formData.attendeeRate * 100) : undefined,
-        facilities: formData.facilities.map(facility => ({
-          ...facility,
-          cost: Math.round(facility.cost * 100),
-        })),
-      };
-      
+      const dataToSend = prepareDataForSubmission(formData);
       const res = await apiRequest("PUT", `/api/rooms/${room.id}`, dataToSend);
       return await res.json();
     },
     onSuccess: () => {
       toast({
-        title: "Room updated",
-        description: "The room has been successfully updated.",
+        title: t('rooms.updateSuccess', 'Room updated'),
+        description: t('rooms.updateSuccessDetail', 'The room has been successfully updated.'),
       });
       queryClient.invalidateQueries({ queryKey: ["/api/rooms"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/rooms", room?.id] });
+      if (room?.id) {
+        queryClient.invalidateQueries({ queryKey: ["/api/rooms", room.id] });
+      }
       onOpenChange(false);
     },
     onError: (error) => {
       toast({
-        title: "Failed to update room",
+        title: t('rooms.updateError', 'Failed to update room'),
         description: error.message,
         variant: "destructive",
       });
@@ -224,62 +220,6 @@ export function RoomFormModal({ room, open, onOpenChange }: RoomFormModalProps) 
   };
 
   const isPending = createRoomMutation.isPending || updateRoomMutation.isPending;
-
-  // Update toast messages
-  const createSuccessToast = () => {
-    toast({
-      title: t('rooms.createSuccess', 'Room created'),
-      description: t('rooms.createSuccessDetail', 'The room has been successfully created.'),
-    });
-  };
-
-  const updateSuccessToast = () => {
-    toast({
-      title: t('rooms.updateSuccess', 'Room updated'),
-      description: t('rooms.updateSuccessDetail', 'The room has been successfully updated.'),
-    });
-  };
-
-  // Update mutation handlers with translated messages
-  useEffect(() => {
-    createMutation.mutate = createRoomMutation.mutate;
-    createMutation.isPending = createRoomMutation.isPending;
-    updateMutation.mutate = updateRoomMutation.mutate;
-    updateMutation.isPending = updateRoomMutation.isPending;
-  }, [createRoomMutation.mutate, createRoomMutation.isPending, updateRoomMutation.mutate, updateRoomMutation.isPending]);
-
-  const createMutation = useMutation({
-    mutationFn: createRoomMutation.mutationFn,
-    onSuccess: () => {
-      createSuccessToast();
-      queryClient.invalidateQueries({ queryKey: ["/api/rooms"] });
-      onOpenChange(false);
-    },
-    onError: (error) => {
-      toast({
-        title: t('rooms.createError', 'Failed to create room'),
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
-
-  const updateMutation = useMutation({
-    mutationFn: updateRoomMutation.mutationFn,
-    onSuccess: () => {
-      updateSuccessToast();
-      queryClient.invalidateQueries({ queryKey: ["/api/rooms"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/rooms", room?.id] });
-      onOpenChange(false);
-    },
-    onError: (error) => {
-      toast({
-        title: t('rooms.updateError', 'Failed to update room'),
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

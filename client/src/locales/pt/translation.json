@@ -29,7 +29,9 @@
     "updating": "Atualizando...",
     "requesting": "Solicitando...",
     "loggingIn": "Entrando...",
-    "active": "Ativo"
+    "active": "Ativo",
+    "create": "Criar",
+    "remove": "Remover"
   },
   "navigation": {
     "dashboard": "Painel",
@@ -231,6 +233,8 @@
     "subtitle": "Gerenciar salas e suas instalações",
     "addRoom": "Adicionar Sala",
     "editRoom": "Editar Sala",
+    "addRoomDesc": "Adicionar uma nova sala à sua localização",
+    "editRoomDesc": "Atualizar detalhes e instalações da sala",
     "deleteRoom": "Excluir Sala",
     "filterByLocation": "Filtrar por localização",
     "selectLocation": "Selecionar localização",
@@ -248,12 +252,23 @@
     "bookNow": "Reservar Agora",
     "confirmDelete": "Tem certeza que deseja excluir esta sala?",
     "active": "Ativo",
+    "activeDescription": "Esta sala está disponível para reservas",
     "inactive": "Inativo",
     "flatRate": "Taxa Fixa",
     "hourlyRate": "Taxa por Hora",
+    "location": "Localização",
+    "name": "Nome",
+    "namePlaceholder": "Nome da sala",
+    "descriptionPlaceholder": "Descrição da sala",
     "deleteSuccess": "Sala excluída",
     "deleteSuccessDetail": "A sala foi excluída com sucesso.",
-    "deleteError": "Falha ao excluir sala"
+    "deleteError": "Falha ao excluir sala",
+    "createSuccess": "Sala criada",
+    "createSuccessDetail": "A sala foi criada com sucesso.",
+    "updateSuccess": "Sala atualizada",
+    "updateSuccessDetail": "A sala foi atualizada com sucesso.",
+    "createError": "Falha ao criar sala",
+    "updateError": "Falha ao atualizar sala"
   },
   "settings": {
     "title": "Configurações",
