@@ -113,7 +113,8 @@ export function registerAppointmentRoutes(app: Express): void {
         
         // Create a typed object that matches the required Appointment type
         const appointmentData = {
-          ...formattedData,
+          ...formattedData, // Keep all original data
+          // But ensure these required fields are properly typed
           title: formattedData.title as string,
           roomId: formattedData.roomId as number,
           userId: formattedData.userId as number,
@@ -124,7 +125,9 @@ export function registerAppointmentRoutes(app: Express): void {
           attendeesCount: formattedData.attendeesCount as number,
           costType: formattedData.costType as string,
           agreedCost: formattedData.agreedCost as number,
-          status: formattedData.status || 'pending'
+          status: formattedData.status || 'pending',
+          // Ensure we have an orderNumber (will be set by storage if not provided)
+          orderNumber: formattedData.orderNumber || undefined
         };
         
         const appointment = await storage.createAppointment(appointmentData);
