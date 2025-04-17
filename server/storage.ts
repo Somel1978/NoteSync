@@ -240,32 +240,56 @@ export class DatabaseStorage implements IStorage {
     // Deep clone the original data for comparison
     const originalForComparison = JSON.parse(JSON.stringify(originalAppointment));
     
+    // Create a more detailed audit trail by collecting field changes and their values
+    const fieldChanges: Record<string, { oldValue: any, newValue: any }> = {};
+    
+    // Prepare update data 
+    const updateData = { 
+      ...updates,
+      updatedAt: new Date() 
+    };
+    
+    // Perform the update in the database
     const [updatedAppointment] = await db
       .update(appointments)
-      .set({ ...updates, updatedAt: new Date() })
+      .set(updateData)
       .where(eq(appointments.id, id))
       .returning();
     
-    // Create audit log for update - always create an audit log entry
+    // Create audit log for update if we have a valid updated appointment
     if (updatedAppointment) {
       // If userId not specified, use the original appointment's userId for the audit log
       const userId = updates.userId || originalAppointment.userId;
       
-      // Only create audit log if there are actual changes
+      // Get a clean copy of the updated data for comparison
       const newForComparison = JSON.parse(JSON.stringify(updatedAppointment));
       
-      // Determine what fields have changed
+      // Determine what fields have changed and collect old and new values
       const changedFields: string[] = [];
-      Object.keys(newForComparison).forEach(key => {
-        // Skip timestamps in comparison
-        if (key === 'updatedAt' || key === 'createdAt') return;
+      
+      // Check all fields in the original or updated appointment
+      const allFields = new Set([
+        ...Object.keys(originalForComparison),
+        ...Object.keys(newForComparison)
+      ]);
+      
+      allFields.forEach(key => {
+        // Skip timestamps and internal fields in comparison
+        if (key === 'updatedAt' || key === 'createdAt' || key === 'userId') return;
         
-        // Convert to string for reliable comparison
+        // Get deep string representations for comparison
         const oldValue = JSON.stringify(originalForComparison[key]);
         const newValue = JSON.stringify(newForComparison[key]);
         
+        // Check if there's an actual change
         if (oldValue !== newValue) {
           changedFields.push(key);
+          
+          // Store the actual values (not string representations) for each changed field
+          fieldChanges[key] = {
+            oldValue: originalForComparison[key],
+            newValue: newForComparison[key]
+          };
         }
       });
       
@@ -277,8 +301,13 @@ export class DatabaseStorage implements IStorage {
           action: 'update',
           oldData: originalAppointment,
           newData: updatedAppointment,
-          changedFields: changedFields
+          changedFields: changedFields,
+          details: fieldChanges // Add the detailed field change information
         });
+        
+        console.log(`Audit log created for appointment ${id}. Changed fields: ${changedFields.join(', ')}`);
+      } else {
+        console.log(`No changes detected for appointment ${id}, no audit log created`);
       }
     }
     
