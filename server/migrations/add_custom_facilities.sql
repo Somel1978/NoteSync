@@ -11,7 +11,7 @@ WITH appointments_to_update AS (
   FROM 
     appointments
   WHERE 
-    cost_breakdown ? 'customFacilities'
+    cost_breakdown::text LIKE '%customFacilities%'
 )
 UPDATE appointments a
 SET custom_facilities = u.custom_facilities_data
