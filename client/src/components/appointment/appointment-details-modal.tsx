@@ -1010,17 +1010,17 @@ export function AppointmentDetailsModal({
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-xl font-bold">
-              {appointment?.title || "Appointment Details"}
+              {appointment?.title || t('appointments.detailsModal.title')}
             </DialogTitle>
           </DialogHeader>
 
           <Tabs defaultValue="details" value={activeTab} onValueChange={setActiveTab}>
             <TabsList className="grid grid-cols-5 mb-4">
-              <TabsTrigger value="details">Details</TabsTrigger>
-              <TabsTrigger value="rooms">Rooms</TabsTrigger>
-              <TabsTrigger value="costs">Costs</TabsTrigger>
-              <TabsTrigger value="contact">Contact</TabsTrigger>
-              <TabsTrigger value="history">History</TabsTrigger>
+              <TabsTrigger value="details">{t('appointments.detailsModal.tabs.details')}</TabsTrigger>
+              <TabsTrigger value="rooms">{t('appointments.detailsModal.tabs.rooms')}</TabsTrigger>
+              <TabsTrigger value="costs">{t('appointments.detailsModal.tabs.costs')}</TabsTrigger>
+              <TabsTrigger value="contact">{t('appointments.detailsModal.tabs.contact')}</TabsTrigger>
+              <TabsTrigger value="history">{t('appointments.detailsModal.tabs.history')}</TabsTrigger>
             </TabsList>
 
             {appointment ? (
@@ -1034,7 +1034,7 @@ export function AppointmentDetailsModal({
                         </svg>
                       </div>
                       <div className="ml-4">
-                        <h4 className="text-sm font-medium text-gray-900">Appointment Information</h4>
+                        <h4 className="text-sm font-medium text-gray-900">{t('appointments.detailsModal.appointmentInfo')}</h4>
                       </div>
                     </div>
                     
@@ -1047,7 +1047,7 @@ export function AppointmentDetailsModal({
                             onClick={handleReject}
                             className="text-xs text-red-500 border-red-200 hover:bg-red-50"
                           >
-                            Reject
+                            {t('common.reject')}
                           </Button>
                           <Button 
                             variant="outline" 
@@ -1055,7 +1055,7 @@ export function AppointmentDetailsModal({
                             onClick={handleApprove}
                             className="text-xs text-green-500 border-green-200 hover:bg-green-50"
                           >
-                            Approve
+                            {t('common.approve')}
                           </Button>
                         </>
                       )}
@@ -1069,12 +1069,12 @@ export function AppointmentDetailsModal({
                         {isEditMode ? (
                           <>
                             <Save className="h-4 w-4 mr-2" />
-                            Save
+                            {t('common.save')}
                           </>
                         ) : (
                           <>
                             <Edit className="h-4 w-4 mr-2" />
-                            Edit
+                            {t('common.edit')}
                           </>
                         )}
                       </Button>
