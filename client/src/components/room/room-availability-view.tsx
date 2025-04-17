@@ -34,44 +34,49 @@ export function RoomAvailabilityView() {
     }
   };
 
-  // Memo para cache de salas
-  const roomsCache = useMemo(() => {
-    return new Map<number, Room>();
+  // Console log para rastrear renderizações
+  useEffect(() => {
+    console.log('RoomAvailabilityView renderizado');
+    console.time('room-view-render');
+    return () => {
+      console.timeEnd('room-view-render');
+    };
   }, []);
 
-  // Fetch specific room if ID is provided - com cache para melhor desempenho
+  // Fetch specific room if ID is provided
   const { data: room, isLoading: isRoomLoading } = useQuery<Room>({
     queryKey: ["/api/public/rooms", roomId],
     enabled: !!roomId,
-    staleTime: 5 * 60 * 1000, // 5 minutos de cache
+    staleTime: 0, // Sem cache - sempre em tempo real
     queryFn: async () => {
+      console.time('fetch-room');
       if (!roomId) return null;
       
-      // Verificar se já temos esta sala em cache
-      if (roomsCache.has(roomId)) {
-        return roomsCache.get(roomId)!;
+      try {
+        // Buscar todas as salas e filtrar pelo ID
+        const startTime = performance.now();
+        const res = await fetch('/api/public/rooms', {
+          credentials: "include",
+        });
+        if (!res.ok) {
+          throw new Error(`Error fetching rooms: ${res.status}`);
+        }
+        const rooms = await res.json();
+        const selectedRoom = rooms.find((r: Room) => r.id === roomId);
+        
+        if (!selectedRoom) {
+          throw new Error(`Room with ID ${roomId} not found`);
+        }
+        
+        const endTime = performance.now();
+        console.log(`Tempo para carregar sala: ${endTime - startTime}ms`);
+        console.timeEnd('fetch-room');
+        return selectedRoom;
+      } catch (error) {
+        console.error("Erro ao carregar sala:", error);
+        console.timeEnd('fetch-room');
+        throw error;
       }
-      
-      // Buscar todas as salas e filtrar pelo ID
-      const res = await fetch('/api/public/rooms', {
-        credentials: "include",
-      });
-      if (!res.ok) {
-        throw new Error(`Error fetching rooms: ${res.status}`);
-      }
-      const rooms = await res.json();
-      const selectedRoom = rooms.find((r: Room) => r.id === roomId);
-      
-      if (!selectedRoom) {
-        throw new Error(`Room with ID ${roomId} not found`);
-      }
-      
-      // Adicionar ao cache
-      rooms.forEach((r: Room) => {
-        roomsCache.set(r.id, r);
-      });
-      
-      return selectedRoom;
     },
   });
   
@@ -79,23 +84,25 @@ export function RoomAvailabilityView() {
   const { data: rooms = [], isLoading: isRoomsLoading } = useQuery<Room[]>({
     queryKey: ["/api/public/rooms"],
     enabled: !roomId,
-    staleTime: 5 * 60 * 1000, // 5 minutos de cache
+    staleTime: 0, // Sem cache
   });
   
   // Fetch locations for context
   const { data: locations = [], isLoading: isLocationsLoading } = useQuery<Location[]>({
     queryKey: ["/api/public/locations"],
-    staleTime: 10 * 60 * 1000, // 10 minutos de cache
+    staleTime: 0, // Sem cache
   });
   
   // Fetch appointments for the specific room
   const { data: appointments = [], isLoading: isAppointmentsLoading } = useQuery<Appointment[]>({
     queryKey: ["/api/public/appointments/room", roomId],
     enabled: !!roomId,
-    staleTime: 60 * 1000, // 1 minuto de cache
+    staleTime: 0, // Sem cache
     queryFn: async () => {
+      console.time('fetch-appointments');
       if (!roomId) return [];
       try {
+        const startTime = performance.now();
         const res = await fetch(`/api/public/appointments/room/${roomId}`, {
           credentials: "include",
         });
@@ -103,9 +110,15 @@ export function RoomAvailabilityView() {
           console.error(`Error fetching appointments: ${res.status}`);
           return [];
         }
-        return await res.json();
+        const appointments = await res.json();
+        const endTime = performance.now();
+        console.log(`Tempo para carregar agendamentos: ${endTime - startTime}ms`);
+        console.log(`Número de agendamentos carregados: ${appointments.length}`);
+        console.timeEnd('fetch-appointments');
+        return appointments;
       } catch (error) {
         console.error("Failed to fetch appointments:", error);
+        console.timeEnd('fetch-appointments');
         return [];
       }
     },

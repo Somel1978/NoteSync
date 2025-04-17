@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Appointment } from "@shared/schema";
 import { Calendar } from "@/components/ui/calendar";
@@ -26,8 +26,19 @@ export function RoomAvailabilityCalendar({
   // Current date for calculations
   const today = new Date();
     
-  // Pré-calcular quais dias têm compromissos (conjunto mais eficiente para pesquisa)
+  // Função para debugar o tempo de processamento do calendário
+  useEffect(() => {
+    console.time('calendar-render');
+    console.log(`Renderizando calendário com ${appointments.length} agendamentos`);
+    
+    return () => {
+      console.timeEnd('calendar-render');
+    };
+  }, [appointments]);
+  
+  // Pré-calcular quais dias têm compromissos
   const bookedDays = useMemo(() => {
+    console.time('bookedDays-calculation');
     const result = new Set<string>();
     
     // Processamos cada compromisso uma vez só
@@ -47,11 +58,13 @@ export function RoomAvailabilityCalendar({
       }
     });
     
+    console.timeEnd('bookedDays-calculation');
     return result;
   }, [appointments]);
   
   // Mapa organizado de compromissos por dia para detalhes
   const appointmentsByDay = useMemo(() => {
+    console.time('appointmentsByDay-calculation');
     const result = new Map<string, Appointment[]>();
     
     appointments.forEach(appointment => {
@@ -74,6 +87,7 @@ export function RoomAvailabilityCalendar({
       }
     });
     
+    console.timeEnd('appointmentsByDay-calculation');
     return result;
   }, [appointments]);
   
