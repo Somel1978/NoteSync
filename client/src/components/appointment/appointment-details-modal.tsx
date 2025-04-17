@@ -1731,7 +1731,7 @@ export function AppointmentDetailsModal({
                                   {/* Show facilities costs */}
                                   {roomBooking.requestedFacilities && roomBooking.requestedFacilities.length > 0 && (
                                     <div className="ml-4 mt-2 text-xs text-gray-600">
-                                      <p className="font-medium">Additional Facilities:</p>
+                                      <p className="font-medium">{t('appointments.detailsModal.additionalFacilities')}:</p>
                                       <ul className="ml-2 mt-1">
                                         {roomBooking.requestedFacilities.map((facility, facilityIndex) => {
                                           // First check in appointment.customFacilities (persisted data)
@@ -1835,12 +1835,12 @@ export function AppointmentDetailsModal({
                           htmlFor="custom-pricing"
                           className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                         >
-                          Use Custom Price
+                          {t('appointments.detailsModal.customPrice')}
                         </label>
                       </div>
 
                       <div>
-                        <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">Agreed Cost (€)</h5>
+                        <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">{t('appointments.detailsModal.agreedCost')} (€)</h5>
                         <Input
                           type="number"
                           min="0"
@@ -1851,19 +1851,19 @@ export function AppointmentDetailsModal({
                           className="mt-1"
                         />
                         <p className="text-xs text-gray-500 mt-1">
-                          Stored in cents: {editedAppointment.agreedCost || 0}
+                          {t('appointments.detailsModal.storedInCents')}: {editedAppointment.agreedCost || 0}
                         </p>
                       </div>
                       
                       {!customPricing && (
                         <div className="bg-gray-50 rounded-md p-4">
-                          <h6 className="text-xs font-medium text-gray-700 mb-2">Automatic Price Calculation</h6>
+                          <h6 className="text-xs font-medium text-gray-700 mb-2">{t('appointments.detailsModal.costCalculation')}</h6>
                           <p className="text-xs text-gray-600">
-                            The price is automatically calculated based on selected rooms, facilities, duration and number of attendees.
+                            {t('appointments.detailsModal.costCalculationDescription')}
                           </p>
                           <div className="flex justify-between items-center mt-2">
                             <p className="text-xs text-gray-600">
-                              Current total: €{((calculateCost() || 0) / 100).toFixed(2)}
+                              {t('appointments.detailsModal.currentTotal')}: €{((calculateCost() || 0) / 100).toFixed(2)}
                             </p>
                             <Button 
                               variant="outline" 
@@ -1880,7 +1880,7 @@ export function AppointmentDetailsModal({
                               className="text-xs"
                             >
                               <RefreshCw className="h-3 w-3 mr-1" />
-                              Recalculate
+                              {t('appointments.detailsModal.recalculate')}
                             </Button>
                           </div>
                         </div>
