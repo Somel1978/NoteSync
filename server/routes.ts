@@ -754,6 +754,7 @@ export function registerRoutes(app: Express): Server {
 
   app.post("/api/settings/email", isAdmin, async (req, res, next) => {
     try {
+      console.log("Received email settings data:", JSON.stringify(req.body));
       let emailSettings = req.body as EmailSettings;
       
       // Validate emailSettings against schema
@@ -777,6 +778,7 @@ export function registerRoutes(app: Express): Server {
       };
       
       const setting = await storage.createOrUpdateSetting('email', emailSettings);
+      console.log("Setting saved to database:", JSON.stringify(setting));
       res.json(setting.value as EmailSettings);
     } catch (error) {
       console.error("Error saving email settings:", error);
