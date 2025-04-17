@@ -161,6 +161,20 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  app.patch("/api/locations/:id", isAdmin, async (req, res, next) => {
+    try {
+      const id = parseInt(req.params.id);
+      const validatedData = insertLocationSchema.partial().parse(req.body);
+      const updatedLocation = await storage.updateLocation(id, validatedData);
+      if (!updatedLocation) {
+        return res.status(404).json({ message: "Location not found" });
+      }
+      res.json(updatedLocation);
+    } catch (error) {
+      next(error);
+    }
+  });
+
   app.delete("/api/locations/:id", isAdmin, async (req, res, next) => {
     try {
       const id = parseInt(req.params.id);
