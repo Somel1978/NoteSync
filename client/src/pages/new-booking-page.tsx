@@ -357,8 +357,8 @@ export default function NewBookingPage() {
 
   return (
     <AppLayout>
-      <div className="p-8">
-        <header className="mb-8">
+      <div className="px-6 py-4 md:p-6">
+        <header className="mb-6">
           <h1 className="text-2xl font-semibold text-gray-800">New Booking</h1>
           <p className="text-gray-600 text-sm">Create a new room booking request</p>
         </header>

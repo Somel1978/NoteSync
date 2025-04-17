@@ -109,6 +109,12 @@
     "rejectSuccess": "Cita rechazada",
     "rejectError": "Error al rechazar la cita",
     "searchPlaceholder": "Buscar citas...",
+    "status": {
+      "pending": "Pendiente",
+      "approved": "Aprobado",
+      "rejected": "Rechazado",
+      "cancelled": "Cancelado"
+    },
     "detailsModal": {
       "title": "Detalles de la Cita",
       "tabs": {
