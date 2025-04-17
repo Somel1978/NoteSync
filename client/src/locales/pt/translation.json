@@ -31,7 +31,9 @@
     "loggingIn": "Entrando...",
     "active": "Ativo",
     "create": "Criar",
-    "remove": "Remover"
+    "remove": "Remover",
+    "success": "Operação concluída com sucesso",
+    "creating": "Criando..."
   },
   "navigation": {
     "dashboard": "Painel",
@@ -291,6 +293,7 @@
     "users": "Usuários",
     "addUser": "Adicionar Usuário",
     "addLocationDesc": "Adicionar uma nova localização à sua organização",
+    "editLocationDesc": "Atualizar os detalhes desta localização",
     "myAccount": "Minha Conta",
     "personalInfo": "Informações Pessoais",
     "updateAccountDetails": "Atualize os detalhes da sua conta",

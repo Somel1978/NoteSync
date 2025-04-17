@@ -31,7 +31,9 @@
     "loggingIn": "Iniciando sesión...",
     "active": "Activo",
     "create": "Crear",
-    "remove": "Eliminar"
+    "remove": "Eliminar",
+    "success": "Operación completada con éxito",
+    "creating": "Creando..."
   },
   "navigation": {
     "dashboard": "Panel",
@@ -297,6 +299,7 @@
     "users": "Usuarios",
     "addUser": "Añadir Usuario",
     "addLocationDesc": "Agregar una nueva ubicación a tu organización",
+    "editLocationDesc": "Actualizar los detalles de esta ubicación",
     "addNewUser": "Añadir Nuevo Usuario",
     "addNewUserDesc": "Crear una nueva cuenta de usuario en el sistema",
     "fullName": "Nombre Completo",

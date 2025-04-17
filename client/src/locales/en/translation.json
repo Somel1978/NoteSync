@@ -29,7 +29,9 @@
     "updating": "Updating...",
     "requesting": "Requesting...",
     "creating": "Creating...",
-    "returnHome": "Return Home"
+    "returnHome": "Return Home",
+    "success": "Operation completed successfully",
+    "create": "Create"
   },
   "navigation": {
     "dashboard": "Dashboard",
@@ -291,6 +293,7 @@
     "users": "Users",
     "addUser": "Add User",
     "addLocationDesc": "Add a new location to your organization",
+    "editLocationDesc": "Update the details for this location",
     "myAccount": "My Account",
     "personalInfo": "Personal Information",
     "updateAccountDetails": "Update your account details",
