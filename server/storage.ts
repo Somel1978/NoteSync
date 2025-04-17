@@ -379,12 +379,19 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateAppointment(id: number, updates: Partial<Appointment>): Promise<Appointment | undefined> {
+    console.log(`StorageDebug: updateAppointment for ID ${id} with data:`, JSON.stringify(updates, null, 2));
+    
     // Get the original appointment for audit purposes
     const originalAppointment = await this.getAppointment(id);
     if (!originalAppointment) return undefined;
     
     // Deep clone the original data for comparison
     const originalForComparison = JSON.parse(JSON.stringify(originalAppointment));
+    
+    // Check specifically for rejection status and reason
+    if (updates.status === 'rejected') {
+      console.log(`StorageDebug: Rejection detected with reason:`, updates.rejectionReason);
+    }
     
     // Create a more detailed audit trail by collecting field changes and their values
     const fieldChanges: Record<string, { oldValue: any, newValue: any }> = {};
