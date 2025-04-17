@@ -4,7 +4,7 @@ import { Upload, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 interface ImageUploadProps {
-  value: string | null;
+  value: string | null | undefined;
   onChange: (value: string | null) => void;
   disabled?: boolean;
 }

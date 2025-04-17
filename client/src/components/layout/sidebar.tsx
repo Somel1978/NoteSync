@@ -36,6 +36,8 @@ export function Sidebar() {
   });
 
   const logoText = appearanceSettings?.logoText || "AC";
+  const logoUrl = appearanceSettings?.logoUrl || null;
+  const useLogoImage = appearanceSettings?.useLogoImage || false;
   const title = appearanceSettings?.title || "ACRDSC";
   const subtitle = appearanceSettings?.subtitle || "Reservas";
 
@@ -89,8 +91,16 @@ export function Sidebar() {
       {/* Logo */}
       <div className="p-4 flex items-center justify-between border-b border-gray-700">
         <div className="flex items-center">
-          <div className="bg-white p-2 rounded-md w-12.5 h-12.5 flex items-center justify-center">
-            <div className="text-2xl font-bold text-primary">{logoText}</div>
+          <div className="bg-white p-2 rounded-md w-12.5 h-12.5 flex items-center justify-center overflow-hidden">
+            {useLogoImage && logoUrl ? (
+              <img 
+                src={logoUrl} 
+                alt="Logo" 
+                className="object-contain w-full h-full"
+              />
+            ) : (
+              <div className="text-2xl font-bold text-primary">{logoText}</div>
+            )}
           </div>
           <div className="ml-3 text-white">
             <div className="font-semibold text-sm">{title}</div>
