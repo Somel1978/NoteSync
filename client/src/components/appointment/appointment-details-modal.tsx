@@ -1705,7 +1705,7 @@ export function AppointmentDetailsModal({
                                             return `${t('appointments.detailsModal.hourlyRateLabel')}: ${hours} ${hours === 1 ? t('appointments.detailsModal.hour') : t('appointments.detailsModal.hours')}`;
                                           })()
                                         ) : (
-                                          <>Hourly Rate</>
+                                          <>{t('appointments.detailsModal.hourlyRateLabel')}</>
                                         )}
                                       </p>
                                     )}
@@ -1720,9 +1720,9 @@ export function AppointmentDetailsModal({
                                             // This should be 150 for 10 attendees at €15.00 per person
                                             const baseTotal = (attendees * room.attendeeRate / 100);
                                             // The display should match the actual stored calculation
-                                            return `Per Attendee: ${attendees} attendees × €${attendeeRate} per person = €${baseTotal.toFixed(2)}`;
+                                            return `${t('appointments.detailsModal.perAttendeeLabel')}: ${attendees} ${t('appointments.detailsModal.attendees')} × €${attendeeRate} ${t('appointments.detailsModal.perPerson')} = €${baseTotal.toFixed(2)}`;
                                           }
-                                          return `Per Attendee: ${attendees} attendees`;
+                                          return `${t('appointments.detailsModal.perAttendeeLabel')}: ${attendees} ${t('appointments.detailsModal.attendees')}`;
                                         })()}
                                       </p>
                                     )}
@@ -1819,9 +1819,9 @@ export function AppointmentDetailsModal({
                     <div className="space-y-6">
                       {/* Cost type selection is now per room, handled on the room tab */}
                       <div className="bg-blue-50 p-4 rounded-md mb-4">
-                        <h5 className="text-xs font-medium text-blue-800 mb-1">Room-Based Pricing</h5>
+                        <h5 className="text-xs font-medium text-blue-800 mb-1">{t('appointments.detailsModal.roomBasedPricing')}</h5>
                         <p className="text-xs text-blue-700">
-                          Cost types are now managed per room. Please go to the Rooms tab to modify cost types for each room.
+                          {t('appointments.detailsModal.roomBasedPricingInfo')}
                         </p>
                       </div>
                       
@@ -1873,8 +1873,8 @@ export function AppointmentDetailsModal({
                                 const recalculatedCost = calculateCost(true);
                                 handleInputChange('agreedCost', recalculatedCost);
                                 toast({ 
-                                  title: "Costs recalculated", 
-                                  description: `Updated total: €${(recalculatedCost / 100).toFixed(2)}`
+                                  title: t('appointments.detailsModal.costsRecalculated'), 
+                                  description: t('appointments.detailsModal.updatedTotal', { total: (recalculatedCost / 100).toFixed(2) })
                                 });
                               }}
                               className="text-xs"
