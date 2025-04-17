@@ -94,7 +94,7 @@
     "orderNumber": "Pedido #",
     "dateTime": "Data e Hora",
     "details": "Detalhes",
-    "status": "Status",
+    "status": "Estado",
     "actions": "Ações",
     "purpose": "Finalidade",
     "location": "Localização",
@@ -109,10 +109,10 @@
     "rejected": "Rejeitado",
     "cancelled": "Cancelado",
     "detailsModal": {
-      "statusPending": "Status: Pendente",
-      "statusApproved": "Status: Aprovado",
-      "statusRejected": "Status: Rejeitado",
-      "statusCancelled": "Status: Cancelado",
+      "statusPending": "Estado: Pendente",
+      "statusApproved": "Estado: Aprovado",
+      "statusRejected": "Estado: Rejeitado",
+      "statusCancelled": "Estado: Cancelado",
       "title": "Detalhes do Agendamento",
       "tabs": {
         "details": "Detalhes",
@@ -121,7 +121,7 @@
         "contact": "Contato",
         "history": "Histórico"
       },
-      "statusLabel": "Status",
+      "statusLabel": "Estado",
       "setActive": "Ativar",
       "appointmentInfo": "Informações do Agendamento",
       "bookedRooms": "Salas Reservadas",
