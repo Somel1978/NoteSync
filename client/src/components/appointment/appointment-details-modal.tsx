@@ -1402,7 +1402,10 @@ export function AppointmentDetailsModal({
                                         {rooms && (() => {
                                           const room = rooms.find(r => r.id === roomBooking.roomId);
                                           if (room && room.flatRate) {
-                                            return `Flat Rate (One-time fee): €${(room.flatRate / 100).toFixed(2)} = €${(room.flatRate / 100).toFixed(2)}`;
+                                            // Use the actual room cost from booking data
+                                            const baseCost = (roomBooking.cost / 100).toFixed(2);
+                                            const flatRate = (room.flatRate / 100).toFixed(2);
+                                            return `Flat Rate (One-time fee): €${flatRate}`;
                                           }
                                           return 'Flat Rate (One-time fee)';
                                         })()}
@@ -1419,9 +1422,10 @@ export function AppointmentDetailsModal({
                                             ));
                                             const room = rooms?.find(r => r.id === roomBooking.roomId);
                                             if (room && room.hourlyRate) {
-                                              const hourlyRate = room.hourlyRate / 100;
-                                              const total = hours * hourlyRate;
-                                              return `Hourly Rate: ${hours} hours × €${hourlyRate.toFixed(2)} per hour = €${total.toFixed(2)}`;
+                                              const hourlyRate = (room.hourlyRate / 100).toFixed(2);
+                                              // Calculate base cost without facilities
+                                              const baseTotal = (hours * room.hourlyRate / 100);
+                                              return `Hourly Rate: ${hours} hours × €${hourlyRate} per hour = €${baseTotal.toFixed(2)}`;
                                             }
                                             return `Hourly Rate: ${hours} hours`;
                                           })()
@@ -1437,9 +1441,10 @@ export function AppointmentDetailsModal({
                                           const attendees = appointment.attendeesCount || 0;
                                           const room = rooms?.find(r => r.id === roomBooking.roomId);
                                           if (room && room.attendeeRate) {
-                                            const attendeeRate = room.attendeeRate / 100;
-                                            const total = attendees * attendeeRate;
-                                            return `Per Attendee: ${attendees} attendees × €${attendeeRate.toFixed(2)} per person = €${total.toFixed(2)}`;
+                                            const attendeeRate = (room.attendeeRate / 100).toFixed(2);
+                                            // Calculate base cost without facilities
+                                            const baseTotal = (attendees * room.attendeeRate / 100);
+                                            return `Per Attendee: ${attendees} attendees × €${attendeeRate} per person = €${baseTotal.toFixed(2)}`;
                                           }
                                           return `Per Attendee: ${attendees} attendees`;
                                         })()}
@@ -1453,27 +1458,41 @@ export function AppointmentDetailsModal({
                                       <p className="font-medium">Additional Facilities:</p>
                                       <ul className="ml-2 mt-1">
                                         {roomBooking.requestedFacilities.map((facility, facilityIndex) => {
-                                          // For custom facilities, check the cache first
+                                          // First check in appointment.customFacilities (persisted data)
                                           const cacheKey = `${roomBooking.roomId}-${facility}`;
-                                          const cachedFacility = window.customFacilities?.[cacheKey];
+                                          let facilityData = null;
                                           
-                                          // If not in cache, check standard facilities
-                                          let facilityData;
-                                          if (cachedFacility) {
-                                            facilityData = cachedFacility;
-                                          } else {
-                                            const availableFacilities = getAvailableFacilities(roomBooking.roomId, false); // Don't include custom
-                                            facilityData = availableFacilities.find((f: any) => 
-                                              typeof f === 'object' && f !== null && f.name === facility
-                                            );
-                                          }
-                                          
-                                          // Check for cost in appointment.customFacilities as well
-                                          if (!facilityData && appointment.customFacilities) {
+                                          if (appointment.customFacilities && appointment.customFacilities[cacheKey]) {
                                             facilityData = appointment.customFacilities[cacheKey];
+                                          } 
+                                          // Then check window cache
+                                          else if (window.customFacilities && window.customFacilities[cacheKey]) {
+                                            facilityData = window.customFacilities[cacheKey];
+                                          } 
+                                          // If not a custom facility, check standard facilities
+                                          else {
+                                            const room = rooms?.find(r => r.id === roomBooking.roomId);
+                                            if (room && room.facilities) {
+                                              try {
+                                                let availableFacilities: any[] = [];
+                                                
+                                                if (typeof room.facilities === 'string') {
+                                                  availableFacilities = JSON.parse(room.facilities);
+                                                } else if (Array.isArray(room.facilities)) {
+                                                  availableFacilities = room.facilities;
+                                                }
+                                                
+                                                facilityData = availableFacilities.find((f: any) => 
+                                                  (typeof f === 'object' && f !== null && f.name === facility)
+                                                );
+                                              } catch (e) {
+                                                console.error('Error parsing facilities:', e);
+                                              }
+                                            }
                                           }
                                           
-                                          const facilityCost = facilityData && typeof facilityData === 'object' ? 
+                                          // Get facility cost (default to 0 if not found)
+                                          const facilityCost = facilityData && typeof facilityData === 'object' && 'cost' in facilityData ? 
                                             Number(facilityData.cost) : 0;
                                           
                                           return (
