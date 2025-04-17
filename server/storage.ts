@@ -242,17 +242,39 @@ export class DatabaseStorage implements IStorage {
     if (!insertAppointment.orderNumber) {
       insertAppointment.orderNumber = await this.getNextAppointmentOrderNumber();
     }
+    
+    // Ensure all date fields are properly Date objects
+    const processedAppointment = { ...insertAppointment };
+    
+    // Process date fields - ensure they're Date objects
+    if (processedAppointment.startTime && !(processedAppointment.startTime instanceof Date)) {
+      processedAppointment.startTime = new Date(processedAppointment.startTime);
+    }
+    
+    if (processedAppointment.endTime && !(processedAppointment.endTime instanceof Date)) {
+      processedAppointment.endTime = new Date(processedAppointment.endTime);
+    }
+    
+    // Set any necessary default values - createdAt will be handled by the database
+    
+    // Log the processed appointment for debugging
+    console.log("Storage: createAppointment with processed data:", JSON.stringify(processedAppointment, (key, value) => {
+      if (value instanceof Date) {
+        return value.toISOString();
+      }
+      return value;
+    }));
 
     const [appointment] = await db
       .insert(appointments)
-      .values(insertAppointment)
+      .values(processedAppointment)
       .returning();
     
     // Create audit log for creation
-    if (appointment && insertAppointment.userId) {
+    if (appointment && processedAppointment.userId) {
       await this.createAuditLog({
         appointmentId: appointment.id,
-        userId: insertAppointment.userId,
+        userId: processedAppointment.userId,
         action: 'create',
         oldData: null,
         newData: appointment
@@ -273,11 +295,31 @@ export class DatabaseStorage implements IStorage {
     // Create a more detailed audit trail by collecting field changes and their values
     const fieldChanges: Record<string, { oldValue: any, newValue: any }> = {};
     
-    // Prepare update data 
+    // Ensure all date fields are properly Date objects
+    const processedUpdates = { ...updates };
+    
+    // Process date fields - ensure they're proper Date objects
+    if (processedUpdates.startTime && !(processedUpdates.startTime instanceof Date)) {
+      processedUpdates.startTime = new Date(processedUpdates.startTime);
+    }
+    
+    if (processedUpdates.endTime && !(processedUpdates.endTime instanceof Date)) {
+      processedUpdates.endTime = new Date(processedUpdates.endTime);
+    }
+    
+    // Prepare update data with all processed fields and always set updatedAt
     const updateData = { 
-      ...updates,
+      ...processedUpdates,
       updatedAt: new Date() 
     };
+    
+    // Log the update data for debugging
+    console.log("Storage: updateAppointment with processed data:", JSON.stringify(updateData, (key, value) => {
+      if (value instanceof Date) {
+        return value.toISOString();
+      }
+      return value;
+    }));
     
     // Perform the update in the database
     const [updatedAppointment] = await db
