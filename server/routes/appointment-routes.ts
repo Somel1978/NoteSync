@@ -399,6 +399,54 @@ export function registerAppointmentRoutes(app: Express): void {
   app.get("/api/appointments/:id/audit", isAuthenticated, getAuditLogs);
   app.get("/api/appointments/:id/auditlogs", isAuthenticated, getAuditLogs);
   
+  // Appointment rejection endpoint with reason
+  app.put("/api/appointments/:id/reject", isAuthenticated, async (req: Request, res: Response, next: Function) => {
+    try {
+      const id = parseInt(req.params.id);
+      const { reason } = req.body;
+      const appointment = await storage.getAppointment(id);
+      
+      if (!appointment) {
+        return res.status(404).json({ message: "Appointment not found" });
+      }
+      
+      // Only allow admins, directors, or the appointment owner to reject
+      if (req.user?.role !== "admin" && req.user?.role !== "director" && appointment.userId !== req.user?.id) {
+        return res.status(403).json({ message: "Forbidden - You can only reject your own appointments" });
+      }
+      
+      // Update the appointment with rejected status and reason
+      const updatedAppointment = await storage.updateAppointment(id, {
+        status: "rejected",
+        rejectionReason: reason
+      });
+      
+      if (!updatedAppointment) {
+        return res.status(500).json({ message: "Failed to reject appointment" });
+      }
+      
+      // Create audit log entry
+      await storage.createAuditLog({
+        appointmentId: id,
+        userId: req.user?.id as number,
+        action: "status-changed-to-rejected",
+        details: `Status changed from ${appointment.status} to rejected. Reason: ${reason || "No reason provided"}`
+      });
+      
+      // Try to send notification but don't fail if email sending fails
+      try {
+        await EmailNotificationService.appointmentStatusChanged(updatedAppointment, req.user!, appointment.status);
+      } catch (emailError) {
+        console.error("Error sending rejection notification:", emailError);
+        // Continue without failing the request
+      }
+      
+      return res.json(updatedAppointment);
+    } catch (error) {
+      next(error);
+    }
+  });
+  
   // Statistics endpoint
   app.get("/api/stats", isAdminOrDirector, async (req: Request, res: Response, next: Function) => {
     try {
