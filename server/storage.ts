@@ -23,6 +23,7 @@ export interface IStorage {
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   updateUser(id: number, updates: Partial<User>): Promise<User | undefined>;
+  updatePassword(id: number, oldPassword: string, newPassword: string, adminOverride?: boolean): Promise<boolean>;
   deleteUser(id: number): Promise<boolean>;
   getAllUsers(): Promise<User[]>;
 
@@ -121,6 +122,35 @@ export class DatabaseStorage implements IStorage {
 
   async getAllUsers(): Promise<User[]> {
     return db.select().from(users);
+  }
+  
+  async updatePassword(id: number, oldPassword: string, newPassword: string, adminOverride: boolean = false): Promise<boolean> {
+    // Get user
+    const user = await this.getUser(id);
+    if (!user) return false;
+    
+    // Import needed functions from auth.ts
+    const { comparePasswords, hashPassword } = await import('./auth');
+    
+    // If not admin override, verify old password
+    if (!adminOverride) {
+      const passwordValid = await comparePasswords(oldPassword, user.password);
+      if (!passwordValid) {
+        return false;
+      }
+    }
+    
+    // Hash new password
+    const hashedPassword = await hashPassword(newPassword);
+    
+    // Update password
+    const [updatedUser] = await db
+      .update(users)
+      .set({ password: hashedPassword })
+      .where(eq(users.id, id))
+      .returning();
+    
+    return !!updatedUser;
   }
 
   // Location Operations

@@ -2,6 +2,7 @@ import type { Express, Request, Response } from "express";
 import { storage } from "../storage";
 import { isAdmin, isAdminOrDirector, isAuthenticated } from "./index";
 import { insertLocationSchema } from "@shared/schema";
+import { z } from "zod";
 
 export function registerLocationRoutes(app: Express): void {
   // Get all locations
@@ -34,18 +35,16 @@ export function registerLocationRoutes(app: Express): void {
   app.post("/api/locations", isAdminOrDirector, async (req: Request, res: Response, next: Function) => {
     try {
       // Validate request body
-      const validationResult = insertLocationSchema.safeParse(req.body);
-      
-      if (!validationResult.success) {
-        return res.status(400).json({ 
-          message: "Invalid location data", 
-          errors: validationResult.error.errors 
-        });
+      try {
+        const validatedData = insertLocationSchema.parse(req.body);
+        const location = await storage.createLocation(validatedData);
+        res.status(201).json(location);
+      } catch (error) {
+        if (error instanceof z.ZodError) {
+          return res.status(400).json({ errors: error.errors });
+        }
+        throw error;
       }
-      
-      // Create the location
-      const location = await storage.createLocation(validationResult.data);
-      res.status(201).json(location);
     } catch (error) {
       next(error);
     }
@@ -62,26 +61,43 @@ export function registerLocationRoutes(app: Express): void {
       }
       
       // Update the location
-      const updatedLocation = await storage.updateLocation(id, req.body);
-      
-      if (!updatedLocation) {
-        return res.status(500).json({ message: "Failed to update location" });
+      try {
+        const updatedLocation = await storage.updateLocation(id, req.body);
+        
+        if (!updatedLocation) {
+          return res.status(500).json({ message: "Failed to update location" });
+        }
+        
+        res.json(updatedLocation);
+      } catch (updateError) {
+        console.error("Error updating location:", updateError);
+        return res.status(500).json({ 
+          message: "Error updating location", 
+          error: updateError instanceof Error ? updateError.message : String(updateError) 
+        });
       }
-      
-      res.json(updatedLocation);
     } catch (error) {
       next(error);
     }
   };
   
   // Register both PUT and PATCH to support different frontend frameworks
-  app.put("/api/locations/:id", isAdminOrDirector, updateLocation);
-  app.patch("/api/locations/:id", isAdminOrDirector, updateLocation);
+  app.put("/api/locations/:id", isAdmin, updateLocation);
+  app.patch("/api/locations/:id", isAdmin, updateLocation);
   
   // Delete a location
   app.delete("/api/locations/:id", isAdmin, async (req: Request, res: Response, next: Function) => {
     try {
       const id = parseInt(req.params.id);
+      
+      // Check if there are rooms associated with this location
+      const rooms = await storage.getRoomsByLocation(id);
+      if (rooms.length > 0) {
+        return res.status(400).json({ 
+          message: "Cannot delete location with associated rooms. Delete the rooms first."
+        });
+      }
+      
       const result = await storage.deleteLocation(id);
       
       if (!result) {
@@ -94,7 +110,7 @@ export function registerLocationRoutes(app: Express): void {
     }
   });
   
-  // Get rooms for a location
+  // Get rooms in a location
   app.get("/api/locations/:id/rooms", isAuthenticated, async (req: Request, res: Response, next: Function) => {
     try {
       const locationId = parseInt(req.params.id);

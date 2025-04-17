@@ -2,7 +2,7 @@ import type { Express, Request, Response } from "express";
 import { storage } from "../storage";
 
 export function registerPublicRoutes(app: Express): void {
-  // Public locations endpoint
+  // Public API endpoints for locations
   app.get("/api/public/locations", async (req: Request, res: Response, next: Function) => {
     try {
       const locations = await storage.getAllLocations();
@@ -12,9 +12,17 @@ export function registerPublicRoutes(app: Express): void {
     }
   });
   
-  // Public rooms endpoint
+  // Public API endpoints for rooms
   app.get("/api/public/rooms", async (req: Request, res: Response, next: Function) => {
     try {
+      // Filter by location if specified
+      if (req.query.locationId) {
+        const locationId = parseInt(req.query.locationId as string);
+        const rooms = await storage.getRoomsByLocation(locationId);
+        return res.json(rooms);
+      }
+      
+      // Otherwise return all rooms
       const rooms = await storage.getAllRooms();
       res.json(rooms);
     } catch (error) {
@@ -22,45 +30,36 @@ export function registerPublicRoutes(app: Express): void {
     }
   });
   
-  // Public appointments endpoint
+  // Public API endpoints for appointments
   app.get("/api/public/appointments", async (req: Request, res: Response, next: Function) => {
     try {
-      // For public access, only return minimal info about appointments
-      // This is for displaying on calendar views without showing private details
+      // Filter by date range if specified
+      if (req.query.startDate && req.query.endDate) {
+        const appointments = await storage.getAppointmentsByDateRange(
+          new Date(req.query.startDate as string),
+          new Date(req.query.endDate as string)
+        );
+        
+        // Only return approved appointments
+        const approvedAppointments = appointments.filter(a => a.status === 'approved');
+        return res.json(approvedAppointments);
+      }
+      
+      // Filter by room if specified
+      if (req.query.roomId) {
+        const roomId = parseInt(req.query.roomId as string);
+        const appointments = await storage.getAppointmentsByRoom(roomId);
+        
+        // Only return approved appointments
+        const approvedAppointments = appointments.filter(a => a.status === 'approved');
+        return res.json(approvedAppointments);
+      }
+      
+      // Return only approved appointments
       const allAppointments = await storage.getAllAppointments();
+      const approvedAppointments = allAppointments.filter(a => a.status === 'approved');
       
-      // Convert to safer public format removing sensitive data
-      const publicAppointments = await Promise.all(
-        allAppointments.map(async (appointment) => {
-          // Get all rooms in this appointment
-          const rooms = [];
-          if (appointment.rooms && Array.isArray(appointment.rooms)) {
-            for (const roomBooking of appointment.rooms) {
-              rooms.push({
-                roomId: roomBooking.roomId,
-                roomName: roomBooking.roomName,
-                requestedFacilities: roomBooking.requestedFacilities,
-                costType: roomBooking.costType,
-                cost: roomBooking.cost
-              });
-            }
-          }
-          
-          // Return only the necessary public information
-          return {
-            id: appointment.id,
-            title: appointment.title,
-            roomId: appointment.roomId,
-            rooms,
-            userId: appointment.userId,
-            startTime: appointment.startTime,
-            endTime: appointment.endTime,
-            status: appointment.status
-          };
-        })
-      );
-      
-      res.json(publicAppointments);
+      res.json(approvedAppointments);
     } catch (error) {
       next(error);
     }

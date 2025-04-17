@@ -2,7 +2,7 @@ import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { setupAuth } from "../auth";
 
-// Import all route modules
+// Import route modules
 import { registerUserRoutes } from "./user-routes";
 import { registerLocationRoutes } from "./location-routes";
 import { registerRoomRoutes } from "./room-routes";
@@ -38,7 +38,10 @@ export function registerRoutes(app: Express): Server {
   // Setup authentication routes
   setupAuth(app);
   
-  // Register all route modules
+  // Create HTTP server
+  const server = createServer(app);
+  
+  // Register API routes
   registerPublicRoutes(app);
   registerUserRoutes(app);
   registerLocationRoutes(app);
@@ -46,7 +49,5 @@ export function registerRoutes(app: Express): Server {
   registerAppointmentRoutes(app);
   registerSettingsRoutes(app);
   
-  // Create and return the HTTP server
-  const httpServer = createServer(app);
-  return httpServer;
+  return server;
 }
