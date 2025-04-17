@@ -36,17 +36,26 @@ export class EmailNotificationService {
       const apiKey = settings.mailjetApiKey || process.env.MAILJET_API_KEY;
       const secretKey = settings.mailjetSecretKey || process.env.MAILJET_SECRET_KEY;
       
+      // Validate email credentials
       if (!apiKey || !secretKey) {
         log('Missing Mailjet API credentials', 'email');
         return false;
       }
+
+      // Validate sender email
+      if (!from.email) {
+        log('Missing sender email', 'email');
+        return false;
+      }
       
+      // Create the Mailjet client
       log('Initializing Mailjet client with provided credentials', 'email');
       const mailjet = new Client({
         apiKey: apiKey,
         apiSecret: secretKey
       });
       
+      // Format recipients
       const recipients = to.map(recipient => ({
         Email: recipient.email,
         Name: recipient.name
@@ -54,44 +63,54 @@ export class EmailNotificationService {
       
       log(`Sending email to ${to.map(r => r.email).join(', ')}`, 'email');
       
-      // Send email with detailed logging
-      const response = await mailjet.post('send', { version: 'v3.1' }).request({
+      // Create email data
+      const emailData = {
         Messages: [
           {
             From: {
               Email: from.email,
-              Name: from.name
+              Name: from.name || 'ACRDSC Reservas'
             },
             To: recipients,
             Subject: subject,
             HTMLPart: html,
-            // Add tracking to ensure delivery is tracked
+            // Add tracking for better delivery verification
             TrackOpens: "enabled",
-            TrackClicks: "enabled"
+            TrackClicks: "enabled",
+            // Add custom ID for tracking
+            CustomID: "Email-" + Date.now() + "-" + Math.floor(Math.random() * 1000)
           }
         ]
-      });
+      };
       
-      // Verify the response format
-      if (response && response.body && response.body.Messages) {
+      log(`Email data: ${JSON.stringify(emailData)}`, 'email');
+      
+      // Send the email using Mailjet
+      const response = await mailjet.post('send', { version: 'v3.1' })
+        .request(emailData);
+      
+      // Log the complete response for debugging
+      log(`Mailjet full response: ${JSON.stringify(response.body)}`, 'email');
+      
+      // Verify the response format and success status
+      if (response && response.body && Array.isArray(response.body.Messages)) {
         const messages = response.body.Messages;
         
-        // Log detailed response for debugging
-        log(`Mailjet response: ${JSON.stringify(response.body)}`, 'email');
-        
-        // Check if all messages were sent successfully
-        const allSuccessful = messages.every((msg: any) => 
-          msg.Status === 'success' && 
-          msg.To && 
-          msg.To.length > 0 && 
-          msg.To.every((recipient: any) => recipient.MessageID)
-        );
+        // Check if all messages were sent successfully with proper message IDs
+        const allSuccessful = messages.length > 0 && messages.every((msg: any) => {
+          return (
+            msg.Status === 'success' && 
+            Array.isArray(msg.To) && 
+            msg.To.length > 0 && 
+            msg.To.every((recipient: any) => recipient.MessageID)
+          );
+        });
         
         if (allSuccessful) {
           log('Email sent successfully with proper message IDs', 'email');
           return true;
         } else {
-          log('Email sending completed but with potential issues', 'email');
+          log('Email sending completed but delivery confirmation is uncertain', 'email');
           return false;
         }
       } else {

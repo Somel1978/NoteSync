@@ -657,6 +657,17 @@ export function registerRoutes(app: Express): Server {
         });
       }
       
+      // Make sure we have a sender email
+      if (!settings.systemEmail) {
+        return res.status(400).json({ 
+          error: "Missing sender email", 
+          details: "A valid sender email must be configured in email settings" 
+        });
+      }
+      
+      // Check if systemEmail is verified in Mailjet
+      console.log(`Using sender email: ${settings.systemEmail}`);
+
       // Create a client instance
       const mailjet = new Client({
         apiKey: settings.mailjetApiKey,
@@ -666,12 +677,13 @@ export function registerRoutes(app: Express): Server {
       // Send test email
       const user = req.user!;
       
-      const response = await mailjet.post('send', { version: 'v3.1' }).request({
+      // Prepare email data using v3.1 API format
+      const emailData = {
         Messages: [
           {
             From: {
               Email: settings.systemEmail,
-              Name: settings.systemName
+              Name: settings.systemName || "ACRDSC Reservas"
             },
             To: [
               {
@@ -684,14 +696,22 @@ export function registerRoutes(app: Express): Server {
               <h3>Test Email</h3>
               <p>This is a test email from your ACRDSC Reservas system.</p>
               <p>If you received this email, your email notification settings are working correctly.</p>
-              <p>Best regards,<br>${settings.systemName}</p>
+              <p>Best regards,<br>${settings.systemName || "ACRDSC Reservas"}</p>
             `,
             // Add tracking for better delivery verification
             TrackOpens: "enabled",
-            TrackClicks: "enabled"
+            TrackClicks: "enabled",
+            // Add custom ID for tracking
+            CustomID: "EmailTest-" + Date.now()
           }
         ]
-      });
+      };
+      
+      console.log("Sending email with data:", JSON.stringify(emailData));
+      
+      // Send the email using Mailjet
+      const response = await mailjet.post('send', { version: 'v3.1' })
+        .request(emailData);
       
       // Log response in detail
       console.log("Full Mailjet response:", JSON.stringify(response.body));
