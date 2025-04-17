@@ -622,6 +622,7 @@ export class DatabaseStorage implements IStorage {
       oldData: auditLogs.oldData,
       newData: auditLogs.newData,
       changedFields: auditLogs.changedFields,
+      details: auditLogs.details,
       createdAt: auditLogs.createdAt,
       username: users.username
     })
@@ -631,12 +632,43 @@ export class DatabaseStorage implements IStorage {
     .orderBy(desc(auditLogs.createdAt));
     
     // Transform the result for the frontend
-    const transformedResult = result.map(log => ({
-      ...log,
-      actionType: log.action, // For compatibility with frontend
-      timestamp: log.createdAt, // For compatibility with frontend
-      details: log.oldData ? { old: log.oldData, new: log.newData } : undefined
-    }));
+    const transformedResult = result.map(log => {
+      // Parse JSON strings for oldData and newData if they exist
+      let parsedOldData = null;
+      let parsedNewData = null;
+      
+      if (log.oldData) {
+        try {
+          if (typeof log.oldData === 'string') {
+            parsedOldData = JSON.parse(log.oldData);
+          } else {
+            parsedOldData = log.oldData;
+          }
+        } catch (e) {
+          console.error('Error parsing oldData:', e);
+        }
+      }
+      
+      if (log.newData) {
+        try {
+          if (typeof log.newData === 'string') {
+            parsedNewData = JSON.parse(log.newData);
+          } else {
+            parsedNewData = log.newData;
+          }
+        } catch (e) {
+          console.error('Error parsing newData:', e);
+        }
+      }
+      
+      return {
+        ...log,
+        oldData: parsedOldData,
+        newData: parsedNewData,
+        actionType: log.action, // For compatibility with frontend
+        timestamp: log.createdAt // For compatibility with frontend
+      };
+    });
     
     return transformedResult as unknown as AuditLog[];
   }

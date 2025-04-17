@@ -432,16 +432,23 @@ export function registerAppointmentRoutes(app: Express): void {
       }
       
       // Create audit log entry with newData to store rejection reason
+      // Use JSON.stringify for the oldData and newData to ensure they are properly stored
+      const oldDataJson = JSON.stringify({ status: appointment.status });
+      const newDataJson = JSON.stringify({
+        status: "rejected",
+        rejectionReason: rejectionReason
+      });
+      
+      console.log("Creating audit log with oldData:", oldDataJson);
+      console.log("Creating audit log with newData:", newDataJson);
+      
       await storage.createAuditLog({
         appointmentId: id,
         userId: req.user?.id as number,
         action: "status-changed-to-rejected",
         details: `Status changed from ${appointment.status} to rejected. Reason: ${rejectionReason}`,
-        oldData: { status: appointment.status },
-        newData: { 
-          status: "rejected",
-          rejectionReason: rejectionReason
-        }
+        oldData: oldDataJson,
+        newData: newDataJson
       });
       
       // Try to send notification but don't fail if email sending fails
