@@ -47,28 +47,57 @@ export class EmailNotificationService {
         apiSecret: secretKey
       });
       
+      const recipients = to.map(recipient => ({
+        Email: recipient.email,
+        Name: recipient.name
+      }));
+      
       log(`Sending email to ${to.map(r => r.email).join(', ')}`, 'email');
       
-      // Send email
-      await mailjet.post('send', { version: 'v3.1' }).request({
+      // Send email with detailed logging
+      const response = await mailjet.post('send', { version: 'v3.1' }).request({
         Messages: [
           {
             From: {
               Email: from.email,
               Name: from.name
             },
-            To: to.map(recipient => ({
-              Email: recipient.email,
-              Name: recipient.name
-            })),
+            To: recipients,
             Subject: subject,
-            HTMLPart: html
+            HTMLPart: html,
+            // Add tracking to ensure delivery is tracked
+            TrackOpens: "enabled",
+            TrackClicks: "enabled"
           }
         ]
       });
       
-      log('Email sent successfully', 'email');
-      return true;
+      // Verify the response format
+      if (response && response.body && response.body.Messages) {
+        const messages = response.body.Messages;
+        
+        // Log detailed response for debugging
+        log(`Mailjet response: ${JSON.stringify(response.body)}`, 'email');
+        
+        // Check if all messages were sent successfully
+        const allSuccessful = messages.every((msg: any) => 
+          msg.Status === 'success' && 
+          msg.To && 
+          msg.To.length > 0 && 
+          msg.To.every((recipient: any) => recipient.MessageID)
+        );
+        
+        if (allSuccessful) {
+          log('Email sent successfully with proper message IDs', 'email');
+          return true;
+        } else {
+          log('Email sending completed but with potential issues', 'email');
+          return false;
+        }
+      } else {
+        log('Invalid response format from Mailjet', 'email');
+        return false;
+      }
     } catch (error) {
       log(`Error sending email: ${error}`, 'email');
       return false;

@@ -685,13 +685,51 @@ export function registerRoutes(app: Express): Server {
               <p>This is a test email from your ACRDSC Reservas system.</p>
               <p>If you received this email, your email notification settings are working correctly.</p>
               <p>Best regards,<br>${settings.systemName}</p>
-            `
+            `,
+            // Add tracking for better delivery verification
+            TrackOpens: "enabled",
+            TrackClicks: "enabled"
           }
         ]
       });
       
-      console.log("Email sent successfully:", response.body);
-      res.json({ success: true, message: "Test email sent successfully" });
+      // Log response in detail
+      console.log("Full Mailjet response:", JSON.stringify(response.body));
+      
+      // Verify the response for complete success
+      if (response.body && response.body.Messages) {
+        const messages = response.body.Messages;
+        
+        const allSuccessful = messages.every((msg: any) => 
+          msg.Status === 'success' && 
+          msg.To && 
+          msg.To.length > 0 && 
+          msg.To.every((recipient: any) => recipient.MessageID)
+        );
+        
+        if (allSuccessful) {
+          // Return detailed success response with message IDs
+          res.json({ 
+            success: true, 
+            message: "Test email sent successfully",
+            details: response.body
+          });
+        } else {
+          // API call succeeded but message might not be delivered
+          res.status(202).json({
+            success: false,
+            message: "Email API call succeeded but delivery not confirmed",
+            details: response.body
+          });
+        }
+      } else {
+        // Unexpected response format
+        res.status(500).json({
+          success: false,
+          message: "Unexpected response format from email service",
+          details: response.body
+        });
+      }
     } catch (error: any) {
       console.error("Error sending test email:", error);
       
