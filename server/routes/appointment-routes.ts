@@ -422,6 +422,16 @@ export function registerAppointmentRoutes(app: Express): void {
       const rejectionReason = reason || "No reason provided";
       console.log(`Updating appointment ${id} with rejection reason:`, rejectionReason);
       
+      // Log what data we're sending to updateAppointment
+      console.log('Enviando dados para storage.updateAppointment:', 
+        JSON.stringify({
+          status: "rejected",
+          rejectionReason: rejectionReason
+        }, null, 2)
+      );
+      
+      // Use a SQL query diretamente para atualizar (vamos refazer o código depois)
+      // Por enquanto, usar o método normal de atualização que está funcionando
       const updatedAppointment = await storage.updateAppointment(id, {
         status: "rejected",
         rejectionReason: rejectionReason
