@@ -363,10 +363,10 @@ export default function NewBookingPage() {
           <p className="text-gray-600 text-sm">Create a new room booking request</p>
         </header>
 
-        <Card className="overflow-hidden">
-          <CardContent className="p-6">
+        <Card>
+          <CardContent className="pt-6 pb-8">
             <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 pb-4">
                 {/* Basic Information */}
                 <div>
                   <h2 className="text-lg font-medium text-gray-800 mb-4">Basic Information</h2>
@@ -1039,7 +1039,7 @@ export default function NewBookingPage() {
                   ) : null}
                 </div>
 
-                <div className="flex justify-end">
+                <div className="flex justify-end mt-8">
                   <Button
                     type="submit"
                     className="flex items-center"
