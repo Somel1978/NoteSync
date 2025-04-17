@@ -12,7 +12,7 @@ interface ImageUploadProps {
 export function ImageUpload({ value, onChange, disabled = false }: ImageUploadProps) {
   const { t } = useTranslation();
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [preview, setPreview] = useState<string | null>(value);
+  const [preview, setPreview] = useState<string | null>(value || null);
 
   const handleClick = () => {
     if (disabled) return;

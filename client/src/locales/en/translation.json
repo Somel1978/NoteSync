@@ -478,7 +478,14 @@
     "subtitleDescription": "Subtitle displayed under the main title",
     "appearanceSettingsSaved": "Appearance Settings Saved",
     "appearanceSettingsSaveSuccess": "Appearance settings have been successfully saved.",
-    "appearanceSettingsSaveError": "Failed to save appearance settings"
+    "appearanceSettingsSaveError": "Failed to save appearance settings",
+    
+    "useLogoImage": "Use Image as Logo",
+    "useLogoImageDescription": "Show an image instead of text for the logo",
+    "logoImage": "Logo Image",
+    "logoImageDescription": "Upload an image to use as the logo (max 2MB)",
+    "uploadLogo": "Upload Logo",
+    "uploadLogoHint": "PNG, JPG or SVG (2MB max)"
   },
   "languages": {
     "english": "English",

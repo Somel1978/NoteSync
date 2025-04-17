@@ -470,7 +470,14 @@
     "subtitleDescription": "Subtítulo exibido abaixo do título principal",
     "appearanceSettingsSaved": "Configurações de Aparência Salvas",
     "appearanceSettingsSaveSuccess": "As configurações de aparência foram salvas com sucesso.",
-    "appearanceSettingsSaveError": "Falha ao salvar configurações de aparência"
+    "appearanceSettingsSaveError": "Falha ao salvar configurações de aparência",
+    
+    "useLogoImage": "Usar Imagem como Logo",
+    "useLogoImageDescription": "Mostrar uma imagem em vez de texto para o logo",
+    "logoImage": "Imagem do Logo",
+    "logoImageDescription": "Carregar uma imagem para usar como logo (máximo 2MB)",
+    "uploadLogo": "Carregar Logo",
+    "uploadLogoHint": "PNG, JPG ou SVG (2MB máx)"
   },
   "languages": {
     "english": "Inglês",
