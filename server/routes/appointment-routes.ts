@@ -142,6 +142,20 @@ export function registerAppointmentRoutes(app: Express): void {
         
         const appointment = await storage.createAppointment(appointmentData);
         
+        // Create audit log for appointment creation
+        try {
+          await storage.createAuditLog({
+            appointmentId: appointment.id,
+            userId: req.user?.id as number,
+            action: "created",
+            details: "Appointment created"
+          });
+          console.log("Created audit log for new appointment:", appointment.id);
+        } catch (auditError) {
+          console.error("Error creating audit log:", auditError);
+          // Continue without failing the request
+        }
+        
         // Send email notification
         try {
           await EmailNotificationService.appointmentCreated(appointment, req.user!);
@@ -359,8 +373,8 @@ export function registerAppointmentRoutes(app: Express): void {
     }
   });
   
-  // Get audit logs for an appointment
-  app.get("/api/appointments/:id/auditlogs", isAuthenticated, async (req: Request, res: Response, next: Function) => {
+  // Get audit logs for an appointment (supporting both /audit and /auditlogs endpoints)
+  const getAuditLogs = async (req: Request, res: Response, next: Function) => {
     try {
       const id = parseInt(req.params.id);
       const appointment = await storage.getAppointment(id);
@@ -379,7 +393,11 @@ export function registerAppointmentRoutes(app: Express): void {
     } catch (error) {
       next(error);
     }
-  });
+  };
+  
+  // Register both endpoints for audit logs
+  app.get("/api/appointments/:id/audit", isAuthenticated, getAuditLogs);
+  app.get("/api/appointments/:id/auditlogs", isAuthenticated, getAuditLogs);
   
   // Statistics endpoint
   app.get("/api/stats", isAdminOrDirector, async (req: Request, res: Response, next: Function) => {
