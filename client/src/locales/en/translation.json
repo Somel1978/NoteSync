@@ -103,19 +103,12 @@
     "rejectError": "Failed to reject appointment",
     "searchPlaceholder": "Search appointments...",
     "noData": "No appointments scheduled for this location",
-    "status": {
-      "pending": "Pending",
-      "approved": "Approved",
-      "rejected": "Rejected",
-      "cancelled": "Cancelled"
-    },
+    "pending": "Pending",
+    "approved": "Approved",
+    "rejected": "Rejected",
+    "cancelled": "Cancelled",
     "detailsModal": {
-      "status": {
-        "pending": "Status: Pending",
-        "approved": "Status: Approved",
-        "rejected": "Status: Rejected",
-        "cancelled": "Status: Cancelled"
-      },
+
       "statusPending": "Status: Pending",
       "statusApproved": "Status: Approved",
       "statusRejected": "Status: Rejected",
