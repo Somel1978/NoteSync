@@ -1,4 +1,4 @@
-import { users, rooms, locations, appointments, auditLogs, settings, type User, type InsertUser, type Room, type InsertRoom, type Location, type InsertLocation, type Appointment, type InsertAppointment, type AuditLog, type InsertAuditLog, type Setting, type InsertSetting } from "@shared/schema";
+import { users, rooms, locations, appointments as appointmentsTable, auditLogs, settings, type User, type InsertUser, type Room, type InsertRoom, type Location, type InsertLocation, type Appointment, type InsertAppointment, type AuditLog, type InsertAuditLog, type Setting, type InsertSetting } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, gte, lte, desc, sql } from "drizzle-orm";
 import connectPg from "connect-pg-simple";
@@ -233,7 +233,18 @@ export class DatabaseStorage implements IStorage {
 
   // Appointment Operations
   async getAppointment(id: number): Promise<Appointment | undefined> {
-    const [appointment] = await db.select().from(appointments).where(eq(appointments.id, id));
+    const [appointment] = await db.select().from(appointmentsTable).where(eq(appointmentsTable.id, id));
+    
+    // Verificar e corrigir explicitamente o mapeamento rejection_reason -> rejectionReason
+    if (appointment) {
+      // Se temos acesso direto ao rejection_reason mas não ao rejectionReason
+      const rawResult = appointment as any;
+      if (rawResult.rejection_reason !== undefined && appointment.rejectionReason === undefined) {
+        (appointment as any).rejectionReason = rawResult.rejection_reason;
+        console.log(`Mapeamento explícito: rejection_reason -> rejectionReason: ${rawResult.rejection_reason}`);
+      }
+    }
+    
     return appointment;
   }
 
@@ -576,38 +587,57 @@ export class DatabaseStorage implements IStorage {
     return result.length > 0;
   }
 
+  // Função auxiliar para mapear os campos snake_case -> camelCase nos resultados
+  private mapAppointmentResults(appointmentList: Appointment[]): Appointment[] {
+    if (appointmentList?.length > 0) {
+      appointmentList.forEach(appointment => {
+        const rawResult = appointment as any;
+        if (rawResult.rejection_reason !== undefined && appointment.rejectionReason === undefined) {
+          (appointment as any).rejectionReason = rawResult.rejection_reason;
+        }
+      });
+    }
+    return appointmentList;
+  }
+
   async getAppointmentsByUser(userId: number): Promise<Appointment[]> {
-    return db.select().from(appointments).where(eq(appointments.userId, userId));
+    const results = await db.select().from(appointments).where(eq(appointments.userId, userId));
+    return this.mapAppointmentResults(results);
   }
 
   async getAppointmentsByRoom(roomId: number): Promise<Appointment[]> {
-    return db.select().from(appointments).where(eq(appointments.roomId, roomId));
+    const results = await db.select().from(appointments).where(eq(appointments.roomId, roomId));
+    return this.mapAppointmentResults(results);
   }
 
   async getAppointmentsByDateRange(startDate: Date, endDate: Date): Promise<Appointment[]> {
-    return db.select().from(appointments).where(
+    const results = await db.select().from(appointments).where(
       and(
         gte(appointments.startTime, startDate),
         lte(appointments.startTime, endDate)
       )
     );
+    return this.mapAppointmentResults(results);
   }
 
   async getAppointmentsByStatus(status: string): Promise<Appointment[]> {
     // Use a type assertion to handle the PgEnumColumn type
-    return db.select().from(appointments).where(
+    const results = await db.select().from(appointments).where(
       eq(appointments.status as any, status)
     );
+    return this.mapAppointmentResults(results);
   }
 
   async getAllAppointments(): Promise<Appointment[]> {
-    return db.select().from(appointments).orderBy(desc(appointments.startTime));
+    const results = await db.select().from(appointments).orderBy(desc(appointments.startTime));
+    return this.mapAppointmentResults(results);
   }
 
   async getRecentAppointments(limit: number): Promise<Appointment[]> {
-    return db.select().from(appointments)
+    const results = await db.select().from(appointments)
       .orderBy(desc(appointments.createdAt))
       .limit(limit);
+    return this.mapAppointmentResults(results);
   }
 
   async getNextAppointmentOrderNumber(): Promise<number> {
