@@ -116,6 +116,10 @@
       "rejected": "Rejeitado",
       "cancelled": "Cancelado"
     },
+    "detailsModal.status:appointments.status.pending": "Status: Pendente",
+    "detailsModal.status:appointments.status.approved": "Status: Aprovado",
+    "detailsModal.status:appointments.status.rejected": "Status: Rejeitado",
+    "detailsModal.status:appointments.status.cancelled": "Status: Cancelado",
     "detailsModal": {
       "title": "Detalhes do Agendamento",
       "tabs": {

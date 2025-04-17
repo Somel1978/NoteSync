@@ -115,6 +115,10 @@
       "rejected": "Rechazado",
       "cancelled": "Cancelado"
     },
+    "detailsModal.status:appointments.status.pending": "Estado: Pendiente",
+    "detailsModal.status:appointments.status.approved": "Estado: Aprobado",
+    "detailsModal.status:appointments.status.rejected": "Estado: Rechazado",
+    "detailsModal.status:appointments.status.cancelled": "Estado: Cancelado",
     "detailsModal": {
       "title": "Detalles de la Cita",
       "tabs": {
