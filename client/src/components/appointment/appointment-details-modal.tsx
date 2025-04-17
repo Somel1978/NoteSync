@@ -1321,7 +1321,7 @@ export function AppointmentDetailsModal({
                                   className="ml-2 p-0 h-6" 
                                   onClick={() => setActiveRoomIndex(index)}
                                 >
-                                  {activeRoomIndex === index ? "✓ Active" : "Set Active"}
+                                  {activeRoomIndex === index ? `✓ ${t('common.active')}` : t('appointments.detailsModal.setActive')}
                                 </Button>
                               </div>
                               
@@ -1366,9 +1366,9 @@ export function AppointmentDetailsModal({
                                       <SelectValue placeholder="Select cost type" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                      <SelectItem value="flat">Flat Rate</SelectItem>
-                                      <SelectItem value="hourly">Hourly Rate</SelectItem>
-                                      <SelectItem value="per_attendee">Per Attendee</SelectItem>
+                                      <SelectItem value="flat">{t('appointments.detailsModal.flatRate')}</SelectItem>
+                                      <SelectItem value="hourly">{t('appointments.detailsModal.hourlyRate')}</SelectItem>
+                                      <SelectItem value="per_attendee">{t('appointments.detailsModal.perAttendee')}</SelectItem>
                                     </SelectContent>
                                   </Select>
                                 </div>

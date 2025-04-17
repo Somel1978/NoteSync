@@ -18,7 +18,13 @@
     "noData": "Nenhum dado disponível",
     "error": "Ocorreu um erro",
     "notAvailable": "N/D",
-    "roomBookingSystem": "Sistema de Reserva de Salas"
+    "roomBookingSystem": "Sistema de Reserva de Salas",
+    "saveChanges": "Salvar Alterações",
+    "saving": "Salvando...",
+    "updating": "Atualizando...",
+    "requesting": "Solicitando...",
+    "loggingIn": "Entrando...",
+    "active": "Ativo"
   },
   "navigation": {
     "dashboard": "Painel",
@@ -98,6 +104,7 @@
         "contact": "Contato",
         "history": "Histórico"
       },
+      "setActive": "Ativar",
       "appointmentInfo": "Informações do Agendamento",
       "bookedRooms": "Salas Reservadas",
       "costInfo": "Informações de Custos",
