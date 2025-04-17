@@ -14,6 +14,8 @@ import { LanguageSelector } from "./language-selector";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useQuery } from "@tanstack/react-query";
+import { AppearanceSettings } from "@shared/schema";
 
 interface PublicLayoutProps {
   children: ReactNode;
@@ -25,6 +27,18 @@ export function PublicLayout({ children }: PublicLayoutProps) {
   const [location, navigate] = useLocation();
   const [isOpen, setIsOpen] = useState(false);
   const isMobile = useIsMobile();
+  
+  // Fetch appearance settings
+  const { data: appearanceSettings } = useQuery<AppearanceSettings>({
+    queryKey: ['/api/settings/appearance'],
+    refetchOnWindowFocus: false
+  });
+
+  const logoText = appearanceSettings?.logoText || "AC";
+  const logoUrl = appearanceSettings?.logoUrl || null;
+  const useLogoImage = appearanceSettings?.useLogoImage || false;
+  const title = appearanceSettings?.title || "ACRDSC";
+  const subtitle = appearanceSettings?.subtitle || "Reservas";
 
   // Close sidebar when navigating on mobile
   useEffect(() => {
@@ -59,7 +73,7 @@ export function PublicLayout({ children }: PublicLayoutProps) {
         <button
           onClick={handleClick}
           className={cn(
-            "flex items-center text-gray-300 hover:bg-primary-hover px-4 py-3 rounded-md transition-colors w-full text-left",
+            "flex items-center text-gray-300 hover:text-gray-300 px-4 py-3 rounded-md transition-colors w-full text-left",
             {
               "bg-primary-hover border-l-3 border-green-500 text-white": active,
             }
@@ -77,12 +91,20 @@ export function PublicLayout({ children }: PublicLayoutProps) {
       {/* Logo and Title */}
       <div className="p-4 flex items-center justify-between border-b border-gray-700">
         <div className="flex items-center">
-          <div className="bg-white p-2 rounded-md w-10 h-10 flex items-center justify-center">
-            <div className="text-xl font-bold text-primary">AC</div>
+          <div className="bg-white p-2 rounded-md w-10 h-10 flex items-center justify-center overflow-hidden">
+            {useLogoImage && logoUrl ? (
+              <img 
+                src={logoUrl} 
+                alt="Logo" 
+                className="object-contain w-full h-full"
+              />
+            ) : (
+              <div className="text-xl font-bold text-primary">{logoText}</div>
+            )}
           </div>
           <div className="ml-3 text-white">
-            <div className="font-semibold text-sm">ACRDSC</div>
-            <div className="text-xs">Reservas</div>
+            <div className="font-semibold text-sm">{title}</div>
+            <div className="text-xs">{subtitle}</div>
           </div>
         </div>
         {isMobile && (
@@ -117,7 +139,7 @@ export function PublicLayout({ children }: PublicLayoutProps) {
         {user ? (
           <Button
             variant="ghost"
-            className="text-gray-300 hover:text-white w-full justify-start px-4 py-2"
+            className="text-gray-300 hover:text-gray-300 hover:bg-transparent w-full justify-start px-4 py-2"
             onClick={() => navigate("/dashboard")}
           >
             <LayoutGrid className="h-5 w-5 mr-3" />
@@ -126,7 +148,7 @@ export function PublicLayout({ children }: PublicLayoutProps) {
         ) : (
           <Button
             variant="ghost"
-            className="text-gray-300 hover:text-white w-full justify-start px-4 py-2"
+            className="text-gray-300 hover:text-gray-300 hover:bg-transparent w-full justify-start px-4 py-2"
             onClick={() => navigate("/auth")}
           >
             <LogIn className="h-5 w-5 mr-3" />
