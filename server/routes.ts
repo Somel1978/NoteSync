@@ -691,6 +691,118 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Email Settings
+  app.get("/api/settings/email", isAdmin, async (req, res, next) => {
+    try {
+      const emailSettings = await storage.getSetting('email_settings');
+      
+      if (!emailSettings) {
+        // Return default settings if none exist
+        return res.json({
+          enabled: false,
+          mailjetApiKey: "",
+          mailjetSecretKey: "",
+          systemEmail: "",
+          systemName: "ACRDSC Reservas",
+          notifyOnCreate: true,
+          notifyOnUpdate: true,
+          notifyOnStatusChange: true,
+          emailTemplateBookingCreated: "",
+          emailTemplateBookingUpdated: "",
+          emailTemplateBookingStatusChanged: ""
+        });
+      }
+      
+      res.json(emailSettings.value);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.post("/api/settings/email", isAdmin, async (req, res, next) => {
+    try {
+      const emailSettings = req.body;
+      
+      // Validate emailSettings against schema
+      if (!emailSettings) {
+        return res.status(400).json({ error: "Email settings are required" });
+      }
+      
+      const setting = await storage.createOrUpdateSetting('email_settings', emailSettings);
+      res.json(setting.value);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.post("/api/settings/email/test", isAdmin, async (req, res, next) => {
+    try {
+      const emailSettings = await storage.getSetting('email_settings');
+      
+      if (!emailSettings || !emailSettings.value.enabled) {
+        return res.status(400).json({ error: "Email notifications are not enabled" });
+      }
+      
+      // Import Mailjet
+      let Mailjet;
+      try {
+        const { Client } = await import('node-mailjet');
+        Mailjet = Client;
+      } catch (error) {
+        return res.status(500).json({ error: "Failed to load Mailjet library" });
+      }
+      
+      const settings = emailSettings.value;
+      
+      // Setup Mailjet client
+      const mailjet = new Mailjet({
+        apiKey: settings.mailjetApiKey,
+        apiSecret: settings.mailjetSecretKey
+      });
+      
+      // Send test email
+      const user = req.user!;
+      
+      await mailjet.post('send', { version: 'v3.1' }).request({
+        Messages: [
+          {
+            From: {
+              Email: settings.systemEmail,
+              Name: settings.systemName
+            },
+            To: [
+              {
+                Email: user.email,
+                Name: user.name
+              }
+            ],
+            Subject: "Test Email from ACRDSC Reservas",
+            HTMLPart: `
+              <h3>Test Email</h3>
+              <p>This is a test email from your ACRDSC Reservas system.</p>
+              <p>If you received this email, your email notification settings are working correctly.</p>
+              <p>Best regards,<br>${settings.systemName}</p>
+            `
+          }
+        ]
+      });
+      
+      res.json({ success: true, message: "Test email sent successfully" });
+    } catch (error: any) {
+      console.error("Error sending test email:", error);
+      
+      // Check for Mailjet specific errors
+      if (error.statusCode) {
+        return res.status(error.statusCode).json({ 
+          error: "Mailjet API error", 
+          details: error.message || "Failed to send test email" 
+        });
+      }
+      
+      next(error);
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
