@@ -38,15 +38,56 @@ export function registerAppointmentRoutes(app: Express): void {
   // Create a new appointment
   app.post("/api/appointments", isAuthenticated, async (req: Request, res: Response, next: Function) => {
     try {
-      // Process the incoming data to ensure date fields are correctly formatted
-      const processedData = { ...req.body };
+      // Helper function to recursively process date strings in the object
+      const processDateFields = (obj: any): any => {
+        // Skip null/undefined values
+        if (!obj) return obj;
+        
+        // Handle arrays
+        if (Array.isArray(obj)) {
+          return obj.map(item => processDateFields(item));
+        }
+        
+        // Handle objects
+        if (typeof obj === 'object' && !(obj instanceof Date)) {
+          const newObj: Record<string, any> = {};
+          
+          for (const key in obj) {
+            // Process nested objects and arrays recursively
+            if (obj[key] && typeof obj[key] === 'object') {
+              newObj[key] = processDateFields(obj[key]);
+            } 
+            // Convert ISO date strings to Date objects
+            else if (typeof obj[key] === 'string' && 
+                     /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{3})?Z$/.test(obj[key])) {
+              try {
+                newObj[key] = new Date(obj[key]);
+              } catch (e) {
+                console.warn(`Failed to convert date string: ${obj[key]}`, e);
+                newObj[key] = obj[key]; // Keep original value if conversion fails
+              }
+            } 
+            // Keep other values as is
+            else {
+              newObj[key] = obj[key];
+            }
+          }
+          return newObj;
+        }
+        
+        // Return primitives and already processed values as is
+        return obj;
+      };
       
-      // Handle date fields properly
-      if (processedData.startTime) {
+      // Process the entire create object, including any nested structures
+      const processedData = processDateFields({ ...req.body });
+      
+      // Extra safety for main date fields
+      if (processedData.startTime && !(processedData.startTime instanceof Date)) {
         processedData.startTime = new Date(processedData.startTime);
       }
       
-      if (processedData.endTime) {
+      if (processedData.endTime && !(processedData.endTime instanceof Date)) {
         processedData.endTime = new Date(processedData.endTime);
       }
       
@@ -131,15 +172,56 @@ export function registerAppointmentRoutes(app: Express): void {
         return res.status(403).json({ message: "Forbidden - You can only update your own appointments" });
       }
       
-      // Ensure date fields are properly converted to Date objects
-      const updateData = { ...req.body };
+      // Helper function to recursively process date strings in the object
+      const processDateFields = (obj: any): any => {
+        // Skip null/undefined values
+        if (!obj) return obj;
+        
+        // Handle arrays
+        if (Array.isArray(obj)) {
+          return obj.map(item => processDateFields(item));
+        }
+        
+        // Handle objects
+        if (typeof obj === 'object' && !(obj instanceof Date)) {
+          const newObj: Record<string, any> = {};
+          
+          for (const key in obj) {
+            // Process nested objects and arrays recursively
+            if (obj[key] && typeof obj[key] === 'object') {
+              newObj[key] = processDateFields(obj[key]);
+            } 
+            // Convert ISO date strings to Date objects
+            else if (typeof obj[key] === 'string' && 
+                     /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{3})?Z$/.test(obj[key])) {
+              try {
+                newObj[key] = new Date(obj[key]);
+              } catch (e) {
+                console.warn(`Failed to convert date string: ${obj[key]}`, e);
+                newObj[key] = obj[key]; // Keep original value if conversion fails
+              }
+            } 
+            // Keep other values as is
+            else {
+              newObj[key] = obj[key];
+            }
+          }
+          return newObj;
+        }
+        
+        // Return primitives and already processed values as is
+        return obj;
+      };
       
-      // Handle date fields properly
-      if (updateData.startTime && typeof updateData.startTime === 'string') {
+      // Process the entire update object, including nested structures
+      const updateData = processDateFields({ ...req.body });
+      
+      // Extra safety for main date fields
+      if (updateData.startTime && !(updateData.startTime instanceof Date)) {
         updateData.startTime = new Date(updateData.startTime);
       }
       
-      if (updateData.endTime && typeof updateData.endTime === 'string') {
+      if (updateData.endTime && !(updateData.endTime instanceof Date)) {
         updateData.endTime = new Date(updateData.endTime);
       }
       

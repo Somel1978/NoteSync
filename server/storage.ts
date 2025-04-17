@@ -244,7 +244,7 @@ export class DatabaseStorage implements IStorage {
     }
     
     // Helper function to recursively process date strings
-    const processDateStrings = (obj: any) => {
+    const processDateStrings = (obj: any): any => {
       if (!obj || typeof obj !== 'object') return obj;
       
       // Process Arrays
@@ -327,7 +327,7 @@ export class DatabaseStorage implements IStorage {
     const fieldChanges: Record<string, { oldValue: any, newValue: any }> = {};
     
     // Helper function to recursively process date strings
-    const processDateStrings = (obj: any) => {
+    const processDateStrings = (obj: any): any => {
       if (!obj || typeof obj !== 'object') return obj;
       
       // Process Arrays
