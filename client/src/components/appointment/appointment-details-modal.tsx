@@ -392,7 +392,9 @@ export function AppointmentDetailsModal({
         
         // Cache in all locations for consistency
         window.customFacilities[cacheKey] = facilityObj;
-        editedAppointment.customFacilities[cacheKey] = facilityObj;
+        if (editedAppointment.customFacilities) {
+          editedAppointment.customFacilities[cacheKey] = facilityObj;
+        }
         
         // Add to results
         result.push(facilityObj);
@@ -546,8 +548,8 @@ export function AppointmentDetailsModal({
       facilities.forEach(facilityName => {
         const cacheKey = `${roomId}-${facilityName}`;
         const customFacility = window.customFacilities?.[cacheKey] || 
-                               (editedAppointment.customFacilities && 
-                                editedAppointment.customFacilities[cacheKey]);
+                               (editedAppointment.customFacilities ? 
+                                editedAppointment.customFacilities[cacheKey] : undefined);
         
         if (customFacility && typeof customFacility === 'object' && customFacility.cost) {
           facilitiesCost += Number(customFacility.cost);
@@ -1374,7 +1376,7 @@ export function AppointmentDetailsModal({
                                         Flat Rate (One-time fee)
                                         {rooms && (() => {
                                           const room = rooms.find(r => r.id === roomBooking.roomId);
-                                          if (room) {
+                                          if (room && room.flatRate) {
                                             return `: €${(room.flatRate / 100).toFixed(2)}`;
                                           }
                                           return '';
@@ -1392,7 +1394,7 @@ export function AppointmentDetailsModal({
                                             ))} hours 
                                             {rooms && (() => {
                                               const room = rooms.find(r => r.id === roomBooking.roomId);
-                                              if (room) {
+                                              if (room && room.hourlyRate) {
                                                 return ` × €${(room.hourlyRate / 100).toFixed(2)} per hour`;
                                               }
                                               return '';
@@ -1409,7 +1411,7 @@ export function AppointmentDetailsModal({
                                         Per Attendee: {appointment.attendeesCount} attendees
                                         {rooms && (() => {
                                           const room = rooms.find(r => r.id === roomBooking.roomId);
-                                          if (room) {
+                                          if (room && room.attendeeRate) {
                                             return ` × €${(room.attendeeRate / 100).toFixed(2)} per person`;
                                           }
                                           return '';
@@ -1477,24 +1479,13 @@ export function AppointmentDetailsModal({
                             </>
                           ) : appointment.costBreakdown && typeof appointment.costBreakdown === 'object' ? (
                             <>
-                              <div className="flex justify-between text-sm text-gray-700">
-                                <span>Base Rate:</span>
-                                <span>€{((appointment.costBreakdown as any).base / 100).toFixed(2)}</span>
-                              </div>
-                              
-                              {/* Show facilities cost if available */}
-                              {(appointment.costBreakdown as any).facilities > 0 && (
-                                <div className="flex justify-between text-sm text-gray-700 mt-1">
-                                  <span>Additional Facilities:</span>
-                                  <span>€{((appointment.costBreakdown as any).facilities / 100).toFixed(2)}</span>
-                                </div>
-                              )}
-                              
-                              <Separator className="my-2" />
                               <div className="flex justify-between font-medium text-sm">
-                                <span>Total:</span>
+                                <span>Total Cost:</span>
                                 <span>€{(appointment.agreedCost / 100).toFixed(2)}</span>
                               </div>
+                              <p className="text-sm text-gray-500 mt-2">
+                                No detailed breakdown available for individual rooms.
+                              </p>
                             </>
                           ) : (
                             <p className="text-sm text-gray-500">No detailed breakdown available</p>
