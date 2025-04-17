@@ -5,6 +5,20 @@ import { insertAppointmentSchema } from "@shared/schema";
 import { EmailNotificationService } from "../utils/email";
 
 export function registerAppointmentRoutes(app: Express): void {
+  // Public endpoint for getting appointments by room
+  app.get("/api/public/appointments/room/:id", async (req: Request, res: Response, next: Function) => {
+    try {
+      const roomId = parseInt(req.params.id);
+      if (isNaN(roomId)) {
+        return res.status(400).json({ message: "Invalid room ID" });
+      }
+      
+      const appointments = await storage.getAppointmentsByRoom(roomId);
+      res.json(appointments);
+    } catch (error) {
+      next(error);
+    }
+  });
   // Get all appointments
   app.get("/api/appointments", isAuthenticated, async (req: Request, res: Response, next: Function) => {
     try {

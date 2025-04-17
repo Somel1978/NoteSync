@@ -11,6 +11,7 @@ import NewBookingPage from "@/pages/enhanced-tabbed-booking-page";
 import SettingsPage from "@/pages/settings-page";
 import LandingPage from "@/pages/landing-page";
 import PublicRoomPage from "@/pages/public-room-page";
+import RoomAvailabilityPage from "@/pages/room-availability-page";
 import { ProtectedRoute } from "./lib/protected-route";
 import { AuthProvider, useAuth } from "./hooks/use-auth";
 import { LanguageProvider } from "./hooks/use-language";
@@ -35,6 +36,8 @@ function Router() {
     <Switch>
       <Route path="/" component={LandingPage} />
       <Route path="/rooms" component={PublicRoomPage} />
+      <Route path="/rooms/availability" component={RoomAvailabilityPage} />
+      <Route path="/rooms/availability/:id" component={RoomAvailabilityPage} />
       <Route path="/auth" component={AuthPage} />
       <ProtectedRoute path="/dashboard" component={DashboardPage} />
       <ProtectedRoute path="/admin/appointments" component={AppointmentsPage} />

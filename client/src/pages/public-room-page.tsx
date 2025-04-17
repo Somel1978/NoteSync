@@ -102,7 +102,11 @@ export default function PublicRoomPage() {
                       </div>
                       
                       <div className="flex mt-4 justify-end">
-                        <Badge variant="outline" className="cursor-pointer">
+                        <Badge 
+                          variant="outline" 
+                          className="cursor-pointer hover:bg-primary/10"
+                          onClick={() => window.location.href = `/rooms/availability/${room.id}`}
+                        >
                           {t("rooms.availabilityCalendar")} →
                         </Badge>
                       </div>
