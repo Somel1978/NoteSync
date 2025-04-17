@@ -93,8 +93,9 @@ export class EmailNotificationService {
       log(`Mailjet full response: ${JSON.stringify(response.body)}`, 'email');
       
       // Verify the response format and success status
-      if (response && response.body && Array.isArray(response.body.Messages)) {
-        const messages = response.body.Messages;
+      const responseBody = response.body as any; // Cast to any to handle Mailjet's response type
+      if (response && responseBody && Array.isArray(responseBody.Messages)) {
+        const messages = responseBody.Messages;
         
         // Check if all messages were sent successfully with proper message IDs
         const allSuccessful = messages.length > 0 && messages.every((msg: any) => {

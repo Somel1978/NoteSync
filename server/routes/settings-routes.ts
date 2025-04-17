@@ -171,8 +171,9 @@ export function registerSettingsRoutes(app: Express): void {
       console.log("Full Mailjet response:", JSON.stringify(response.body));
       
       // Verify the response for complete success
-      if (response.body && response.body.Messages) {
-        const messages = response.body.Messages;
+      const responseBody = response.body as any; // Cast to any to handle Mailjet's response type
+      if (responseBody && responseBody.Messages) {
+        const messages = responseBody.Messages;
         
         const allSuccessful = messages.every((msg: any) => 
           msg.Status === 'success' && 
