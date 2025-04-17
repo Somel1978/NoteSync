@@ -52,6 +52,16 @@ export function RoomAvailabilityView() {
   const { data: appointments = [], isLoading: isAppointmentsLoading } = useQuery<Appointment[]>({
     queryKey: ["/api/public/appointments/room", roomId],
     enabled: !!roomId,
+    queryFn: async () => {
+      if (!roomId) return [];
+      const res = await fetch(`/api/public/appointments/room/${roomId}`, {
+        credentials: "include",
+      });
+      if (!res.ok) {
+        throw new Error(`Error fetching appointments: ${res.status}`);
+      }
+      return await res.json();
+    },
   });
   
   // Find the location name for the current room
