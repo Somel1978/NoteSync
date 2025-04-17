@@ -2,6 +2,7 @@ import type { Express, Request, Response } from "express";
 import { storage } from "../storage";
 import { isAdmin } from "./index";
 import { EmailSettings } from "@shared/schema";
+import Mailjet from 'node-mailjet';
 
 export function registerSettingsRoutes(app: Express): void {
   // Get email settings
@@ -96,20 +97,7 @@ export function registerSettingsRoutes(app: Express): void {
         return res.status(400).json({ error: "Email notifications are not enabled" });
       }
       
-      // Import Mailjet
-      const mailjetModule = await import('node-mailjet');
-      console.log("Mailjet module keys:", Object.keys(mailjetModule));
-      
-      // Access the Client constructor from the imported module
-      const Client = mailjetModule.Client || mailjetModule.default;
-      console.log("Client type:", typeof Client);
-      
-      if (typeof Client !== 'function') {
-        return res.status(500).json({ 
-          error: "Failed to initialize Mailjet", 
-          details: "Invalid client constructor" 
-        });
-      }
+      // Using Mailjet imported at the top of the file
       
       // Make sure we have a sender email
       if (!settings.systemEmail) {
@@ -121,12 +109,14 @@ export function registerSettingsRoutes(app: Express): void {
       
       // Check if systemEmail is verified in Mailjet
       console.log(`Using sender email: ${settings.systemEmail}`);
+      console.log(`Using Mailjet API key: ${settings.mailjetApiKey.substring(0, 4)}...`);
+      console.log(`Using Mailjet Secret key: ${settings.mailjetSecretKey.substring(0, 4)}...`);
 
-      // Create a client instance
-      const mailjet = new Client({
-        apiKey: settings.mailjetApiKey,
-        apiSecret: settings.mailjetSecretKey
-      });
+      // Create a client instance using the proven apiConnect method
+      const mailjet = Mailjet.apiConnect(
+        settings.mailjetApiKey,
+        settings.mailjetSecretKey
+      );
       
       // Send test email
       const user = req.user!;
