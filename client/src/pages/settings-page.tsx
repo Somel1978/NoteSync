@@ -10,6 +10,8 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Switch } from "@/components/ui/switch";
+import { Textarea } from "@/components/ui/textarea";
 import { 
   Pencil, 
   Trash, 
@@ -22,7 +24,9 @@ import {
   UserMinus,
   UserPlus,
   AlertCircle,
-  PlusCircle
+  PlusCircle,
+  Mail,
+  Loader2
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
@@ -87,9 +91,24 @@ const newUserSchema = z.object({
   role: z.enum(["admin", "director", "guest"])
 });
 
+const emailSettingsSchema = z.object({
+  enabled: z.boolean().default(false),
+  mailjetApiKey: z.string().min(1, "API Key is required"),
+  mailjetSecretKey: z.string().min(1, "Secret Key is required"),
+  systemEmail: z.string().email("Please enter a valid email address"),
+  systemName: z.string().min(1, "System Name is required"),
+  notifyOnCreate: z.boolean().default(true),
+  notifyOnUpdate: z.boolean().default(true),
+  notifyOnStatusChange: z.boolean().default(true),
+  emailTemplateBookingCreated: z.string().optional(),
+  emailTemplateBookingUpdated: z.string().optional(),
+  emailTemplateBookingStatusChanged: z.string().optional()
+});
+
 type ProfileFormValues = z.infer<typeof profileSchema>;
 type ChangePasswordFormValues = z.infer<typeof changePasswordSchema>;
 type NewUserFormValues = z.infer<typeof newUserSchema>;
+type EmailSettingsFormValues = z.infer<typeof emailSettingsSchema>;
 
 // UserProfileCard component
 const UserProfileCard = ({ 
@@ -193,6 +212,329 @@ const UserProfileCard = ({
         </div>
       </CardContent>
     </Card>
+  );
+};
+
+// Email Settings Form component
+const EmailSettingsForm = () => {
+  const { t } = useTranslation();
+  const { toast } = useToast();
+  
+  // Initialize and fetch email settings
+  const { data: emailSettingsData, isLoading } = useQuery<EmailSettingsFormValues>({
+    queryKey: ['/api/settings/email'],
+    enabled: true,
+  });
+  
+  const emailSettingsForm = useForm<EmailSettingsFormValues>({
+    resolver: zodResolver(emailSettingsSchema),
+    defaultValues: {
+      enabled: false,
+      mailjetApiKey: "",
+      mailjetSecretKey: "",
+      systemEmail: "",
+      systemName: "",
+      notifyOnCreate: true,
+      notifyOnUpdate: true,
+      notifyOnStatusChange: true,
+      emailTemplateBookingCreated: "",
+      emailTemplateBookingUpdated: "",
+      emailTemplateBookingStatusChanged: "",
+    },
+  });
+  
+  // Update form when data is fetched
+  useEffect(() => {
+    if (emailSettingsData) {
+      emailSettingsForm.reset(emailSettingsData);
+    }
+  }, [emailSettingsData, emailSettingsForm]);
+  
+  // Save email settings mutation
+  const saveEmailSettingsMutation = useMutation({
+    mutationFn: async (data: EmailSettingsFormValues) => {
+      const res = await apiRequest("POST", "/api/settings/email", data);
+      if (!res.ok) throw new Error("Failed to save email settings");
+      return await res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/settings/email'] });
+      toast({
+        title: t('settings.emailSettingsSaved'),
+        description: t('settings.emailSettingsSaveSuccess'),
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: t('settings.emailSettingsSaveError'),
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+  
+  // Test email mutation
+  const testEmailMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("POST", "/api/settings/email/test", {});
+      if (!res.ok) throw new Error("Failed to send test email");
+      return await res.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: t('settings.testEmailSent'),
+        description: t('settings.testEmailSuccess'),
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: t('settings.testEmailError'),
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+  
+  // Form submission
+  const onSubmit = (data: EmailSettingsFormValues) => {
+    saveEmailSettingsMutation.mutate(data);
+  };
+  
+  const handleTestEmail = () => {
+    testEmailMutation.mutate();
+  };
+  
+  if (isLoading) {
+    return <div className="flex items-center justify-center p-8"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
+  }
+  
+  return (
+    <div className="grid grid-cols-1 gap-6">
+      <Card>
+        <CardHeader>
+          <CardTitle>{t('settings.mailjetSettings')}</CardTitle>
+          <CardDescription>
+            {t('settings.manageEmailSettings')}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Form {...emailSettingsForm}>
+            <form onSubmit={emailSettingsForm.handleSubmit(onSubmit)} className="space-y-4">
+              <FormField
+                control={emailSettingsForm.control}
+                name="enabled"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                    <div className="space-y-0.5">
+                      <FormLabel className="text-base">
+                        {t('settings.emailEnabled')}
+                      </FormLabel>
+                      <FormDescription>
+                        {t('settings.emailEnabled')}
+                      </FormDescription>
+                    </div>
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={emailSettingsForm.control}
+                name="mailjetApiKey"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t('settings.mailjetApiKey')}</FormLabel>
+                    <FormControl>
+                      <Input type="password" placeholder={t('settings.mailjetApiKey')} {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={emailSettingsForm.control}
+                name="mailjetSecretKey"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t('settings.mailjetSecretKey')}</FormLabel>
+                    <FormControl>
+                      <Input type="password" placeholder={t('settings.mailjetSecretKey')} {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={emailSettingsForm.control}
+                name="systemEmail"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t('settings.systemEmail')}</FormLabel>
+                    <FormControl>
+                      <Input placeholder="system@example.com" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={emailSettingsForm.control}
+                name="systemName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t('settings.systemName')}</FormLabel>
+                    <FormControl>
+                      <Input placeholder="ACRDSC Reservas" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <div className="mt-6">
+                <h3 className="text-lg font-medium mb-4">{t('settings.notificationPreferences')}</h3>
+                
+                <div className="space-y-4">
+                  <FormField
+                    control={emailSettingsForm.control}
+                    name="notifyOnCreate"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
+                        <FormLabel>{t('settings.notifyOnCreate')}</FormLabel>
+                        <FormControl>
+                          <Switch
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={emailSettingsForm.control}
+                    name="notifyOnUpdate"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
+                        <FormLabel>{t('settings.notifyOnUpdate')}</FormLabel>
+                        <FormControl>
+                          <Switch
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={emailSettingsForm.control}
+                    name="notifyOnStatusChange"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
+                        <FormLabel>{t('settings.notifyOnStatusChange')}</FormLabel>
+                        <FormControl>
+                          <Switch
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </div>
+              
+              <div className="mt-6">
+                <h3 className="text-lg font-medium mb-4">{t('settings.emailTemplates')}</h3>
+                
+                <div className="space-y-4">
+                  <FormField
+                    control={emailSettingsForm.control}
+                    name="emailTemplateBookingCreated"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{t('settings.templateBookingCreated')}</FormLabel>
+                        <FormControl>
+                          <Textarea 
+                            placeholder="Template for booking created notification" 
+                            className="h-40"
+                            {...field} 
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={emailSettingsForm.control}
+                    name="emailTemplateBookingUpdated"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{t('settings.templateBookingUpdated')}</FormLabel>
+                        <FormControl>
+                          <Textarea 
+                            placeholder="Template for booking updated notification" 
+                            className="h-40"
+                            {...field} 
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={emailSettingsForm.control}
+                    name="emailTemplateBookingStatusChanged"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{t('settings.templateStatusChanged')}</FormLabel>
+                        <FormControl>
+                          <Textarea 
+                            placeholder="Template for booking status changed notification" 
+                            className="h-40"
+                            {...field} 
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </div>
+              
+              <div className="flex justify-end gap-2 mt-6">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleTestEmail}
+                  disabled={testEmailMutation.isPending || !emailSettingsForm.getValues().enabled}
+                >
+                  {testEmailMutation.isPending ? t('common.sending') : t('settings.testEmail')}
+                </Button>
+                
+                <Button
+                  type="submit"
+                  disabled={saveEmailSettingsMutation.isPending}
+                >
+                  {saveEmailSettingsMutation.isPending ? t('common.saving') : t('common.saveChanges')}
+                </Button>
+              </div>
+            </form>
+          </Form>
+        </CardContent>
+      </Card>
+    </div>
   );
 };
 
@@ -488,6 +830,14 @@ export default function SettingsPage() {
                       <TabsTrigger value="locations">
                         <Settings className="h-4 w-4 mr-2" />
                         {t('settings.locations')}
+                      </TabsTrigger>
+                    )}
+                    
+                    {/* Show Email Notifications tab only for Admin */}
+                    {user?.role === 'admin' && (
+                      <TabsTrigger value="email">
+                        <Mail className="h-4 w-4 mr-2" />
+                        {t('settings.emailNotifications')}
                       </TabsTrigger>
                     )}
                   </TabsList>
@@ -988,6 +1338,19 @@ export default function SettingsPage() {
                             </div>
                           )}
                         </div>
+                      </div>
+                    </TabsContent>
+                  )}
+                  
+                  {/* Email Notifications Tab - Admin only */}
+                  {user?.role === 'admin' && (
+                    <TabsContent value="email">
+                      <div className="space-y-6">
+                        <h2 className="text-lg leading-6 font-medium text-gray-900 mb-4">
+                          {t('settings.manageEmailSettings')}
+                        </h2>
+                        
+                        <EmailSettingsForm />
                       </div>
                     </TabsContent>
                   )}
