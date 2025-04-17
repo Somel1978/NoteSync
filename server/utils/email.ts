@@ -77,9 +77,34 @@ export class EmailNotificationService {
       log(`Subject: ${subject}`, 'email');
       
       try {
-        // Create the Mailjet client using ES module import - same approach as our working test script
+        // Create the Mailjet client
         log(`Connecting to Mailjet with API key: ${apiKey.substring(0, 4)}...`, 'email');
         const mailjet = Mailjet.apiConnect(apiKey, secretKey);
+        
+        // Check if sender is verified (we only do this check once in a while to not hit rate limits)
+        const shouldCheckSender = Math.random() < 0.2; // 20% chance to check
+        if (shouldCheckSender) {
+          try {
+            log(`Checking sender status for ${from.email}...`, 'email');
+            const sendersResponse = await mailjet.get('sender').request();
+            
+            if (sendersResponse.body && sendersResponse.body.Data) {
+              const senders = sendersResponse.body.Data;
+              const apiSender = senders.find((sender: any) => sender.Email === from.email);
+              
+              if (apiSender && apiSender.Status !== 'Active') {
+                log(`⚠️ WARNING: Sender ${from.email} is not active (status: ${apiSender.Status}). Emails won't be delivered!`, 'email');
+                log(`Please verify the sender email in your Mailjet account to receive emails.`, 'email');
+              } else if (!apiSender) {
+                log(`⚠️ WARNING: Sender ${from.email} not found in Mailjet. Emails won't be delivered!`, 'email');
+                log(`Please add this sender in your Mailjet account and verify it to receive emails.`, 'email');
+              }
+            }
+          } catch (senderError) {
+            log(`Error checking sender status: ${senderError}`, 'email');
+            // Continue anyway - this is just a diagnostic check
+          }
+        }
         
         // Send the email
         log('Sending email via Mailjet', 'email');
@@ -96,9 +121,12 @@ export class EmailNotificationService {
             ? JSON.parse(response.body) 
             : response.body;
           log(`Mailjet response data: ${JSON.stringify(responseData)}`, 'email');
+          
+          // Add a clear warning about sender verification
+          log(`⚠️ NOTE: Even though API call succeeded, emails will only be delivered if ${from.email} is verified in Mailjet.`, 'email');
         }
         
-        log('Email sent successfully', 'email');
+        log('Email request processed successfully', 'email');
         return true;
       } catch (mailjetError) {
         log(`Error with Mailjet: ${mailjetError}`, 'email');
