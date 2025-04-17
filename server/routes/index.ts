@@ -9,6 +9,7 @@ import { registerRoomRoutes } from "./room-routes";
 import { registerAppointmentRoutes } from "./appointment-routes";
 import { registerSettingsRoutes } from "./settings-routes";
 import { registerPublicRoutes } from "./public-routes";
+import { registerDebugRoutes } from "./debug-routes";
 
 // Middleware to check if user is authenticated
 export const isAuthenticated = (req: Request, res: Response, next: Function) => {
@@ -48,6 +49,7 @@ export function registerRoutes(app: Express): Server {
   registerRoomRoutes(app);
   registerAppointmentRoutes(app);
   registerSettingsRoutes(app);
+  registerDebugRoutes(app);
   
   return server;
 }
