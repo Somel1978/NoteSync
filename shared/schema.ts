@@ -198,3 +198,18 @@ export type RoomBooking = {
   costType: 'flat' | 'hourly' | 'per_attendee';
   cost: number; // In cents
 };
+
+// Email notification settings type
+export type EmailSettings = {
+  enabled: boolean;
+  mailjetApiKey: string;
+  mailjetSecretKey: string;
+  systemEmail: string;
+  systemName: string;
+  notifyOnCreate: boolean;
+  notifyOnUpdate: boolean;
+  notifyOnStatusChange: boolean;
+  emailTemplateBookingCreated: string;
+  emailTemplateBookingUpdated: string;
+  emailTemplateBookingStatusChanged: string;
+};
