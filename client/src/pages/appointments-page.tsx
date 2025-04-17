@@ -152,7 +152,14 @@ export default function AppointmentsPage() {
         
         return (
           <Badge variant={variant} className="whitespace-nowrap">
-            {t(`appointments.${status}`, status.charAt(0).toUpperCase() + status.slice(1))}
+            {status === "approved" 
+              ? t('appointments.approved')
+              : status === "rejected" 
+              ? t('appointments.rejected')
+              : status === "cancelled" 
+              ? t('appointments.cancelled')
+              : t('appointments.pending')
+            }
           </Badge>
         );
       },

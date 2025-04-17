@@ -155,7 +155,14 @@ export default function DashboardPage() {
                             "secondary"
                           }
                         >
-                          {t(`appointments.${booking.status}`, booking.status.charAt(0).toUpperCase() + booking.status.slice(1))}
+                          {booking.status === "approved" 
+                            ? t('appointments.approved')
+                            : booking.status === "rejected" 
+                            ? t('appointments.rejected')
+                            : booking.status === "cancelled" 
+                            ? t('appointments.cancelled')
+                            : t('appointments.pending')
+                          }
                         </Badge>
                       </div>
                     </div>
