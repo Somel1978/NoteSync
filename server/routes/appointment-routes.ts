@@ -556,17 +556,31 @@ export function registerAppointmentRoutes(app: Express): void {
       const utilization = roomUtilization.reduce((total, curr) => total + curr.utilization, 0) / 
                           (roomUtilization.length || 1);
       
-      // Get popular rooms (by booking count)
+      // Get popular rooms (by booking count) and calculate revenue
       const rooms = await storage.getAllRooms();
       const popularRooms = [];
       
       for (const room of rooms) {
         const bookings = await storage.getAppointmentsByRoom(room.id);
         const roomUtilization = await storage.getRoomUtilization(room.id, startDate, now);
+        
+        // Calculate total revenue for the room
+        let totalRevenue = 0;
+        for (const booking of bookings) {
+          if (booking.rooms && Array.isArray(booking.rooms)) {
+            // Find the cost entry for this specific room
+            const roomEntry = booking.rooms.find((r: any) => r.roomId === room.id);
+            if (roomEntry && roomEntry.cost) {
+              totalRevenue += roomEntry.cost;
+            }
+          }
+        }
+        
         popularRooms.push({
           room,
           bookings: bookings.length,
-          utilization: roomUtilization
+          utilization: roomUtilization,
+          revenue: totalRevenue // Revenue in cents
         });
       }
       

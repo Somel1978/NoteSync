@@ -1,6 +1,7 @@
-import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
-import { useTranslation } from "react-i18next";
+import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useTranslation } from "react-i18next";
+import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
 
 interface BookingStatusChartProps {
   approvedCount: number;
@@ -17,57 +18,64 @@ export function BookingStatusChart({
 }: BookingStatusChartProps) {
   const { t } = useTranslation();
   
+  // Prepare data for pie chart
   const data = [
-    { name: t('appointments.approved'), value: approvedCount, color: '#10b981' },
-    { name: t('appointments.pending'), value: pendingCount, color: '#f59e0b' },
-    { name: t('appointments.rejected'), value: rejectedCount, color: '#ef4444' },
-    { name: t('appointments.cancelled'), value: cancelledCount, color: '#6b7280' },
-  ].filter(item => item.value > 0); // Only show statuses with bookings
+    { name: t('appointments.approved', 'Approved'), value: approvedCount, color: '#10b981' },
+    { name: t('appointments.pending', 'Pending'), value: pendingCount, color: '#6366f1' },
+    { name: t('appointments.rejected', 'Rejected'), value: rejectedCount, color: '#ef4444' },
+    { name: t('appointments.cancelled', 'Cancelled'), value: cancelledCount, color: '#94a3b8' },
+  ].filter(item => item.value > 0); // Only show statuses with at least one booking
   
-  // If no data, show a placeholder
-  if (data.length === 0 || (approvedCount === 0 && pendingCount === 0 && rejectedCount === 0 && cancelledCount === 0)) {
-    return (
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-lg font-medium">{t('dashboard.bookingStatusChart', 'Booking Status')}</CardTitle>
-        </CardHeader>
-        <CardContent className="h-[300px] flex items-center justify-center">
-          <p className="text-gray-500 text-sm">{t('dashboard.noBookingsData', 'No booking data available')}</p>
-        </CardContent>
-      </Card>
-    );
-  }
+  // Custom tooltip formatter
+  const customTooltip = ({ active, payload }: any) => {
+    if (active && payload && payload.length) {
+      return (
+        <div className="bg-white p-3 border rounded shadow-md">
+          <p className="font-medium text-sm">{payload[0].name}: {payload[0].value}</p>
+          <p className="text-xs text-gray-500">{t('dashboard.count', 'Count')}</p>
+        </div>
+      );
+    }
+    return null;
+  };
   
   return (
     <Card>
-      <CardHeader className="pb-3">
-        <CardTitle className="text-lg font-medium">{t('dashboard.bookingStatusChart', 'Booking Status')}</CardTitle>
+      <CardHeader className="pb-2">
+        <CardTitle className="text-lg font-medium">
+          {t('dashboard.bookingStatusChart', 'Booking Status')}
+        </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="h-[300px] w-full">
-          <ResponsiveContainer width="100%" height="100%">
-            <PieChart>
-              <Pie
-                data={data}
-                cx="50%"
-                cy="50%"
-                innerRadius={60}
-                outerRadius={90}
-                paddingAngle={5}
-                dataKey="value"
-                label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-              >
-                {data.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.color} />
-                ))}
-              </Pie>
-              <Legend />
-              <Tooltip 
-                formatter={(value) => [`${value} ${t('dashboard.bookings', 'bookings')}`, t('dashboard.count', 'Count')]}
-              />
-            </PieChart>
-          </ResponsiveContainer>
-        </div>
+        {data.length > 0 ? (
+          <div className="h-[300px] mt-4">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={data}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={60}
+                  outerRadius={90}
+                  paddingAngle={2}
+                  dataKey="value"
+                  label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                  labelLine={false}
+                >
+                  {data.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  ))}
+                </Pie>
+                <Tooltip content={customTooltip} />
+                <Legend layout="vertical" align="right" verticalAlign="middle" />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+        ) : (
+          <div className="text-center py-8 text-gray-500">
+            <p>{t('dashboard.noBookingData', 'No booking data available')}</p>
+          </div>
+        )}
       </CardContent>
     </Card>
   );

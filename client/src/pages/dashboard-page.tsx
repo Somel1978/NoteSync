@@ -9,6 +9,7 @@ import { useTranslation } from "react-i18next";
 import { MetricsOverview } from "@/components/dashboard/metrics-overview";
 import { BookingStatusChart } from "@/components/dashboard/booking-status-chart";
 import { MonthlyUtilizationChart } from "@/components/dashboard/monthly-utilization-chart";
+import { RoomRevenueChart } from "@/components/dashboard/room-revenue-chart";
 
 interface DashboardStats {
   totalAppointments: number;
@@ -38,6 +39,7 @@ interface PopularRoom {
   };
   bookings: number;
   utilization: number;
+  revenue?: number;
 }
 
 interface RecentBooking {
@@ -160,7 +162,7 @@ export default function DashboardPage() {
           cancelledCount={statusCounts.cancelled}
         />
 
-        {/* Charts Section */}
+        {/* Charts Section - First Row */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-8 mb-8">
           <BookingStatusChart 
             approvedCount={statusCounts.approved}
@@ -169,6 +171,11 @@ export default function DashboardPage() {
             cancelledCount={statusCounts.cancelled}
           />
           <MonthlyUtilizationChart utilizationData={monthlyUtilization} />
+        </div>
+        
+        {/* Charts Section - Second Row */}
+        <div className="mb-8">
+          <RoomRevenueChart roomsData={data?.popularRooms || []} />
         </div>
 
         {/* Two Column Layout */}
@@ -239,6 +246,9 @@ export default function DashboardPage() {
                         <div className="text-right">
                           <p className="font-medium text-gray-800">{roomData.bookings} {t('dashboard.bookings', 'bookings')}</p>
                           <p className="text-sm text-gray-600">{Math.round(roomData.utilization)}% {t('dashboard.utilization', 'utilization')}</p>
+                          <p className="text-sm font-medium text-emerald-600">
+                            €{((roomData.revenue || 0) / 100).toFixed(2)} {t('dashboard.revenue', 'revenue')}
+                          </p>
                         </div>
                       </div>
                       <Progress value={roomData.utilization} className="h-2" />
