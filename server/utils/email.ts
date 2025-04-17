@@ -177,8 +177,17 @@ export class EmailNotificationService {
       const startDate = new Date(appointment.startTime).toLocaleString();
       const endDate = new Date(appointment.endTime).toLocaleString();
       
-      // Get custom email template
-      const customTemplate = settings.emailTemplateBookingCreated || '';
+      // Get custom email template and replace placeholders
+      let customTemplate = settings.emailTemplateBookingCreated || '';
+      customTemplate = customTemplate
+        .replace(/{eventTitle}/g, appointment.title)
+        .replace(/{roomName}/g, room.name)
+        .replace(/{locationName}/g, location.name)
+        .replace(/{startTime}/g, startDate)
+        .replace(/{endTime}/g, endDate)
+        .replace(/{status}/g, appointment.status)
+        .replace(/{cost}/g, `€${(appointment.agreedCost / 100).toFixed(2)}`);
+      
       
       // Generate booking details HTML section
       const bookingDetailsHtml = `
@@ -346,8 +355,16 @@ export class EmailNotificationService {
       const startDate = new Date(appointment.startTime).toLocaleString();
       const endDate = new Date(appointment.endTime).toLocaleString();
       
-      // Get custom email template
-      const customTemplate = settings.emailTemplateBookingUpdated || '';
+      // Get custom email template and replace placeholders
+      let customTemplate = settings.emailTemplateBookingUpdated || '';
+      customTemplate = customTemplate
+        .replace(/{eventTitle}/g, appointment.title)
+        .replace(/{roomName}/g, room.name)
+        .replace(/{locationName}/g, location.name)
+        .replace(/{startTime}/g, startDate)
+        .replace(/{endTime}/g, endDate)
+        .replace(/{status}/g, appointment.status)
+        .replace(/{cost}/g, `€${(appointment.agreedCost / 100).toFixed(2)}`);
       
       // Generate booking details HTML section
       const bookingDetailsHtml = `
@@ -519,8 +536,18 @@ export class EmailNotificationService {
       const startDate = new Date(appointment.startTime).toLocaleString();
       const endDate = new Date(appointment.endTime).toLocaleString();
       
-      // Get custom email template
-      const customTemplate = settings.emailTemplateBookingStatusChanged || '';
+      // Get custom email template and replace placeholders
+      let customTemplate = settings.emailTemplateBookingStatusChanged || '';
+      customTemplate = customTemplate
+        .replace(/{oldStatus}/g, oldStatus)
+        .replace(/{newStatus}/g, appointment.status)
+        .replace(/{eventTitle}/g, appointment.title)
+        .replace(/{roomName}/g, room.name)
+        .replace(/{locationName}/g, location.name)
+        .replace(/{startTime}/g, startDate)
+        .replace(/{endTime}/g, endDate)
+        .replace(/{status}/g, appointment.status)
+        .replace(/{cost}/g, `€${(appointment.agreedCost / 100).toFixed(2)}`);
       
       // Generate status change banner
       const statusBanner = `
