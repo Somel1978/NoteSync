@@ -8,7 +8,7 @@ import { log } from '../vite';
  */
 export class EmailNotificationService {
   private static async getEmailSettings(): Promise<EmailSettings | null> {
-    const emailSettingsRecord = await storage.getSetting('email_settings');
+    const emailSettingsRecord = await storage.getSetting('email');
     if (!emailSettingsRecord) {
       return null;
     }
@@ -31,10 +31,23 @@ export class EmailNotificationService {
     try {
       // Import Mailjet
       const { Client } = await import('node-mailjet');
+      
+      // Use API keys from settings or from environment variables as fallback
+      const apiKey = settings.mailjetApiKey || process.env.MAILJET_API_KEY;
+      const secretKey = settings.mailjetSecretKey || process.env.MAILJET_SECRET_KEY;
+      
+      if (!apiKey || !secretKey) {
+        log('Missing Mailjet API credentials', 'email');
+        return false;
+      }
+      
+      log('Initializing Mailjet client with provided credentials', 'email');
       const mailjet = new Client({
-        apiKey: settings.mailjetApiKey,
-        apiSecret: settings.mailjetSecretKey
+        apiKey: apiKey,
+        apiSecret: secretKey
       });
+      
+      log(`Sending email to ${to.map(r => r.email).join(', ')}`, 'email');
       
       // Send email
       await mailjet.post('send', { version: 'v3.1' }).request({
@@ -54,6 +67,7 @@ export class EmailNotificationService {
         ]
       });
       
+      log('Email sent successfully', 'email');
       return true;
     } catch (error) {
       log(`Error sending email: ${error}`, 'email');

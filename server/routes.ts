@@ -394,7 +394,6 @@ export function registerRoutes(app: Express): Server {
         appointmentId: appointment.id,
         userId: req.user?.id as number,
         action: "created",
-        timestamp: new Date(),
         details: "Appointment created"
       });
       
@@ -456,7 +455,6 @@ export function registerRoutes(app: Express): Server {
         appointmentId: id,
         userId: req.user?.id as number,
         action: statusChanged ? `status-changed-to-${req.body.status}` : "updated",
-        timestamp: new Date(),
         details: statusChanged 
           ? `Status changed from ${oldAppointment.status} to ${req.body.status}`
           : "Appointment details updated"
@@ -464,7 +462,7 @@ export function registerRoutes(app: Express): Server {
       
       // Send appropriate email notification
       if (statusChanged) {
-        await EmailNotificationService.appointmentStatusChanged(updatedAppointment!, req.user!);
+        await EmailNotificationService.appointmentStatusChanged(updatedAppointment!, req.user!, oldAppointment.status);
       } else {
         await EmailNotificationService.appointmentUpdated(updatedAppointment!, req.user!, oldAppointment);
       }
