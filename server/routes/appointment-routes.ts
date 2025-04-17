@@ -38,64 +38,64 @@ export function registerAppointmentRoutes(app: Express): void {
   // Create a new appointment
   app.post("/api/appointments", isAuthenticated, async (req: Request, res: Response, next: Function) => {
     try {
-      // Helper function to recursively process date strings in the object
-      const processDateFields = (obj: any): any => {
-        // Skip null/undefined values
-        if (!obj) return obj;
-        
-        // Handle arrays
-        if (Array.isArray(obj)) {
-          return obj.map(item => processDateFields(item));
+      // Create a deep copy of the request body
+      const processedData = { ...req.body };
+      
+      // Clear out the object and rebuild it to avoid null date issues
+      const formattedData: Record<string, any> = {};
+      
+      // Copy all non-date fields
+      Object.keys(processedData).forEach(key => {
+        if (key !== 'startTime' && key !== 'endTime') {
+          formattedData[key] = processedData[key];
         }
-        
-        // Handle objects
-        if (typeof obj === 'object' && !(obj instanceof Date)) {
-          const newObj: Record<string, any> = {};
-          
-          for (const key in obj) {
-            // Process nested objects and arrays recursively
-            if (obj[key] && typeof obj[key] === 'object') {
-              newObj[key] = processDateFields(obj[key]);
-            } 
-            // Convert ISO date strings to Date objects
-            else if (typeof obj[key] === 'string' && 
-                     /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{3})?Z$/.test(obj[key])) {
-              try {
-                newObj[key] = new Date(obj[key]);
-              } catch (e) {
-                console.warn(`Failed to convert date string: ${obj[key]}`, e);
-                newObj[key] = obj[key]; // Keep original value if conversion fails
-              }
-            } 
-            // Keep other values as is
-            else {
-              newObj[key] = obj[key];
-            }
+      });
+      
+      // Explicitly handle date fields
+      try {
+        // Handle startTime
+        console.log("Original startTime:", processedData.startTime);
+        if (processedData.startTime) {
+          const startDate = new Date(processedData.startTime);
+          // Verify it's a valid date
+          if (!isNaN(startDate.getTime())) {
+            formattedData.startTime = startDate;
+            console.log("Parsed startTime:", startDate.toISOString());
+          } else {
+            throw new Error(`Invalid startTime value: ${processedData.startTime}`);
           }
-          return newObj;
+        } else {
+          throw new Error("Missing required startTime field");
         }
         
-        // Return primitives and already processed values as is
-        return obj;
-      };
-      
-      // Process the entire create object, including any nested structures
-      const processedData = processDateFields({ ...req.body });
-      
-      // Extra safety for main date fields
-      if (processedData.startTime && !(processedData.startTime instanceof Date)) {
-        processedData.startTime = new Date(processedData.startTime);
-      }
-      
-      if (processedData.endTime && !(processedData.endTime instanceof Date)) {
-        processedData.endTime = new Date(processedData.endTime);
+        // Handle endTime
+        console.log("Original endTime:", processedData.endTime);
+        if (processedData.endTime) {
+          const endDate = new Date(processedData.endTime);
+          // Verify it's a valid date
+          if (!isNaN(endDate.getTime())) {
+            formattedData.endTime = endDate;
+            console.log("Parsed endTime:", endDate.toISOString());
+          } else {
+            throw new Error(`Invalid endTime value: ${processedData.endTime}`);
+          }
+        } else {
+          throw new Error("Missing required endTime field");
+        }
+      } catch (error) {
+        const dateError = error as Error;
+        console.error("Date validation error:", dateError.message);
+        return res.status(400).json({ 
+          message: "Invalid date format", 
+          error: dateError.message 
+        });
       }
       
       // Add the user ID
-      processedData.userId = req.user?.id;
+      formattedData.userId = req.user?.id;
       
       // Log what we're attempting to create
-      console.log("Creating appointment with processed data:", JSON.stringify(processedData, (key, value) => {
+      console.log("Creating appointment with processed data:", JSON.stringify(formattedData, (key, value) => {
         if (value instanceof Date) {
           return value.toISOString();
         }
@@ -103,8 +103,15 @@ export function registerAppointmentRoutes(app: Express): void {
       }));
       
       try {
-        // Process the appointment including custom fields
-        const appointment = await storage.createAppointment(processedData);
+        // Process the appointment including custom fields using the formattedData with proper date fields
+        console.log("Storage: createAppointment with processed data:", JSON.stringify(formattedData, (key, value) => {
+          if (value instanceof Date) {
+            return value.toISOString();
+          }
+          return value;
+        }));
+        
+        const appointment = await storage.createAppointment(formattedData);
         
         // Send email notification
         try {
