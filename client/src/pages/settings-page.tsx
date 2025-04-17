@@ -1552,6 +1552,19 @@ export default function SettingsPage() {
                     </TabsContent>
                   )}
                   
+                  {/* Appearance Settings Tab - Admin only */}
+                  {user?.role === 'admin' && (
+                    <TabsContent value="appearance">
+                      <div className="space-y-6">
+                        <h2 className="text-lg leading-6 font-medium text-gray-900 mb-4">
+                          {t('settings.appearance')}
+                        </h2>
+                        
+                        <AppearanceSettingsForm />
+                      </div>
+                    </TabsContent>
+                  )}
+                  
                   {/* Email Notifications Tab - Admin only */}
                   {user?.role === 'admin' && (
                     <TabsContent value="email">
