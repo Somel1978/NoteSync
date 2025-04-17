@@ -109,19 +109,11 @@
     "rejectSuccess": "Cita rechazada",
     "rejectError": "Error al rechazar la cita",
     "searchPlaceholder": "Buscar citas...",
-    "status": {
-      "pending": "Pendiente",
-      "approved": "Aprobado",
-      "rejected": "Rechazado",
-      "cancelled": "Cancelado"
-    },
+    "pending": "Pendiente",
+    "approved": "Aprobado",
+    "rejected": "Rechazado",
+    "cancelled": "Cancelado",
     "detailsModal": {
-      "status": {
-        "pending": "Estado: Pendiente",
-        "approved": "Estado: Aprobado",
-        "rejected": "Estado: Rechazado",
-        "cancelled": "Estado: Cancelado"
-      },
       "statusPending": "Estado: Pendiente",
       "statusApproved": "Estado: Aprobado",
       "statusRejected": "Estado: Rechazado",
