@@ -371,7 +371,7 @@ export class DatabaseStorage implements IStorage {
     }));
 
     const [appointment] = await db
-      .insert(appointments)
+      .insert(appointmentsTable)
       .values(processedAppointment)
       .returning();
     
@@ -500,9 +500,9 @@ export class DatabaseStorage implements IStorage {
     
     // Perform the update in the database
     const [updatedAppointment] = await db
-      .update(appointments)
+      .update(appointmentsTable)
       .set(finalData)
-      .where(eq(appointments.id, id))
+      .where(eq(appointmentsTable.id, id))
       .returning();
     
     // Create audit log for update if we have a valid updated appointment
@@ -569,9 +569,9 @@ export class DatabaseStorage implements IStorage {
     if (!originalAppointment) return false;
 
     const result = await db
-      .delete(appointments)
-      .where(eq(appointments.id, id))
-      .returning({ id: appointments.id });
+      .delete(appointmentsTable)
+      .where(eq(appointmentsTable.id, id))
+      .returning({ id: appointmentsTable.id });
     
     // Create audit log for deletion if user ID is provided
     if (result.length > 0 && userId) {
@@ -601,20 +601,20 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getAppointmentsByUser(userId: number): Promise<Appointment[]> {
-    const results = await db.select().from(appointments).where(eq(appointments.userId, userId));
+    const results = await db.select().from(appointmentsTable).where(eq(appointmentsTable.userId, userId));
     return this.mapAppointmentResults(results);
   }
 
   async getAppointmentsByRoom(roomId: number): Promise<Appointment[]> {
-    const results = await db.select().from(appointments).where(eq(appointments.roomId, roomId));
+    const results = await db.select().from(appointmentsTable).where(eq(appointmentsTable.roomId, roomId));
     return this.mapAppointmentResults(results);
   }
 
   async getAppointmentsByDateRange(startDate: Date, endDate: Date): Promise<Appointment[]> {
-    const results = await db.select().from(appointments).where(
+    const results = await db.select().from(appointmentsTable).where(
       and(
-        gte(appointments.startTime, startDate),
-        lte(appointments.startTime, endDate)
+        gte(appointmentsTable.startTime, startDate),
+        lte(appointmentsTable.startTime, endDate)
       )
     );
     return this.mapAppointmentResults(results);
@@ -622,28 +622,28 @@ export class DatabaseStorage implements IStorage {
 
   async getAppointmentsByStatus(status: string): Promise<Appointment[]> {
     // Use a type assertion to handle the PgEnumColumn type
-    const results = await db.select().from(appointments).where(
-      eq(appointments.status as any, status)
+    const results = await db.select().from(appointmentsTable).where(
+      eq(appointmentsTable.status as any, status)
     );
     return this.mapAppointmentResults(results);
   }
 
   async getAllAppointments(): Promise<Appointment[]> {
-    const results = await db.select().from(appointments).orderBy(desc(appointments.startTime));
+    const results = await db.select().from(appointmentsTable).orderBy(desc(appointmentsTable.startTime));
     return this.mapAppointmentResults(results);
   }
 
   async getRecentAppointments(limit: number): Promise<Appointment[]> {
-    const results = await db.select().from(appointments)
-      .orderBy(desc(appointments.createdAt))
+    const results = await db.select().from(appointmentsTable)
+      .orderBy(desc(appointmentsTable.createdAt))
       .limit(limit);
     return this.mapAppointmentResults(results);
   }
 
   async getNextAppointmentOrderNumber(): Promise<number> {
     const result = await db.select({
-      maxOrderNumber: sql<number>`COALESCE(MAX(${appointments.orderNumber}), 0)`
-    }).from(appointments);
+      maxOrderNumber: sql<number>`COALESCE(MAX(${appointmentsTable.orderNumber}), 0)`
+    }).from(appointmentsTable);
     
     return (result[0]?.maxOrderNumber || 0) + 1;
   }
