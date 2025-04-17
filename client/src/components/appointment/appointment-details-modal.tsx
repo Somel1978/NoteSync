@@ -15,7 +15,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { format } from "date-fns";
-import { Edit, Save, X, Info } from "lucide-react";
+import { Edit, Save, X, Info, RefreshCw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 // Define custom window property for tracking custom facilities
@@ -536,8 +536,13 @@ export function AppointmentDetailsModal({
                 (['startTime', 'endTime'].includes(field) && room.costType === 'hourly')) {
               
               // First update the edited appointment temporarily so calculateRoomCost uses new values
-              const tempEditedAppointment = editedAppointment;
-              tempEditedAppointment[field] = value;
+              // Create a temporary copy to avoid mutating the original
+              const tempAppointment = { ...editedAppointment };
+              
+              // Use type-safe approach to set the field
+              if (field === 'startTime' || field === 'endTime' || field === 'attendeesCount') {
+                tempAppointment[field] = value;
+              }
               
               // Calculate new cost with updated field value
               const newCost = calculateRoomCost(
