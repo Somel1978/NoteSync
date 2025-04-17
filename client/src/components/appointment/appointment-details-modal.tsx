@@ -2036,12 +2036,12 @@ export function AppointmentDetailsModal({
                                  log.actionType}
                               </h5>
                               <p className="text-xs text-gray-500 mt-1">
-                                {log.timestamp ? format(new Date(log.timestamp), "MMM d, yyyy 'at' h:mm a") : "Unknown date"}
+                                {log.timestamp ? format(new Date(log.timestamp), "MMM d, yyyy 'at' h:mm a") : t('appointments.detailsModal.history.unknownDate')}
                               </p>
                             </div>
                             <div className="text-right">
                               <p className="text-xs font-medium text-gray-700">
-                                {log.username || (log.userId ? `User ${log.userId}` : "System")}
+                                {log.username || (log.userId ? t('appointments.detailsModal.history.userWithId', { id: log.userId }) : t('appointments.detailsModal.history.system'))}
                               </p>
                             </div>
                           </div>
@@ -2079,7 +2079,7 @@ export function AppointmentDetailsModal({
               </>
             ) : (
               <div className="flex justify-center items-center h-40">
-                <p>No appointment data available.</p>
+                <p>{t('appointments.detailsModal.noData')}</p>
               </div>
             )}
           </Tabs>
@@ -2089,24 +2089,24 @@ export function AppointmentDetailsModal({
       <AlertDialog open={isRejectDialogOpen} onOpenChange={setIsRejectDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Reject Appointment</AlertDialogTitle>
+            <AlertDialogTitle>{t('appointments.detailsModal.reject.title')}</AlertDialogTitle>
             <AlertDialogDescription>
-              Please provide a reason for rejecting this appointment. This information will be shared with the customer.
+              {t('appointments.detailsModal.reject.description')}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <div className="py-4">
             <Textarea
               value={rejectionReason}
               onChange={(e) => setRejectionReason(e.target.value)}
-              placeholder="Reason for rejection..."
+              placeholder={t('appointments.detailsModal.reject.placeholder')}
               className="w-full"
               rows={4}
             />
           </div>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
             <AlertDialogAction onClick={handleConfirmReject}>
-              Confirm Rejection
+              {t('appointments.detailsModal.reject.confirm')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
