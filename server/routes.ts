@@ -725,7 +725,7 @@ export function registerRoutes(app: Express): Server {
   // Email Settings
   app.get("/api/settings/email", isAdmin, async (req, res, next) => {
     try {
-      const emailSettings = await storage.getSetting('email_settings');
+      const emailSettings = await storage.getSetting('email');
       
       if (!emailSettings) {
         // Return default settings if none exist
@@ -776,7 +776,7 @@ export function registerRoutes(app: Express): Server {
         emailTemplateBookingStatusChanged: emailSettings.emailTemplateBookingStatusChanged ?? ""
       };
       
-      const setting = await storage.createOrUpdateSetting('email_settings', emailSettings);
+      const setting = await storage.createOrUpdateSetting('email', emailSettings);
       res.json(setting.value as EmailSettings);
     } catch (error) {
       console.error("Error saving email settings:", error);
@@ -786,7 +786,7 @@ export function registerRoutes(app: Express): Server {
 
   app.post("/api/settings/email/test", isAdmin, async (req, res, next) => {
     try {
-      const emailSettings = await storage.getSetting('email_settings');
+      const emailSettings = await storage.getSetting('email');
       
       if (!emailSettings) {
         return res.status(400).json({ error: "Email settings not found" });
