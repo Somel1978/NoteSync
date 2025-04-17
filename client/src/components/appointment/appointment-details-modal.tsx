@@ -1366,18 +1366,63 @@ export function AppointmentDetailsModal({
                                     <span className="font-medium">{roomBooking.roomName}:</span>
                                     <span>€{(roomBooking.cost / 100).toFixed(2)}</span>
                                   </div>
-                                  <p className="text-xs text-gray-500 ml-4">
-                                    {roomBooking.costType === 'flat' ? 'Flat Rate' : 
-                                     roomBooking.costType === 'hourly' ? 'Hourly Rate' : 
-                                     roomBooking.costType === 'per_attendee' ? 'Per Attendee' : 
-                                     roomBooking.costType}
-                                  </p>
+                                  
+                                  {/* Show detailed rate information */}
+                                  <div className="text-xs text-gray-600 ml-4 mt-1">
+                                    {roomBooking.costType === 'flat' && (
+                                      <p>
+                                        Flat Rate (One-time fee)
+                                        {rooms && (() => {
+                                          const room = rooms.find(r => r.id === roomBooking.roomId);
+                                          if (room) {
+                                            return `: €${(room.flatRate / 100).toFixed(2)}`;
+                                          }
+                                          return '';
+                                        })()}
+                                      </p>
+                                    )}
+                                    
+                                    {roomBooking.costType === 'hourly' && (
+                                      <p>
+                                        {appointment.startTime && appointment.endTime ? (
+                                          <>
+                                            Hourly Rate: {Math.max(1, Math.ceil(
+                                              (new Date(appointment.endTime).getTime() - new Date(appointment.startTime).getTime()) 
+                                              / (1000 * 60 * 60)
+                                            ))} hours 
+                                            {rooms && (() => {
+                                              const room = rooms.find(r => r.id === roomBooking.roomId);
+                                              if (room) {
+                                                return ` × €${(room.hourlyRate / 100).toFixed(2)} per hour`;
+                                              }
+                                              return '';
+                                            })()}
+                                          </>
+                                        ) : (
+                                          <>Hourly Rate</>
+                                        )}
+                                      </p>
+                                    )}
+                                    
+                                    {roomBooking.costType === 'per_attendee' && (
+                                      <p>
+                                        Per Attendee: {appointment.attendeesCount} attendees
+                                        {rooms && (() => {
+                                          const room = rooms.find(r => r.id === roomBooking.roomId);
+                                          if (room) {
+                                            return ` × €${(room.attendeeRate / 100).toFixed(2)} per person`;
+                                          }
+                                          return '';
+                                        })()}
+                                      </p>
+                                    )}
+                                  </div>
                                   
                                   {/* Show facilities costs */}
                                   {roomBooking.requestedFacilities && roomBooking.requestedFacilities.length > 0 && (
-                                    <div className="ml-4 mt-1 text-xs text-gray-600">
-                                      <p>Facilities:</p>
-                                      <ul className="ml-2">
+                                    <div className="ml-4 mt-2 text-xs text-gray-600">
+                                      <p className="font-medium">Additional Facilities:</p>
+                                      <ul className="ml-2 mt-1">
                                         {roomBooking.requestedFacilities.map((facility, facilityIndex) => {
                                           // For custom facilities, check the cache first
                                           const cacheKey = `${roomBooking.roomId}-${facility}`;
@@ -1400,7 +1445,7 @@ export function AppointmentDetailsModal({
                                           }
                                           
                                           const facilityCost = facilityData && typeof facilityData === 'object' ? 
-                                            facilityData.cost : 0;
+                                            Number(facilityData.cost) : 0;
                                           
                                           return (
                                             <li key={facilityIndex} className="flex justify-between">
@@ -1416,25 +1461,6 @@ export function AppointmentDetailsModal({
                                   {index < getRoomsArray(appointment).length - 1 && <Separator className="my-2" />}
                                 </div>
                               ))}
-                              
-                              <Separator className="my-3" />
-                              
-                              {appointment.costBreakdown && typeof appointment.costBreakdown === 'object' && (
-                                <>
-                                  <div className="flex justify-between text-sm text-gray-700">
-                                    <span>Base Rate:</span>
-                                    <span>€{((appointment.costBreakdown as any).base / 100).toFixed(2)}</span>
-                                  </div>
-                                  
-                                  {/* Show facilities cost if available */}
-                                  {(appointment.costBreakdown as any).facilities > 0 && (
-                                    <div className="flex justify-between text-sm text-gray-700 mt-1">
-                                      <span>Additional Facilities:</span>
-                                      <span>€{((appointment.costBreakdown as any).facilities / 100).toFixed(2)}</span>
-                                    </div>
-                                  )}
-                                </>
-                              )}
                               
                               <div className="flex justify-between font-medium text-sm mt-2">
                                 <span>Total:</span>
