@@ -77,14 +77,32 @@ export class EmailNotificationService {
       
       try {
         // Create the Mailjet client using ES module import
+        log(`Connecting to Mailjet with API key: ${apiKey.substring(0, 4)}...`, 'email');
         const mailjet = Mailjet.apiConnect(apiKey, secretKey);
         
         // Send the email
         log('Sending email via Mailjet', 'email');
+        log(`Email recipients: ${JSON.stringify(recipients)}`, 'email');
+        
         const response = await mailjet
           .post('send', { version: 'v3.1' })
           .request(emailData);
           
+        if (response && response.body) {
+          // Safely try to log the response
+        try {
+          log(`Mailjet API response status: ${response.status}`, 'email');
+          if (response.body) {
+            const responseData = typeof response.body === 'string' 
+              ? JSON.parse(response.body) 
+              : response.body;
+            log(`Mailjet response data: ${JSON.stringify(responseData)}`, 'email');
+          }
+        } catch (logError) {
+          log(`Error logging Mailjet response: ${logError}`, 'email');
+        }
+        }
+        
         log('Email sent successfully', 'email');
         return true;
       } catch (mailjetError) {
