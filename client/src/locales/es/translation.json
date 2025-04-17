@@ -155,7 +155,12 @@
         "name": "Nombre de Instalación",
         "cost": "Costo",
         "addCustom": "Añadir Instalación Personalizada"
-      }
+      },
+      "availableFacilities": "Instalaciones Disponibles",
+      "addCustomFacility": "Añadir Instalación Personalizada",
+      "facilityName": "Nombre de instalación",
+      "customPrice": "Precio personalizado",
+      "customPriceApplied": "Precio personalizado aplicado"
     }
   },
   "rooms": {

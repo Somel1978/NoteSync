@@ -1374,7 +1374,7 @@ export function AppointmentDetailsModal({
                                 </div>
                                 
                                 <div>
-                                  <h6 className="text-xs font-medium text-gray-500 uppercase mb-1">Facilities</h6>
+                                  <h6 className="text-xs font-medium text-gray-500 uppercase mb-1">{t('appointments.detailsModal.facilities')}</h6>
                                   <div className="flex flex-wrap gap-1 p-2 bg-gray-50 rounded-md">
                                     {roomBooking.requestedFacilities && roomBooking.requestedFacilities.map((facility, i) => {
                                       // For each facility, find the cost if available
@@ -1478,7 +1478,7 @@ export function AppointmentDetailsModal({
                                   </div>
                                   
                                   <div className="mt-2">
-                                    <h6 className="text-xs font-medium text-gray-500 uppercase mb-1">Available Facilities</h6>
+                                    <h6 className="text-xs font-medium text-gray-500 uppercase mb-1">{t('appointments.detailsModal.availableFacilities')}</h6>
                                     <div className="grid grid-cols-1 gap-2 p-3 bg-gray-50 rounded-md">
                                       {(() => {
                                         const availableFacilities = getAvailableFacilities(roomBooking.roomId);
@@ -1554,14 +1554,14 @@ export function AppointmentDetailsModal({
                                     {/* Add a divider between existing facility selector and custom facility form */}
                                     <div className="mt-4 mb-2">
                                       <Separator />
-                                      <h6 className="text-xs font-medium text-gray-500 uppercase mt-3 mb-1">Add Custom Facility</h6>
+                                      <h6 className="text-xs font-medium text-gray-500 uppercase mt-3 mb-1">{t('appointments.detailsModal.addCustomFacility')}</h6>
                                     </div>
                                     
                                     {/* Custom facility form */}
                                     <div className="grid grid-cols-3 gap-2 mt-2">
                                       <div className="col-span-2">
                                         <Input
-                                          placeholder="Facility name"
+                                          placeholder={t('appointments.detailsModal.facilityName')}
                                           value={customFacilityName}
                                           onChange={(e) => setCustomFacilityName(e.target.value)}
                                           className="h-9 text-sm"
@@ -1587,7 +1587,7 @@ export function AppointmentDetailsModal({
                                           disabled={!customFacilityName || customFacilityCost <= 0}
                                           onClick={() => handleAddCustomFacility(index)}
                                         >
-                                          Add Custom Facility
+                                          {t('appointments.detailsModal.customFacility.addCustom')}
                                         </Button>
                                       </div>
                                     </div>
@@ -1655,7 +1655,7 @@ export function AppointmentDetailsModal({
                         {appointment.costBreakdown && 
                          typeof appointment.costBreakdown === 'object' && 
                          (appointment.costBreakdown as any).isCustom && (
-                          <Badge className="mt-1" variant="outline">Custom Price</Badge>
+                          <Badge className="mt-1" variant="outline">{t('appointments.detailsModal.customPrice')}</Badge>
                         )}
                       </div>
                       <div>
