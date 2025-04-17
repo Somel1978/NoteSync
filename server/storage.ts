@@ -279,44 +279,65 @@ export class DatabaseStorage implements IStorage {
     // Create a clean copy with dates properly processed
     const processedAppointment = processDateStrings({ ...insertAppointment });
     
-    // Ensure start time is a valid Date
-    if (!processedAppointment.startTime || !(processedAppointment.startTime instanceof Date)) {
-      // If startTime is a string, try to parse it
-      if (typeof insertAppointment.startTime === 'string') {
-        try {
-          const date = new Date(insertAppointment.startTime);
-          if (!isNaN(date.getTime())) {
-            processedAppointment.startTime = date;
-            console.log("Converted startTime string to Date:", date.toISOString());
-          } else {
-            throw new Error("Invalid startTime format");
-          }
-        } catch (e) {
-          throw new Error(`Failed to parse startTime: ${insertAppointment.startTime}`);
-        }
-      } else {
-        throw new Error("startTime is required and must be a valid date");
-      }
+    // First, ensure we're working with the correct input values
+    const startTimeInput = processedAppointment.startTime || insertAppointment.startTime;
+    const endTimeInput = processedAppointment.endTime || insertAppointment.endTime;
+    
+    console.log("Original startTime:", startTimeInput);
+    console.log("Original endTime:", endTimeInput);
+    
+    // Handle startTime
+    if (!startTimeInput) {
+      throw new Error("startTime is required");
     }
     
-    // Ensure end time is a valid Date
-    if (!processedAppointment.endTime || !(processedAppointment.endTime instanceof Date)) {
-      // If endTime is a string, try to parse it
-      if (typeof insertAppointment.endTime === 'string') {
-        try {
-          const date = new Date(insertAppointment.endTime);
-          if (!isNaN(date.getTime())) {
-            processedAppointment.endTime = date;
-            console.log("Converted endTime string to Date:", date.toISOString());
-          } else {
-            throw new Error("Invalid endTime format");
-          }
-        } catch (e) {
-          throw new Error(`Failed to parse endTime: ${insertAppointment.endTime}`);
+    try {
+      // If it's already a Date object and valid
+      if (startTimeInput instanceof Date && !isNaN(startTimeInput.getTime())) {
+        processedAppointment.startTime = startTimeInput;
+      } 
+      // If it's a string, parse it
+      else if (typeof startTimeInput === 'string') {
+        const parsedDate = new Date(startTimeInput);
+        if (!isNaN(parsedDate.getTime())) {
+          processedAppointment.startTime = parsedDate;
+          console.log("Parsed startTime:", parsedDate.toISOString());
+        } else {
+          throw new Error(`Invalid startTime format: ${startTimeInput}`);
         }
       } else {
-        throw new Error("endTime is required and must be a valid date");
+        throw new Error("startTime must be a valid date string or Date object");
       }
+    } catch (e) {
+      console.error("Error processing startTime:", e);
+      throw new Error(`Failed to process startTime: ${e.message}`);
+    }
+    
+    // Handle endTime
+    if (!endTimeInput) {
+      throw new Error("endTime is required");
+    }
+    
+    try {
+      // If it's already a Date object and valid
+      if (endTimeInput instanceof Date && !isNaN(endTimeInput.getTime())) {
+        processedAppointment.endTime = endTimeInput;
+      } 
+      // If it's a string, parse it
+      else if (typeof endTimeInput === 'string') {
+        const parsedDate = new Date(endTimeInput);
+        if (!isNaN(parsedDate.getTime())) {
+          processedAppointment.endTime = parsedDate;
+          console.log("Parsed endTime:", parsedDate.toISOString());
+        } else {
+          throw new Error(`Invalid endTime format: ${endTimeInput}`);
+        }
+      } else {
+        throw new Error("endTime must be a valid date string or Date object");
+      }
+    } catch (e) {
+      console.error("Error processing endTime:", e);
+      throw new Error(`Failed to process endTime: ${e.message}`);
     }
     
     // Log the processed appointment for debugging
