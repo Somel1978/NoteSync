@@ -191,6 +191,10 @@ export class EmailNotificationService {
             <li><strong>End:</strong> {endTime}</li>
             <li><strong>Status:</strong> {status}</li>
             <li><strong>Cost:</strong> {cost}</li>
+            <li><strong>Purpose:</strong> {purpose}</li>
+            <li><strong>Attendees:</strong> {attendeesCount}</li>
+            <li><strong>Membership #:</strong> {membershipNumber}</li>
+            <li><strong>Notes:</strong> {notes}</li>
           </ul>
           <p>Customer Details:</p>
           <ul>
@@ -199,10 +203,15 @@ export class EmailNotificationService {
             <li><strong>Phone:</strong> {customerPhone}</li>
             <li><strong>Organization:</strong> {customerOrganization}</li>
           </ul>
+          <p>Reserved Rooms:</p>
+          {roomsTable}
           <p>For more details, please log in to the system.</p>
           <p>Best regards,<br>{systemName}</p>
         `;
       }
+      
+      // Generate rooms table HTML
+      const roomsTable = this.generateRoomsTableHtml(appointment);
       
       // Replace placeholders with actual data
       const htmlContent = emailTemplate
@@ -217,6 +226,11 @@ export class EmailNotificationService {
         .replace(/{customerEmail}/g, appointment.customerEmail)
         .replace(/{customerPhone}/g, appointment.customerPhone || 'N/A')
         .replace(/{customerOrganization}/g, appointment.customerOrganization || 'N/A')
+        .replace(/{purpose}/g, appointment.purpose || 'N/A')
+        .replace(/{notes}/g, appointment.notes || 'N/A')
+        .replace(/{membershipNumber}/g, appointment.membershipNumber || 'N/A')
+        .replace(/{attendeesCount}/g, appointment.attendeesCount?.toString() || 'N/A')
+        .replace(/{roomsTable}/g, roomsTable)
         .replace(/{systemName}/g, settings.systemName);
       
       // Set up recipients
@@ -282,6 +296,8 @@ export class EmailNotificationService {
         emailTemplate = `
           <h2>Booking Update Notification</h2>
           <p>A booking has been updated:</p>
+          
+          <h3>Updated Details:</h3>
           <ul>
             <li><strong>Event:</strong> {eventTitle}</li>
             <li><strong>Room:</strong> {roomName}</li>
@@ -290,7 +306,12 @@ export class EmailNotificationService {
             <li><strong>End:</strong> {endTime}</li>
             <li><strong>Status:</strong> {status}</li>
             <li><strong>Cost:</strong> {cost}</li>
+            <li><strong>Purpose:</strong> {purpose}</li>
+            <li><strong>Attendees:</strong> {attendeesCount}</li>
+            <li><strong>Membership #:</strong> {membershipNumber}</li>
+            <li><strong>Notes:</strong> {notes}</li>
           </ul>
+          
           <p>Customer Details:</p>
           <ul>
             <li><strong>Name:</strong> {customerName}</li>
@@ -298,9 +319,24 @@ export class EmailNotificationService {
             <li><strong>Phone:</strong> {customerPhone}</li>
             <li><strong>Organization:</strong> {customerOrganization}</li>
           </ul>
+          
+          <p>Reserved Rooms:</p>
+          {roomsTable}
+          
+          {changesTable}
+          
           <p>For more details, please log in to the system.</p>
           <p>Best regards,<br>{systemName}</p>
         `;
+      }
+      
+      // Generate rooms table HTML
+      const roomsTable = this.generateRoomsTableHtml(appointment);
+      
+      // Generate changes table if we have the old appointment data
+      let changesTable = '';
+      if (oldAppointment) {
+        changesTable = this.generateChangesTableHtml(appointment, oldAppointment);
       }
       
       // Replace placeholders with actual data
@@ -316,6 +352,12 @@ export class EmailNotificationService {
         .replace(/{customerEmail}/g, appointment.customerEmail)
         .replace(/{customerPhone}/g, appointment.customerPhone || 'N/A')
         .replace(/{customerOrganization}/g, appointment.customerOrganization || 'N/A')
+        .replace(/{purpose}/g, appointment.purpose || 'N/A')
+        .replace(/{notes}/g, appointment.notes || 'N/A')
+        .replace(/{membershipNumber}/g, appointment.membershipNumber || 'N/A')
+        .replace(/{attendeesCount}/g, appointment.attendeesCount?.toString() || 'N/A')
+        .replace(/{roomsTable}/g, roomsTable)
+        .replace(/{changesTable}/g, changesTable)
         .replace(/{systemName}/g, settings.systemName);
       
       // Set up recipients
@@ -389,6 +431,7 @@ export class EmailNotificationService {
         emailTemplate = `
           <h2>Booking Status Update</h2>
           <p>The status of your booking has changed from <strong>{oldStatus}</strong> to <strong>{newStatus}</strong>:</p>
+          
           <ul>
             <li><strong>Event:</strong> {eventTitle}</li>
             <li><strong>Room:</strong> {roomName}</li>
@@ -397,7 +440,12 @@ export class EmailNotificationService {
             <li><strong>End:</strong> {endTime}</li>
             <li><strong>New Status:</strong> {status}</li>
             <li><strong>Cost:</strong> {cost}</li>
+            <li><strong>Purpose:</strong> {purpose}</li>
+            <li><strong>Attendees:</strong> {attendeesCount}</li>
           </ul>
+          
+          {rejectionReason}
+          
           <p>Customer Details:</p>
           <ul>
             <li><strong>Name:</strong> {customerName}</li>
@@ -405,8 +453,26 @@ export class EmailNotificationService {
             <li><strong>Phone:</strong> {customerPhone}</li>
             <li><strong>Organization:</strong> {customerOrganization}</li>
           </ul>
+          
+          <p>Reserved Rooms:</p>
+          {roomsTable}
+          
           <p>For more details, please log in to the system.</p>
           <p>Best regards,<br>{systemName}</p>
+        `;
+      }
+      
+      // Generate rooms table HTML
+      const roomsTable = this.generateRoomsTableHtml(appointment);
+      
+      // Generate rejection reason HTML if applicable
+      let rejectionReasonHtml = '';
+      if (appointment.status === 'rejected' && appointment.rejectionReason) {
+        rejectionReasonHtml = `
+          <p><strong>Reason for rejection:</strong></p>
+          <p style="padding: 10px; background-color: #f8f8f8; border-left: 4px solid #d0021b;">
+            ${appointment.rejectionReason}
+          </p>
         `;
       }
       
@@ -425,6 +491,10 @@ export class EmailNotificationService {
         .replace(/{customerEmail}/g, appointment.customerEmail)
         .replace(/{customerPhone}/g, appointment.customerPhone || 'N/A')
         .replace(/{customerOrganization}/g, appointment.customerOrganization || 'N/A')
+        .replace(/{purpose}/g, appointment.purpose || 'N/A')
+        .replace(/{attendeesCount}/g, appointment.attendeesCount?.toString() || 'N/A')
+        .replace(/{rejectionReason}/g, rejectionReasonHtml)
+        .replace(/{roomsTable}/g, roomsTable)
         .replace(/{systemName}/g, settings.systemName);
       
       // Set up recipients
@@ -468,5 +538,135 @@ export class EmailNotificationService {
       log(`Error in appointmentStatusChanged notification: ${error}`, 'email');
       return false;
     }
+  }
+  
+  /**
+   * Generate HTML table for rooms list
+   */
+  private static generateRoomsTableHtml(appointment: Appointment): string {
+    if (!appointment.rooms || appointment.rooms.length === 0) {
+      return '<p><em>No rooms selected</em></p>';
+    }
+    
+    let tableHtml = `
+      <table border="1" cellpadding="8" cellspacing="0" style="border-collapse: collapse; width: 100%; max-width: 600px; margin-bottom: 20px;">
+        <thead>
+          <tr style="background-color: #f3f4f6;">
+            <th align="left">Room</th>
+            <th align="left">Pricing Type</th>
+            <th align="left">Facilities</th>
+            <th align="right">Cost</th>
+          </tr>
+        </thead>
+        <tbody>
+    `;
+    
+    let totalCost = 0;
+    
+    // Add rows for each room
+    appointment.rooms.forEach(room => {
+      const costTypeDisplay = room.costType === 'flat' ? 'Flat Rate' : 
+                             room.costType === 'hourly' ? 'Hourly Rate' : 'Per Attendee';
+      
+      const facilitiesList = room.requestedFacilities && room.requestedFacilities.length > 0 
+        ? room.requestedFacilities.join(', ') 
+        : 'None';
+        
+      const costFormatted = `€${(room.cost / 100).toFixed(2)}`;
+      totalCost += room.cost;
+      
+      tableHtml += `
+        <tr>
+          <td>${room.roomName}</td>
+          <td>${costTypeDisplay}</td>
+          <td>${facilitiesList}</td>
+          <td align="right">${costFormatted}</td>
+        </tr>
+      `;
+    });
+    
+    // Add total row
+    tableHtml += `
+        <tr style="font-weight: bold; background-color: #f3f4f6;">
+          <td colspan="3" align="right">Total:</td>
+          <td align="right">€${(totalCost / 100).toFixed(2)}</td>
+        </tr>
+      </tbody>
+    </table>
+    `;
+    
+    return tableHtml;
+  }
+  
+  /**
+   * Generate HTML table showing changes between old and new appointment
+   */
+  private static generateChangesTableHtml(newAppointment: Appointment, oldAppointment: Appointment): string {
+    // Fields to compare
+    const fieldsToCompare = [
+      { key: 'title', label: 'Event Title' },
+      { key: 'startTime', label: 'Start Time', formatter: (val: string) => new Date(val).toLocaleString() },
+      { key: 'endTime', label: 'End Time', formatter: (val: string) => new Date(val).toLocaleString() },
+      { key: 'status', label: 'Status' },
+      { key: 'purpose', label: 'Purpose' },
+      { key: 'attendeesCount', label: 'Attendees Count' },
+      { key: 'agreedCost', label: 'Total Cost', formatter: (val: number) => `€${(val / 100).toFixed(2)}` },
+      { key: 'notes', label: 'Notes' }
+    ];
+    
+    // Find differences
+    const changes: {field: string, old: any, new: any}[] = [];
+    
+    for (const field of fieldsToCompare) {
+      const oldValue = oldAppointment[field.key as keyof Appointment];
+      const newValue = newAppointment[field.key as keyof Appointment];
+      
+      // If values differ, add to changes list
+      if (oldValue !== newValue && (oldValue || newValue)) {
+        const formatter = field.formatter || ((val: any) => val);
+        changes.push({
+          field: field.label,
+          old: oldValue ? formatter(oldValue) : 'Not specified',
+          new: newValue ? formatter(newValue) : 'Not specified'
+        });
+      }
+    }
+    
+    // If no changes found
+    if (changes.length === 0) {
+      return '';
+    }
+    
+    // Generate HTML table
+    let changesHtml = `
+      <h3>What Changed:</h3>
+      <table border="1" cellpadding="8" cellspacing="0" style="border-collapse: collapse; width: 100%; max-width: 600px; margin-bottom: 20px;">
+        <thead>
+          <tr style="background-color: #f3f4f6;">
+            <th align="left">Field</th>
+            <th align="left">Previous Value</th>
+            <th align="left">New Value</th>
+          </tr>
+        </thead>
+        <tbody>
+    `;
+    
+    // Add rows for each change
+    changes.forEach(change => {
+      changesHtml += `
+        <tr>
+          <td><strong>${change.field}</strong></td>
+          <td>${change.old}</td>
+          <td>${change.new}</td>
+        </tr>
+      `;
+    });
+    
+    changesHtml += `
+      </tbody>
+    </table>
+    `;
+    
+    return changesHtml;
   }
 }
