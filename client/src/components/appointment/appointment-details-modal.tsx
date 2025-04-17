@@ -1184,7 +1184,7 @@ export function AppointmentDetailsModal({
                       </div>
                       <div>
                         <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">{t('appointments.detailsModal.description')}</h5>
-                        <p className="text-sm text-gray-900">{appointment.description || t('appointments.detailsModal.noDescription')}</p>
+                        <p className="text-sm text-gray-900">{appointment.description || appointment.purpose || t('appointments.detailsModal.noDescription')}</p>
                       </div>
                       <div className="grid grid-cols-2 gap-6">
                         <div>
@@ -1228,8 +1228,12 @@ export function AppointmentDetailsModal({
                       <div>
                         <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">{t('appointments.detailsModal.description')}</h5>
                         <Textarea
-                          value={editedAppointment.description || ""}
-                          onChange={(e) => handleInputChange('description', e.target.value)}
+                          value={editedAppointment.description || editedAppointment.purpose || ""}
+                          onChange={(e) => {
+                            // Update both fields to ensure compatibility
+                            handleInputChange('description', e.target.value);
+                            handleInputChange('purpose', e.target.value);
+                          }}
                           className="mt-1"
                           rows={4}
                         />

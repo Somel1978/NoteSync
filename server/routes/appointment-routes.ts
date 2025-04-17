@@ -111,7 +111,23 @@ export function registerAppointmentRoutes(app: Express): void {
           return value;
         }));
         
-        const appointment = await storage.createAppointment(formattedData);
+        // Create a typed object that matches the required Appointment type
+        const appointmentData = {
+          ...formattedData,
+          title: formattedData.title as string,
+          roomId: formattedData.roomId as number,
+          userId: formattedData.userId as number,
+          startTime: formattedData.startTime as Date,
+          endTime: formattedData.endTime as Date,
+          customerName: formattedData.customerName as string,
+          customerEmail: formattedData.customerEmail as string,
+          attendeesCount: formattedData.attendeesCount as number,
+          costType: formattedData.costType as string,
+          agreedCost: formattedData.agreedCost as number,
+          status: formattedData.status || 'pending'
+        };
+        
+        const appointment = await storage.createAppointment(appointmentData);
         
         // Send email notification
         try {
