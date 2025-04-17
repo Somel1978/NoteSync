@@ -14,7 +14,7 @@ interface RoomRevenueChartProps {
       id: number;
       name: string;
     };
-    revenue: number;
+    revenue?: number;
   }[];
 }
 
@@ -23,12 +23,12 @@ export function RoomRevenueChart({ roomsData }: RoomRevenueChartProps) {
   
   // Prepare data for chart
   const chartData: RoomRevenueData[] = roomsData
-    .filter(room => room.revenue > 0) // Only include rooms with positive revenue
-    .sort((a, b) => b.revenue - a.revenue) // Sort by revenue descending
+    .filter(room => room.revenue && room.revenue > 0) // Only include rooms with positive revenue
+    .sort((a, b) => (b.revenue || 0) - (a.revenue || 0)) // Sort by revenue descending
     .slice(0, 5) // Limit to top 5 rooms by revenue
     .map(room => ({
       name: room.room.name,
-      revenue: (room.revenue / 100) // Convert cents to euros
+      revenue: ((room.revenue || 0) / 100) // Convert cents to euros
     }));
   
   return (

@@ -1,36 +1,30 @@
-import { ReactNode } from "react";
-import { Card } from "@/components/ui/card";
-import { cn } from "@/lib/utils";
+import React, { ReactNode } from 'react';
+import { Card, CardContent } from '@/components/ui/card';
 
 interface StatsCardProps {
   title: string;
   value: string | number;
+  subtitle: string;
   icon: ReactNode;
-  subtitle?: string;
-  iconColor?: string;
-  iconBgColor?: string;
+  iconColor: string;
+  iconBgColor: string;
 }
 
-export function StatsCard({
-  title,
-  value,
-  icon,
-  subtitle,
-  iconColor = "text-indigo-500",
-  iconBgColor = "bg-indigo-50",
-}: StatsCardProps) {
+export function StatsCard({ title, value, subtitle, icon, iconColor, iconBgColor }: StatsCardProps) {
   return (
-    <Card className="bg-white rounded-lg shadow p-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-sm font-medium text-gray-500">{title}</h2>
-        <div className={cn("p-2 rounded-md", iconBgColor)}>
-          <div className={cn("h-5 w-5", iconColor)}>{icon}</div>
+    <Card>
+      <CardContent className="flex items-start pt-6">
+        <div className={`${iconBgColor} rounded-full p-3 mr-4`}>
+          <div className={`${iconColor}`}>
+            {icon}
+          </div>
         </div>
-      </div>
-      <div className="mt-4">
-        <p className="text-2xl font-bold text-gray-900">{value}</p>
-        {subtitle && <p className="text-sm text-gray-500">{subtitle}</p>}
-      </div>
+        <div>
+          <p className="text-sm font-medium text-gray-500">{title}</p>
+          <h4 className="text-2xl font-bold mt-1">{value}</h4>
+          <p className="text-xs text-gray-500 mt-1">{subtitle}</p>
+        </div>
+      </CardContent>
     </Card>
   );
 }
