@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
+import { useTranslation } from "react-i18next";
 import {
   Dialog,
   DialogContent,
@@ -74,6 +75,7 @@ export function AppointmentDetailsModal({
   const [isRejectDialogOpen, setIsRejectDialogOpen] = useState(false);
 
   const { toast } = useToast();
+  const { t } = useTranslation();
   
   // Define a type that includes the appointment with properly typed rooms
   // and additional fields not in the database schema
@@ -1006,11 +1008,6 @@ export function AppointmentDetailsModal({
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>
-              {appointment?.title || "Appointment Details"}
-            </DialogTitle>
-          </DialogHeader>
           <DialogHeader>
             <DialogTitle className="text-xl font-bold">
               {appointment?.title || "Appointment Details"}
