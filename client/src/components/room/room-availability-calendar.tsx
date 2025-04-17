@@ -10,12 +10,14 @@ interface RoomAvailabilityCalendarProps {
   appointments: Appointment[];
   roomId: number;
   locale: Locale;
+  onMonthChange?: (month: Date) => void;
 }
 
 export function RoomAvailabilityCalendar({
   appointments,
   roomId,
-  locale
+  locale,
+  onMonthChange
 }: RoomAvailabilityCalendarProps) {
   const { t } = useTranslation();
   
@@ -190,6 +192,7 @@ export function RoomAvailabilityCalendar({
           past: "opacity-50 pointer-events-none"
         }}
         onDayClick={handleDayClick}
+        onMonthChange={onMonthChange}
       />
       
       <div className="flex items-center justify-center space-x-4 text-sm">

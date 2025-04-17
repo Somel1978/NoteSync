@@ -13,7 +13,31 @@ export function registerAppointmentRoutes(app: Express): void {
         return res.status(400).json({ message: "Invalid room ID" });
       }
       
-      const appointments = await storage.getAppointmentsByRoom(roomId);
+      const { startDate, endDate } = req.query;
+      
+      let appointments;
+      
+      // Se startDate e endDate estiverem presentes, use-os para filtrar
+      if (startDate && endDate) {
+        console.log(`Filtrando agendamentos por data: ${startDate} até ${endDate}`);
+        const start = new Date(startDate as string);
+        const end = new Date(endDate as string);
+        
+        // Verificar se as datas são válidas
+        if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+          return res.status(400).json({
+            error: "Invalid date format. Please use ISO format (YYYY-MM-DDTHH:MM:SS.sssZ)."
+          });
+        }
+        
+        appointments = await storage.getAppointmentsByDateRange(start, end);
+        // Filtre apenas os agendamentos para a sala específica
+        appointments = appointments.filter(a => a.roomId === roomId);
+      } else {
+        // Caso contrário, busque todos os agendamentos para a sala
+        appointments = await storage.getAppointmentsByRoom(roomId);
+      }
+      
       res.json(appointments);
     } catch (error) {
       next(error);

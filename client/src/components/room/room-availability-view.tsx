@@ -93,9 +93,34 @@ export function RoomAvailabilityView() {
     staleTime: 0, // Sem cache
   });
   
-  // Fetch appointments for the specific room
+  // Estado para acompanhar o mês atual do calendário
+  const [currentMonth, setCurrentMonth] = useState<Date>(new Date());
+  
+  // Calcular datas de início e fim para o mês atual
+  const startOfCurrentMonth = useMemo(() => {
+    const date = new Date(currentMonth);
+    date.setDate(1); // Primeiro dia do mês
+    date.setHours(0, 0, 0, 0);
+    return date;
+  }, [currentMonth]);
+  
+  const endOfCurrentMonth = useMemo(() => {
+    const date = new Date(currentMonth);
+    date.setMonth(date.getMonth() + 1); // Próximo mês
+    date.setDate(0); // Último dia do mês atual
+    date.setHours(23, 59, 59, 999);
+    return date;
+  }, [currentMonth]);
+  
+  // Manipulador para mudança de mês
+  const handleMonthChange = (newMonth: Date) => {
+    console.log(`Mês alterado para: ${format(newMonth, 'MMMM yyyy')}`);
+    setCurrentMonth(newMonth);
+  };
+  
+  // Fetch appointments for the specific room only for the selected month
   const { data: appointments = [], isLoading: isAppointmentsLoading } = useQuery<Appointment[]>({
-    queryKey: ["/api/public/appointments/room", roomId],
+    queryKey: ["/api/public/appointments/room", roomId, format(startOfCurrentMonth, 'yyyy-MM')],
     enabled: !!roomId,
     staleTime: 0, // Sem cache
     queryFn: async () => {
@@ -103,17 +128,26 @@ export function RoomAvailabilityView() {
       if (!roomId) return [];
       try {
         const startTime = performance.now();
-        const res = await fetch(`/api/public/appointments/room/${roomId}`, {
+        
+        // Adicionar parâmetros de consulta para filtrar por mês
+        const url = new URL(`/api/public/appointments/room/${roomId}`, window.location.origin);
+        url.searchParams.append('startDate', startOfCurrentMonth.toISOString());
+        url.searchParams.append('endDate', endOfCurrentMonth.toISOString());
+        
+        const res = await fetch(url.toString(), {
           credentials: "include",
         });
+        
         if (!res.ok) {
           console.error(`Error fetching appointments: ${res.status}`);
           return [];
         }
+        
         const appointments = await res.json();
         const endTime = performance.now();
         console.log(`Tempo para carregar agendamentos: ${endTime - startTime}ms`);
         console.log(`Número de agendamentos carregados: ${appointments.length}`);
+        console.log(`Período: ${format(startOfCurrentMonth, 'dd/MM/yyyy')} a ${format(endOfCurrentMonth, 'dd/MM/yyyy')}`);
         console.timeEnd('fetch-appointments');
         return appointments;
       } catch (error) {
@@ -260,6 +294,7 @@ export function RoomAvailabilityView() {
                     appointments={appointments} 
                     roomId={room.id} 
                     locale={getDateLocale()}
+                    onMonthChange={handleMonthChange}
                   />
                 </div>
               </div>
