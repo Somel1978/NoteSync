@@ -289,6 +289,8 @@
     "availabilityCalendar": "90-Day Availability Calendar",
     "availabilityDescription": "View room availability for the next 90 days",
     "availabilityHelp": "Click on a date to see more details or to make a booking",
+    "hourlyAvailability": "Hourly Availability",
+    "hourlyAvailabilityDescription": "Detailed availability for each hour of the selected day",
     "details": "Room Details",
     "noDescription": "No description provided",
     "noImage": "No image available",

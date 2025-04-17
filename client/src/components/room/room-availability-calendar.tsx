@@ -1,8 +1,10 @@
-import { useCallback, useMemo } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Appointment } from "@shared/schema";
 import { Calendar } from "@/components/ui/calendar";
-import { format, isBefore, isAfter, isSameDay, isWithinInterval, addDays, eachDayOfInterval, Locale } from "date-fns";
+import { format, isBefore, isAfter, isSameDay, isWithinInterval, addDays, eachDayOfInterval, Locale, getHours, getMinutes, parseISO } from "date-fns";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Clock } from "lucide-react";
 
 interface RoomAvailabilityCalendarProps {
   appointments: Appointment[];
@@ -16,6 +18,10 @@ export function RoomAvailabilityCalendar({
   locale
 }: RoomAvailabilityCalendarProps) {
   const { t } = useTranslation();
+  
+  // State for daily detail dialog
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [dayDetailOpen, setDayDetailOpen] = useState(false);
   
   // Current date for calculations
   const today = new Date();
@@ -86,6 +92,80 @@ export function RoomAvailabilityCalendar({
     return className;
   }, [hasAppointments, today]);
   
+  // Get appointments for the selected date
+  const getAppointmentsForDate = useCallback((date: Date | null) => {
+    if (!date) return [];
+    
+    const dateKey = format(date, 'yyyy-MM-dd');
+    return appointmentDays.get(dateKey) || [];
+  }, [appointmentDays]);
+  
+  // Format time for display
+  const formatTimeDisplay = (dateString: string): string => {
+    const date = parseISO(dateString);
+    return `${String(getHours(date)).padStart(2, '0')}:${String(getMinutes(date)).padStart(2, '0')}`;
+  };
+  
+  // Handle day clicks to show availability details
+  const handleDayClick = (date: Date) => {
+    setSelectedDate(date);
+    setDayDetailOpen(true);
+  };
+  
+  // Reorder hours as a timeline
+  const renderHourlyTimeline = () => {
+    if (!selectedDate) return null;
+    
+    const dateAppointments = getAppointmentsForDate(selectedDate);
+    const hours = [];
+    
+    // Generate all hours of the day
+    for (let i = 0; i < 24; i++) {
+      hours.push({
+        hour: i,
+        display: `${String(i).padStart(2, '0')}:00`,
+        appointments: dateAppointments.filter(appointment => {
+          const start = new Date(appointment.startTime);
+          const end = new Date(appointment.endTime);
+          const hourStart = new Date(selectedDate);
+          hourStart.setHours(i, 0, 0, 0);
+          const hourEnd = new Date(selectedDate);
+          hourEnd.setHours(i, 59, 59, 999);
+          
+          // Check if the appointment overlaps with this hour
+          return (
+            (start <= hourEnd && end >= hourStart) ||
+            (start >= hourStart && start <= hourEnd) ||
+            (end >= hourStart && end <= hourEnd)
+          );
+        })
+      });
+    }
+    
+    return (
+      <div className="space-y-2 max-h-80 overflow-y-auto">
+        {hours.map(hour => (
+          <div 
+            key={hour.hour} 
+            className={`p-2 rounded flex items-center justify-between ${hour.appointments.length > 0 ? 'bg-red-50 dark:bg-red-900/20' : 'bg-green-50 dark:bg-green-900/20'}`}
+          >
+            <div className="flex items-center">
+              <Clock className="mr-2 h-4 w-4 text-gray-500" />
+              <span>{hour.display}</span>
+            </div>
+            <div>
+              {hour.appointments.length > 0 ? (
+                <span className="text-xs font-medium text-red-500">{t("booking.unavailable")}</span>
+              ) : (
+                <span className="text-xs font-medium text-green-500">{t("booking.available")}</span>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  };
+  
   return (
     <div className="space-y-4">
       <Calendar
@@ -102,9 +182,14 @@ export function RoomAvailabilityCalendar({
           booked: "bg-red-50 dark:bg-red-900/20",
           available: "bg-green-50 dark:bg-green-900/20"
         }}
+        onDayClick={handleDayClick}
         components={{
           Day: ({ date, ...props }) => (
-            <div {...props} className={dayClassName(date)}>
+            <div 
+              {...props} 
+              className={dayClassName(date)}
+              onClick={() => handleDayClick(date)}
+            >
               {date.getDate()}
             </div>
           )
@@ -125,6 +210,24 @@ export function RoomAvailabilityCalendar({
       <div className="text-center text-sm text-gray-500 mt-2">
         {t("rooms.availabilityHelp")}
       </div>
+      
+      {/* Dialog for detailed hourly view */}
+      <Dialog open={dayDetailOpen} onOpenChange={setDayDetailOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>
+              {selectedDate && format(selectedDate, 'dd/MM/yyyy')} - {t("rooms.hourlyAvailability")}
+            </DialogTitle>
+            <DialogDescription>
+              {t("rooms.hourlyAvailabilityDescription")}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="py-4">
+            {renderHourlyTimeline()}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
