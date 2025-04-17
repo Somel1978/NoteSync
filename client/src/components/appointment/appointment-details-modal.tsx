@@ -1423,11 +1423,11 @@ export function AppointmentDetailsModal({
                                             const room = rooms?.find(r => r.id === roomBooking.roomId);
                                             if (room && room.hourlyRate) {
                                               const hourlyRate = (room.hourlyRate / 100).toFixed(2);
-                                              // Calculate base cost without facilities
+                                              // Calculate base cost without facilities - should be 1 hour × €15.00 = €15.00
                                               const baseTotal = (hours * room.hourlyRate / 100);
-                                              return `Hourly Rate: ${hours} hours × €${hourlyRate} per hour = €${baseTotal.toFixed(2)}`;
+                                              return `Hourly Rate: ${hours} ${hours === 1 ? 'hour' : 'hours'} × €${hourlyRate} per hour = €${baseTotal.toFixed(2)}`;
                                             }
-                                            return `Hourly Rate: ${hours} hours`;
+                                            return `Hourly Rate: ${hours} ${hours === 1 ? 'hour' : 'hours'}`;
                                           })()
                                         ) : (
                                           <>Hourly Rate</>
@@ -1442,8 +1442,9 @@ export function AppointmentDetailsModal({
                                           const room = rooms?.find(r => r.id === roomBooking.roomId);
                                           if (room && room.attendeeRate) {
                                             const attendeeRate = (room.attendeeRate / 100).toFixed(2);
-                                            // Calculate base cost without facilities
+                                            // This should be 150 for 10 attendees at €15.00 per person
                                             const baseTotal = (attendees * room.attendeeRate / 100);
+                                            // The display should match the actual stored calculation
                                             return `Per Attendee: ${attendees} attendees × €${attendeeRate} per person = €${baseTotal.toFixed(2)}`;
                                           }
                                           return `Per Attendee: ${attendees} attendees`;
