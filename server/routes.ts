@@ -725,9 +725,9 @@ export function registerRoutes(app: Express): Server {
   // Email Settings
   app.get("/api/settings/email", isAdmin, async (req, res, next) => {
     try {
-      const emailSettings = await storage.getSetting('email');
+      const emailSetting = await storage.getSetting('email');
       
-      if (!emailSettings) {
+      if (!emailSetting) {
         // Return default settings if none exist
         return res.json({
           enabled: false,
@@ -744,8 +744,27 @@ export function registerRoutes(app: Express): Server {
         });
       }
       
+      console.log("Retrieved email settings:", JSON.stringify(emailSetting));
+      
+      // Check if value is an empty object and return defaults if it is
+      if (emailSetting.value && Object.keys(emailSetting.value).length === 0) {
+        return res.json({
+          enabled: false,
+          mailjetApiKey: "",
+          mailjetSecretKey: "",
+          systemEmail: "",
+          systemName: "ACRDSC Reservas",
+          notifyOnCreate: true,
+          notifyOnUpdate: true,
+          notifyOnStatusChange: true,
+          emailTemplateBookingCreated: "",
+          emailTemplateBookingUpdated: "",
+          emailTemplateBookingStatusChanged: ""
+        });
+      }
+      
       // Cast to EmailSettings type
-      const settings = emailSettings.value as EmailSettings;
+      const settings = emailSetting.value as EmailSettings;
       res.json(settings);
     } catch (error) {
       next(error);
@@ -777,9 +796,12 @@ export function registerRoutes(app: Express): Server {
         emailTemplateBookingStatusChanged: emailSettings.emailTemplateBookingStatusChanged ?? ""
       };
       
+      // Save settings to database
       const setting = await storage.createOrUpdateSetting('email', emailSettings);
       console.log("Setting saved to database:", JSON.stringify(setting));
-      res.json(setting.value as EmailSettings);
+      
+      // Return the email settings (not the entire setting object)
+      res.json(emailSettings);
     } catch (error) {
       console.error("Error saving email settings:", error);
       next(error);
@@ -788,13 +810,20 @@ export function registerRoutes(app: Express): Server {
 
   app.post("/api/settings/email/test", isAdmin, async (req, res, next) => {
     try {
-      const emailSettings = await storage.getSetting('email');
+      const emailSetting = await storage.getSetting('email');
       
-      if (!emailSettings) {
+      if (!emailSetting) {
         return res.status(400).json({ error: "Email settings not found" });
       }
       
-      const settings = emailSettings.value as EmailSettings;
+      console.log("Testing with email settings:", JSON.stringify(emailSetting));
+      
+      // Check if value is an empty object
+      if (emailSetting.value && Object.keys(emailSetting.value).length === 0) {
+        return res.status(400).json({ error: "Email settings are not configured" });
+      }
+      
+      const settings = emailSetting.value as EmailSettings;
       
       if (!settings || !settings.enabled) {
         return res.status(400).json({ error: "Email notifications are not enabled" });
