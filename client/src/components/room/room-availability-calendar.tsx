@@ -10,6 +10,7 @@ interface RoomAvailabilityCalendarProps {
   appointments: Appointment[];
   roomId: number;
   locale: Locale;
+  isLoading?: boolean;
   onMonthChange?: (month: Date) => void;
 }
 
@@ -17,6 +18,7 @@ export function RoomAvailabilityCalendar({
   appointments,
   roomId,
   locale,
+  isLoading = false,
   onMonthChange
 }: RoomAvailabilityCalendarProps) {
   const { t } = useTranslation();
@@ -175,25 +177,32 @@ export function RoomAvailabilityCalendar({
   
   return (
     <div className="space-y-4">
-      <Calendar
-        mode="default"
-        className="rounded-md border"
-        locale={locale}
-        fromDate={today}
-        toDate={addDays(today, 90)}
-        modifiers={{
-          booked: (date) => hasAppointments(date),
-          available: (date) => !hasAppointments(date) && isAfter(date, today),
-          past: (date) => isBefore(date, today) && !isSameDay(date, today)
-        }}
-        modifiersClassNames={{
-          booked: "bg-red-50 dark:bg-red-900/20 relative after:absolute after:bottom-1 after:left-1/2 after:-translate-x-1/2 after:w-1 after:h-1 after:bg-red-500 after:rounded-full",
-          available: "bg-green-50 dark:bg-green-900/20 relative after:absolute after:bottom-1 after:left-1/2 after:-translate-x-1/2 after:w-1 after:h-1 after:bg-green-500 after:rounded-full",
-          past: "opacity-50 pointer-events-none"
-        }}
-        onDayClick={handleDayClick}
-        onMonthChange={onMonthChange}
-      />
+      <div className="relative">
+        {isLoading && (
+          <div className="absolute inset-0 bg-white/50 dark:bg-gray-900/50 flex items-center justify-center z-10 rounded-md">
+            <div className="h-8 w-8 rounded-full border-4 border-gray-300 border-t-primary animate-spin" />
+          </div>
+        )}
+        <Calendar
+          mode="default"
+          className="rounded-md border"
+          locale={locale}
+          fromDate={today}
+          toDate={addDays(today, 90)}
+          modifiers={{
+            booked: (date) => hasAppointments(date),
+            available: (date) => !hasAppointments(date) && isAfter(date, today),
+            past: (date) => isBefore(date, today) && !isSameDay(date, today)
+          }}
+          modifiersClassNames={{
+            booked: "bg-red-50 dark:bg-red-900/20 relative after:absolute after:bottom-1 after:left-1/2 after:-translate-x-1/2 after:w-1 after:h-1 after:bg-red-500 after:rounded-full",
+            available: "bg-green-50 dark:bg-green-900/20 relative after:absolute after:bottom-1 after:left-1/2 after:-translate-x-1/2 after:w-1 after:h-1 after:bg-green-500 after:rounded-full",
+            past: "opacity-50 pointer-events-none"
+          }}
+          onDayClick={handleDayClick}
+          onMonthChange={onMonthChange}
+        />
+      </div>
       
       <div className="flex items-center justify-center space-x-4 text-sm">
         <div className="flex items-center">

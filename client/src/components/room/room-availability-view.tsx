@@ -115,11 +115,15 @@ export function RoomAvailabilityView() {
   // Manipulador para mudança de mês
   const handleMonthChange = (newMonth: Date) => {
     console.log(`Mês alterado para: ${format(newMonth, 'MMMM yyyy')}`);
+    setIsMonthChanging(true);
     setCurrentMonth(newMonth);
   };
   
+  // Estado para controlar o carregamento do mês
+  const [isMonthChanging, setIsMonthChanging] = useState(false);
+  
   // Fetch appointments for the specific room only for the selected month
-  const { data: appointments = [], isLoading: isAppointmentsLoading } = useQuery<Appointment[]>({
+  const { data: appointments = [], isLoading: isAppointmentsLoading, isFetching } = useQuery<Appointment[]>({
     queryKey: ["/api/public/appointments/room", roomId, format(startOfCurrentMonth, 'yyyy-MM')],
     enabled: !!roomId,
     staleTime: 0, // Sem cache
