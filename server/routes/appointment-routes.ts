@@ -431,13 +431,25 @@ export function registerAppointmentRoutes(app: Express): void {
         }, null, 2)
       );
       
-      // Usar uma abordagem direta para testar
+      // Usar SQL direto para garantir a atualização do campo de rejeição
       console.log('TESTE: Usando SQL direto para atualizar com rejection_reason:', rejectionReason);
       
+      // Primeiro atualizamos o status via método normal
       const updatedAppointment = await storage.updateAppointment(id, {
-        status: "rejected",
-        rejectionReason: rejectionReason
+        status: "rejected"
       });
+      
+      // Depois atualizamos o motivo da rejeição diretamente no banco usando SQL
+      if (updatedAppointment) {
+        // Utilizamos pool do PostgreSQL para executar SQL direto
+        await storage.executeRawSQL(
+          'UPDATE appointments SET rejection_reason = $1 WHERE id = $2',
+          [rejectionReason, id]
+        );
+        
+        // Atualizamos a propriedade no objeto para retornar ao cliente
+        (updatedAppointment as any).rejectionReason = rejectionReason;
+      }
       
       // Imprimir o resultado para debug
       console.log('RESULTADO DA ATUALIZAÇÃO:', JSON.stringify(updatedAppointment, null, 2));

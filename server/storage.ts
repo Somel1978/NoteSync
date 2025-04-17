@@ -18,6 +18,9 @@ declare module 'express-session' {
 const PostgresSessionStore = connectPg(session);
 
 export interface IStorage {
+  // SQL Raw Operations
+  executeRawSQL(query: string, params?: any[]): Promise<any>;
+
   // User Operations
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
@@ -82,6 +85,19 @@ export class DatabaseStorage implements IStorage {
       createTableIfMissing: true,
       tableName: 'session' 
     });
+  }
+  
+  // Operação SQL Direta para contornar limitações do ORM
+  async executeRawSQL(query: string, params?: any[]): Promise<any> {
+    try {
+      console.log(`Executando SQL direto: ${query} com parâmetros:`, params);
+      const result = await pool.query(query, params);
+      console.log(`Resultado SQL direto:`, result.rows);
+      return result.rows;
+    } catch (error) {
+      console.error(`Erro ao executar SQL direto: ${query}`, error);
+      throw error;
+    }
   }
 
   // User Operations
