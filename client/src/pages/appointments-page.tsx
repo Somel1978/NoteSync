@@ -59,10 +59,13 @@ export default function AppointmentsPage() {
     },
   });
 
+  // Use este mutation apenas para a rejeição via modal
+  // Não deve mais ser usado diretamente na página
   const rejectAppointmentMutation = useMutation({
-    mutationFn: async (id: number) => {
-      const res = await apiRequest("PUT", `/api/appointments/${id}`, {
-        status: "rejected",
+    mutationFn: async ({ id, reason }: { id: number, reason: string }) => {
+      // Use a rota específica para rejeição que lida com o motivo da rejeição
+      const res = await apiRequest("PUT", `/api/appointments/${id}/reject`, {
+        reason: reason
       });
       return await res.json();
     },
@@ -98,9 +101,11 @@ export default function AppointmentsPage() {
   };
 
   const handleReject = (id: number) => {
-    if (confirm(t('appointments.confirmReject', 'Are you sure you want to reject this appointment?'))) {
-      rejectAppointmentMutation.mutate(id);
-    }
+    // Em vez de usar confirm, use o modal de detalhes que já possui um diálogo de rejeição
+    // O modal tem um diálogo próprio para coletar o motivo da rejeição
+    setSelectedAppointmentId(id);
+    setModalOpen(true);
+    // O handleConfirmReject no modal vai chamar o rejectMutation
   };
 
   const columns: ColumnDef<Appointment>[] = [
