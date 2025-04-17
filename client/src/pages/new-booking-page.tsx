@@ -363,8 +363,8 @@ export default function NewBookingPage() {
           <p className="text-gray-600 text-sm">Create a new room booking request</p>
         </header>
 
-        <Card>
-          <CardContent className="pt-6">
+        <Card className="overflow-hidden">
+          <CardContent className="p-6">
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                 {/* Basic Information */}
@@ -506,150 +506,158 @@ export default function NewBookingPage() {
                     />
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
-                    <FormField
-                      control={form.control}
-                      name="startTime"
-                      render={({ field }) => (
-                        <FormItem className="flex flex-col">
-                          <FormLabel>Start Time</FormLabel>
-                          <Popover>
-                            <PopoverTrigger asChild>
-                              <FormControl>
-                                <Button
-                                  variant={"outline"}
-                                  className={cn(
-                                    "pl-3 text-left font-normal",
-                                    !field.value && "text-muted-foreground"
-                                  )}
-                                >
-                                  {field.value ? (
-                                    format(field.value, "PPP HH:mm")
-                                  ) : (
-                                    <span>Select start date and time</span>
-                                  )}
-                                  <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                                </Button>
-                              </FormControl>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0" align="start">
-                              <Calendar
-                                mode="single"
-                                selected={field.value}
-                                onSelect={(date) => {
-                                  if (date) {
-                                    const now = new Date();
-                                    date.setHours(now.getHours());
-                                    date.setMinutes(0);
-                                    
-                                    field.onChange(date);
-                                    
-                                    // Set end time to 1 hour after start time if not set yet
-                                    const currentEndTime = form.getValues("endTime");
-                                    if (!currentEndTime) {
-                                      form.setValue("endTime", addHours(date, 1));
-                                    }
-                                  }
-                                }}
-                                disabled={(date) => date < new Date()}
-                                initialFocus
-                              />
-                              <div className="p-3 border-t border-border">
-                                <Input
-                                  type="time"
-                                  onChange={(e) => {
-                                    const timeStr = e.target.value;
-                                    const date = field.value || new Date();
-                                    const [hours, minutes] = timeStr.split(':').map(Number);
-                                    
-                                    date.setHours(hours);
-                                    date.setMinutes(minutes);
-                                    
-                                    field.onChange(date);
-                                  }}
-                                  value={field.value ? format(field.value, "HH:mm") : ""}
-                                />
-                              </div>
-                            </PopoverContent>
-                          </Popover>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                  {/* Refactored date/time picker section with improved layout */}
+                  <div className="mt-4">
+                    <h3 className="text-md font-medium text-gray-700 mb-3">Date and Time</h3>
+                    <div className="flex flex-col sm:flex-row gap-4">
+                      <div className="flex-1">
+                        <FormField
+                          control={form.control}
+                          name="startTime"
+                          render={({ field }) => (
+                            <FormItem className="flex flex-col">
+                              <FormLabel>Start Time</FormLabel>
+                              <Popover>
+                                <PopoverTrigger asChild>
+                                  <FormControl>
+                                    <Button
+                                      variant={"outline"}
+                                      className={cn(
+                                        "w-full pl-3 text-left font-normal h-10",
+                                        !field.value && "text-muted-foreground"
+                                      )}
+                                    >
+                                      {field.value ? (
+                                        format(field.value, "PPP HH:mm")
+                                      ) : (
+                                        <span>Select start date and time</span>
+                                      )}
+                                      <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                    </Button>
+                                  </FormControl>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-auto p-0" align="start">
+                                  <Calendar
+                                    mode="single"
+                                    selected={field.value}
+                                    onSelect={(date) => {
+                                      if (date) {
+                                        const now = new Date();
+                                        date.setHours(now.getHours());
+                                        date.setMinutes(0);
+                                        
+                                        field.onChange(date);
+                                        
+                                        // Set end time to 1 hour after start time if not set yet
+                                        const currentEndTime = form.getValues("endTime");
+                                        if (!currentEndTime) {
+                                          form.setValue("endTime", addHours(date, 1));
+                                        }
+                                      }
+                                    }}
+                                    disabled={(date) => date < new Date()}
+                                    initialFocus
+                                  />
+                                  <div className="p-3 border-t border-border">
+                                    <Input
+                                      type="time"
+                                      onChange={(e) => {
+                                        const timeStr = e.target.value;
+                                        const date = field.value || new Date();
+                                        const [hours, minutes] = timeStr.split(':').map(Number);
+                                        
+                                        date.setHours(hours);
+                                        date.setMinutes(minutes);
+                                        
+                                        field.onChange(date);
+                                      }}
+                                      value={field.value ? format(field.value, "HH:mm") : ""}
+                                    />
+                                  </div>
+                                </PopoverContent>
+                              </Popover>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
 
-                    <FormField
-                      control={form.control}
-                      name="endTime"
-                      render={({ field }) => (
-                        <FormItem className="flex flex-col">
-                          <FormLabel>End Time</FormLabel>
-                          <Popover>
-                            <PopoverTrigger asChild>
-                              <FormControl>
-                                <Button
-                                  variant={"outline"}
-                                  className={cn(
-                                    "pl-3 text-left font-normal",
-                                    !field.value && "text-muted-foreground"
-                                  )}
-                                >
-                                  {field.value ? (
-                                    format(field.value, "PPP HH:mm")
-                                  ) : (
-                                    <span>Select end date and time</span>
-                                  )}
-                                  <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                                </Button>
-                              </FormControl>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0" align="start">
-                              <Calendar
-                                mode="single"
-                                selected={field.value}
-                                onSelect={(date) => {
-                                  if (date) {
-                                    const startTime = form.getValues("startTime");
-                                    if (startTime) {
-                                      // Transfer the hours/minutes from startTime + 1 hour
-                                      date.setHours(startTime.getHours() + 1);
-                                      date.setMinutes(startTime.getMinutes());
-                                    } else {
-                                      // Default to current time + 1 hour
-                                      const now = new Date();
-                                      date.setHours(now.getHours() + 1);
-                                      date.setMinutes(0);
-                                    }
-                                    field.onChange(date);
-                                  }
-                                }}
-                                disabled={(date) => {
-                                  const startTime = form.getValues("startTime");
-                                  return startTime ? date < startTime : date < new Date();
-                                }}
-                                initialFocus
-                              />
-                              <div className="p-3 border-t border-border">
-                                <Input
-                                  type="time"
-                                  onChange={(e) => {
-                                    const timeStr = e.target.value;
-                                    const date = field.value || new Date();
-                                    const [hours, minutes] = timeStr.split(':').map(Number);
-                                    
-                                    date.setHours(hours);
-                                    date.setMinutes(minutes);
-                                    
-                                    field.onChange(date);
-                                  }}
-                                  value={field.value ? format(field.value, "HH:mm") : ""}
-                                />
-                              </div>
-                            </PopoverContent>
-                          </Popover>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                      <div className="flex-1">
+                        <FormField
+                          control={form.control}
+                          name="endTime"
+                          render={({ field }) => (
+                            <FormItem className="flex flex-col">
+                              <FormLabel>End Time</FormLabel>
+                              <Popover>
+                                <PopoverTrigger asChild>
+                                  <FormControl>
+                                    <Button
+                                      variant={"outline"}
+                                      className={cn(
+                                        "w-full pl-3 text-left font-normal h-10",
+                                        !field.value && "text-muted-foreground"
+                                      )}
+                                    >
+                                      {field.value ? (
+                                        format(field.value, "PPP HH:mm")
+                                      ) : (
+                                        <span>Select end date and time</span>
+                                      )}
+                                      <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                    </Button>
+                                  </FormControl>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-auto p-0" align="start">
+                                  <Calendar
+                                    mode="single"
+                                    selected={field.value}
+                                    onSelect={(date) => {
+                                      if (date) {
+                                        const startTime = form.getValues("startTime");
+                                        if (startTime) {
+                                          // Transfer the hours/minutes from startTime + 1 hour
+                                          date.setHours(startTime.getHours() + 1);
+                                          date.setMinutes(startTime.getMinutes());
+                                        } else {
+                                          // Default to current time + 1 hour
+                                          const now = new Date();
+                                          date.setHours(now.getHours() + 1);
+                                          date.setMinutes(0);
+                                        }
+                                        field.onChange(date);
+                                      }
+                                    }}
+                                    disabled={(date) => {
+                                      const startTime = form.getValues("startTime");
+                                      return startTime ? date < startTime : date < new Date();
+                                    }}
+                                    initialFocus
+                                  />
+                                  <div className="p-3 border-t border-border">
+                                    <Input
+                                      type="time"
+                                      onChange={(e) => {
+                                        const timeStr = e.target.value;
+                                        const date = field.value || new Date();
+                                        const [hours, minutes] = timeStr.split(':').map(Number);
+                                        
+                                        date.setHours(hours);
+                                        date.setMinutes(minutes);
+                                        
+                                        field.onChange(date);
+                                      }}
+                                      value={field.value ? format(field.value, "HH:mm") : ""}
+                                    />
+                                  </div>
+                                </PopoverContent>
+                              </Popover>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                    </div>
                   </div>
 
                   <div className="mt-4">
