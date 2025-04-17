@@ -2,6 +2,7 @@ import { Appointment, EmailSettings } from '@shared/schema';
 import { storage } from '../storage';
 import { User } from '@shared/schema';
 import { log } from '../vite';
+// Import Mailjet in the style recommended by their documentation
 import Mailjet from 'node-mailjet';
 
 /**
@@ -76,9 +77,8 @@ export class EmailNotificationService {
       log(`Subject: ${subject}`, 'email');
       
       try {
-        // Create the Mailjet client using ES module import
+        // Create the Mailjet client using ES module import - same approach as our working test script
         log(`Connecting to Mailjet with API key: ${apiKey.substring(0, 4)}...`, 'email');
-        // Use standard apiConnect without custom config to avoid type errors
         const mailjet = Mailjet.apiConnect(apiKey, secretKey);
         
         // Send the email
@@ -89,19 +89,13 @@ export class EmailNotificationService {
           .post('send', { version: 'v3.1' })
           .request(emailData);
           
-        if (response) {
-          // Safely try to log the response
-          try {
-            log(`Mailjet API call succeeded`, 'email');
-            if (response.body) {
-              const responseData = typeof response.body === 'string' 
-                ? JSON.parse(response.body) 
-                : response.body;
-              log(`Mailjet response data: ${JSON.stringify(responseData)}`, 'email');
-            }
-          } catch (logError) {
-            log(`Error logging Mailjet response: ${logError}`, 'email');
-          }
+        // Log the result
+        log(`Mailjet API call succeeded`, 'email');
+        if (response && response.body) {
+          const responseData = typeof response.body === 'string' 
+            ? JSON.parse(response.body) 
+            : response.body;
+          log(`Mailjet response data: ${JSON.stringify(responseData)}`, 'email');
         }
         
         log('Email sent successfully', 'email');
@@ -118,7 +112,7 @@ export class EmailNotificationService {
         log(`Subject: ${subject}`, 'email');
         log(`Content: ${html.substring(0, 100)}...`, 'email');
         
-        // For now, return true so the appointment update isn't blocked
+        // For now, return true so the appointment update isn't blocked by email failures
         return true;
       }
     } catch (error) {
