@@ -21,9 +21,11 @@ function Router() {
   const { user } = useAuth();
   const [, setLocation] = useLocation();
   
-  // Redirect users based on their role when they log in
+  // Redirect users based on their role when they log in, but only if they're on the auth page
   useEffect(() => {
-    if (user) {
+    const currentPath = window.location.pathname;
+    // Only redirect if user is on auth page or root page
+    if (user && (currentPath === '/auth' || currentPath === '/')) {
       if (user.role === 'guest') {
         setLocation("/new-booking");
       } else {
