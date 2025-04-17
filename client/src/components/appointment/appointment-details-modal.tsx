@@ -171,13 +171,18 @@ export function AppointmentDetailsModal({
       // Deep copy to avoid modifying the original data
       const processedData = { ...data };
       
+      // Create a data transfer object that will be sent to the API
+      // This allows us to convert Date to string without TypeScript errors
+      const dataForApi: Record<string, any> = { ...processedData };
+      
       // Ensure date fields are properly formatted
       if (processedData.startTime) {
         try {
           // Create proper Date object and convert to ISO string for consistent format
           const dateObj = new Date(processedData.startTime);
-          processedData.startTime = dateObj.toISOString();
-          console.log(`Formatted startTime to ISO string: ${processedData.startTime}`);
+          // Store as string in the API data object
+          dataForApi.startTime = dateObj.toISOString();
+          console.log(`Formatted startTime to ISO string: ${dataForApi.startTime}`);
         } catch (e) {
           console.error(`Failed to format startTime: ${processedData.startTime}`, e);
         }
@@ -187,19 +192,20 @@ export function AppointmentDetailsModal({
         try {
           // Create proper Date object and convert to ISO string for consistent format
           const dateObj = new Date(processedData.endTime);
-          processedData.endTime = dateObj.toISOString();
-          console.log(`Formatted endTime to ISO string: ${processedData.endTime}`);
+          // Store as string in the API data object
+          dataForApi.endTime = dateObj.toISOString();
+          console.log(`Formatted endTime to ISO string: ${dataForApi.endTime}`);
         } catch (e) {
           console.error(`Failed to format endTime: ${processedData.endTime}`, e);
         }
       }
       
       console.log('Sending appointment update with dates:', {
-        startTime: processedData.startTime,
-        endTime: processedData.endTime
+        startTime: dataForApi.startTime,
+        endTime: dataForApi.endTime
       });
       
-      const res = await apiRequest("PUT", `/api/appointments/${appointmentId}`, processedData);
+      const res = await apiRequest("PUT", `/api/appointments/${appointmentId}`, dataForApi);
       return await res.json();
     },
     onSuccess: (updatedAppointment) => {
