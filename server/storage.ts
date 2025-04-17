@@ -789,14 +789,14 @@ export class DatabaseStorage implements IStorage {
   async getRoomUtilization(roomId: number, startDate: Date, endDate: Date): Promise<number> {
     // Get all approved appointments for this room in date range
     const roomAppointments = await db.select({
-      startTime: appointments.startTime,
-      endTime: appointments.endTime
-    }).from(appointments).where(
+      startTime: appointmentsTable.startTime,
+      endTime: appointmentsTable.endTime
+    }).from(appointmentsTable).where(
       and(
-        eq(appointments.roomId, roomId),
-        eq(appointments.status as any, 'approved'),
-        gte(appointments.startTime, startDate),
-        lte(appointments.endTime, endDate)
+        eq(appointmentsTable.roomId, roomId),
+        eq(appointmentsTable.status as any, 'approved'),
+        gte(appointmentsTable.startTime, startDate),
+        lte(appointmentsTable.endTime, endDate)
       )
     );
     
