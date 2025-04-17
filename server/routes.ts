@@ -31,35 +31,10 @@ const isAdminOrDirector = (req: Request, res: Response, next: Function) => {
 };
 
 export function registerRoutes(app: Express): Server {
-  // Set up authentication routes
+  // Setup authentication routes
   setupAuth(app);
-
-  // Public API endpoints
-  app.get("/api/public/appointments", async (req, res, next) => {
-    try {
-      const appointments = await storage.getAllAppointments();
-      
-      // Only return certain fields for public view
-      const publicAppointments = appointments.map(appointment => ({
-        id: appointment.id,
-        title: appointment.title,
-        roomId: appointment.roomId,
-        startTime: appointment.startTime,
-        endTime: appointment.endTime,
-        status: appointment.status,
-        orderNumber: appointment.orderNumber,
-        customerName: appointment.customerName,
-        // Only include contact details for approved appointments
-        customerEmail: appointment.status === 'approved' ? appointment.customerEmail : undefined,
-        customerPhone: appointment.status === 'approved' ? appointment.customerPhone : undefined,
-      }));
-      
-      res.json(publicAppointments);
-    } catch (error) {
-      next(error);
-    }
-  });
-
+  
+  // Public API Endpoints
   app.get("/api/public/locations", async (req, res, next) => {
     try {
       const locations = await storage.getAllLocations();
@@ -68,55 +43,160 @@ export function registerRoutes(app: Express): Server {
       next(error);
     }
   });
-
+  
   app.get("/api/public/rooms", async (req, res, next) => {
     try {
-      // By default, only return active rooms for public view
-      const rooms = await storage.getActiveRooms();
+      const rooms = await storage.getAllRooms();
       res.json(rooms);
     } catch (error) {
       next(error);
     }
   });
-
-  app.get("/api/public/room/:id/availability", async (req, res, next) => {
+  
+  app.get("/api/public/appointments", async (req, res, next) => {
     try {
-      const roomId = parseInt(req.params.id);
-      const room = await storage.getRoom(roomId);
-      
-      if (!room) {
-        return res.status(404).json({ message: "Room not found" });
-      }
-      
-      // Get date range for next 90 days
-      const startDate = new Date();
-      const endDate = new Date();
-      endDate.setDate(endDate.getDate() + 90);
-      
-      // Get appointments for this room in the date range
-      const appointments = await storage.getAppointmentsByRoom(roomId);
-      const rangeAppointments = appointments.filter(appointment => {
-        const appointmentDate = new Date(appointment.startTime);
-        return appointmentDate >= startDate && appointmentDate <= endDate;
-      });
-      
-      res.json({
-        room,
-        appointments: rangeAppointments.map(appointment => ({
-          id: appointment.id,
-          title: appointment.title,
-          startTime: appointment.startTime,
-          endTime: appointment.endTime,
-          status: appointment.status
-        }))
-      });
+      const appointments = await storage.getAllAppointments();
+      res.json(appointments);
     } catch (error) {
       next(error);
     }
   });
-
-  // Location routes
-  app.get("/api/locations", async (req, res, next) => {
+  
+  // Protected API Endpoints
+  
+  // User endpoints
+  app.get("/api/users", isAdmin, async (req, res, next) => {
+    try {
+      const users = await storage.getAllUsers();
+      res.json(users);
+    } catch (error) {
+      next(error);
+    }
+  });
+  
+  app.get("/api/users/:id", isAdmin, async (req, res, next) => {
+    try {
+      const id = parseInt(req.params.id);
+      const user = await storage.getUser(id);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      res.json(user);
+    } catch (error) {
+      next(error);
+    }
+  });
+  
+  app.patch("/api/users/:id", isAuthenticated, async (req, res, next) => {
+    try {
+      const id = parseInt(req.params.id);
+      
+      // Users can only update their own profile unless they're an admin
+      if (req.user?.id !== id && req.user?.role !== "admin") {
+        return res.status(403).json({ message: "Forbidden - You can only update your own profile" });
+      }
+      
+      // Don't allow role changes unless the user is an admin
+      if (req.body.role && req.user?.role !== "admin") {
+        delete req.body.role;
+      }
+      
+      const user = await storage.updateUser(id, req.body);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      res.json(user);
+    } catch (error) {
+      next(error);
+    }
+  });
+  
+  app.delete("/api/users/:id", isAdmin, async (req, res, next) => {
+    try {
+      const id = parseInt(req.params.id);
+      
+      // Don't allow deleting the last admin user
+      if (req.user?.id === id && req.user?.role === "admin") {
+        const admins = (await storage.getAllUsers()).filter(u => u.role === "admin");
+        if (admins.length <= 1) {
+          return res.status(400).json({ message: "Cannot delete the last admin user" });
+        }
+      }
+      
+      const result = await storage.deleteUser(id);
+      if (!result) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      res.status(204).end();
+    } catch (error) {
+      next(error);
+    }
+  });
+  
+  app.post("/api/users/:id/change-password", isAuthenticated, async (req, res, next) => {
+    try {
+      const id = parseInt(req.params.id);
+      
+      // Users can only change their own password
+      if (req.user?.id !== id) {
+        return res.status(403).json({ message: "Forbidden - You can only change your own password" });
+      }
+      
+      // Check if currentPassword and newPassword are provided
+      if (!req.body.currentPassword || !req.body.newPassword) {
+        return res.status(400).json({ message: "Current password and new password are required" });
+      }
+      
+      // Additional validation can be added here
+      
+      // This endpoint relies on the storage implementation to verify the current password
+      // and update with the new one
+      const updated = await storage.updatePassword(
+        id, 
+        req.body.currentPassword, 
+        req.body.newPassword
+      );
+      
+      if (!updated) {
+        return res.status(400).json({ message: "Invalid current password" });
+      }
+      
+      res.json({ success: true });
+    } catch (error) {
+      next(error);
+    }
+  });
+  
+  app.post("/api/users/:id/request-deletion", isAuthenticated, async (req, res, next) => {
+    try {
+      const id = parseInt(req.params.id);
+      
+      // Users can only request deletion for their own account
+      if (req.user?.id !== id) {
+        return res.status(403).json({ message: "Forbidden - You can only request deletion for your own account" });
+      }
+      
+      // Don't allow the last admin to request deletion
+      if (req.user?.role === "admin") {
+        const admins = (await storage.getAllUsers()).filter(u => u.role === "admin");
+        if (admins.length <= 1) {
+          return res.status(400).json({ message: "Cannot delete the last admin user" });
+        }
+      }
+      
+      const user = await storage.updateUser(id, { deletionRequested: true });
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      res.json(user);
+    } catch (error) {
+      next(error);
+    }
+  });
+  
+  // Location endpoints
+  app.get("/api/locations", isAdminOrDirector, async (req, res, next) => {
     try {
       const locations = await storage.getAllLocations();
       res.json(locations);
@@ -124,18 +204,21 @@ export function registerRoutes(app: Express): Server {
       next(error);
     }
   });
-
+  
   app.post("/api/locations", isAdmin, async (req, res, next) => {
     try {
       const validatedData = insertLocationSchema.parse(req.body);
       const location = await storage.createLocation(validatedData);
       res.status(201).json(location);
     } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ errors: error.errors });
+      }
       next(error);
     }
   });
-
-  app.get("/api/locations/:id", async (req, res, next) => {
+  
+  app.get("/api/locations/:id", isAdminOrDirector, async (req, res, next) => {
     try {
       const id = parseInt(req.params.id);
       const location = await storage.getLocation(id);
@@ -147,40 +230,34 @@ export function registerRoutes(app: Express): Server {
       next(error);
     }
   });
-
-  app.put("/api/locations/:id", isAdmin, async (req, res, next) => {
-    try {
-      const id = parseInt(req.params.id);
-      const validatedData = insertLocationSchema.partial().parse(req.body);
-      const updatedLocation = await storage.updateLocation(id, validatedData);
-      if (!updatedLocation) {
-        return res.status(404).json({ message: "Location not found" });
-      }
-      res.json(updatedLocation);
-    } catch (error) {
-      next(error);
-    }
-  });
-
+  
   app.patch("/api/locations/:id", isAdmin, async (req, res, next) => {
     try {
       const id = parseInt(req.params.id);
-      const validatedData = insertLocationSchema.partial().parse(req.body);
-      const updatedLocation = await storage.updateLocation(id, validatedData);
-      if (!updatedLocation) {
+      const location = await storage.updateLocation(id, req.body);
+      if (!location) {
         return res.status(404).json({ message: "Location not found" });
       }
-      res.json(updatedLocation);
+      res.json(location);
     } catch (error) {
       next(error);
     }
   });
-
+  
   app.delete("/api/locations/:id", isAdmin, async (req, res, next) => {
     try {
       const id = parseInt(req.params.id);
-      const success = await storage.deleteLocation(id);
-      if (!success) {
+      
+      // Check if there are rooms associated with this location
+      const rooms = await storage.getRoomsByLocation(id);
+      if (rooms.length > 0) {
+        return res.status(400).json({ 
+          message: "Cannot delete location with associated rooms. Delete the rooms first."
+        });
+      }
+      
+      const result = await storage.deleteLocation(id);
+      if (!result) {
         return res.status(404).json({ message: "Location not found" });
       }
       res.status(204).end();
@@ -188,43 +265,31 @@ export function registerRoutes(app: Express): Server {
       next(error);
     }
   });
-
-  // Room routes
-  app.get("/api/rooms", async (req, res, next) => {
+  
+  // Room endpoints
+  app.get("/api/rooms", isAdminOrDirector, async (req, res, next) => {
     try {
       const rooms = await storage.getAllRooms();
-      
-      // If location query param is provided, filter by location
-      const locationId = req.query.locationId ? parseInt(req.query.locationId as string) : null;
-      if (locationId) {
-        const filteredRooms = rooms.filter(room => room.locationId === locationId);
-        return res.json(filteredRooms);
-      }
-      
-      // If active query param is provided, filter by active status
-      const activeParam = req.query.active;
-      if (activeParam === 'true') {
-        const activeRooms = rooms.filter(room => room.active);
-        return res.json(activeRooms);
-      }
-      
       res.json(rooms);
     } catch (error) {
       next(error);
     }
   });
-
+  
   app.post("/api/rooms", isAdmin, async (req, res, next) => {
     try {
       const validatedData = insertRoomSchema.parse(req.body);
       const room = await storage.createRoom(validatedData);
       res.status(201).json(room);
     } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ errors: error.errors });
+      }
       next(error);
     }
   });
-
-  app.get("/api/rooms/:id", async (req, res, next) => {
+  
+  app.get("/api/rooms/:id", isAdminOrDirector, async (req, res, next) => {
     try {
       const id = parseInt(req.params.id);
       const room = await storage.getRoom(id);
@@ -236,26 +301,34 @@ export function registerRoutes(app: Express): Server {
       next(error);
     }
   });
-
-  app.put("/api/rooms/:id", isAdmin, async (req, res, next) => {
+  
+  app.patch("/api/rooms/:id", isAdmin, async (req, res, next) => {
     try {
       const id = parseInt(req.params.id);
-      const validatedData = insertRoomSchema.partial().parse(req.body);
-      const updatedRoom = await storage.updateRoom(id, validatedData);
-      if (!updatedRoom) {
+      const room = await storage.updateRoom(id, req.body);
+      if (!room) {
         return res.status(404).json({ message: "Room not found" });
       }
-      res.json(updatedRoom);
+      res.json(room);
     } catch (error) {
       next(error);
     }
   });
-
+  
   app.delete("/api/rooms/:id", isAdmin, async (req, res, next) => {
     try {
       const id = parseInt(req.params.id);
-      const success = await storage.deleteRoom(id);
-      if (!success) {
+      
+      // Check if there are appointments using this room
+      const appointments = await storage.getAppointmentsByRoom(id);
+      if (appointments.length > 0) {
+        return res.status(400).json({ 
+          message: "Cannot delete room with associated appointments. Delete or reassign the appointments first."
+        });
+      }
+      
+      const result = await storage.deleteRoom(id);
+      if (!result) {
         return res.status(404).json({ message: "Room not found" });
       }
       res.status(204).end();
@@ -263,32 +336,39 @@ export function registerRoutes(app: Express): Server {
       next(error);
     }
   });
-
-  // Appointment routes
+  
+  // Appointment endpoints
   app.get("/api/appointments", isAuthenticated, async (req, res, next) => {
     try {
-      const appointments = await storage.getAllAppointments();
+      let appointments;
       
-      // Filter by status if provided
-      const status = req.query.status as string;
-      if (status) {
-        const filteredAppointments = appointments.filter(appt => appt.status === status);
-        return res.json(filteredAppointments);
+      // Filter by user if specified
+      if (req.query.userId) {
+        appointments = await storage.getAppointmentsByUser(parseInt(req.query.userId as string));
+      } 
+      // Filter by room if specified
+      else if (req.query.roomId) {
+        appointments = await storage.getAppointmentsByRoom(parseInt(req.query.roomId as string));
+      }
+      // Filter by date range if specified
+      else if (req.query.startDate && req.query.endDate) {
+        appointments = await storage.getAppointmentsByDateRange(
+          new Date(req.query.startDate as string),
+          new Date(req.query.endDate as string)
+        );
+      }
+      // Filter by status if specified
+      else if (req.query.status) {
+        appointments = await storage.getAppointmentsByStatus(req.query.status as string);
+      }
+      // Otherwise get all appointments
+      else {
+        appointments = await storage.getAllAppointments();
       }
       
-      // Filter by date range if provided
-      const startDate = req.query.startDate ? new Date(req.query.startDate as string) : null;
-      const endDate = req.query.endDate ? new Date(req.query.endDate as string) : null;
-      if (startDate && endDate) {
-        const rangeAppointments = await storage.getAppointmentsByDateRange(startDate, endDate);
-        return res.json(rangeAppointments);
-      }
-      
-      // Filter by room if provided
-      const roomId = req.query.roomId ? parseInt(req.query.roomId as string) : null;
-      if (roomId) {
-        const roomAppointments = await storage.getAppointmentsByRoom(roomId);
-        return res.json(roomAppointments);
+      // If the user is not an admin or director, only return their own appointments
+      if (req.user?.role !== "admin" && req.user?.role !== "director") {
+        appointments = appointments.filter(a => a.userId === req.user?.id);
       }
       
       res.json(appointments);
@@ -296,134 +376,97 @@ export function registerRoutes(app: Express): Server {
       next(error);
     }
   });
-
+  
   app.post("/api/appointments", isAuthenticated, async (req, res, next) => {
     try {
-      const userId = req.user!.id;
-      
-      // Ensure we have startTime and endTime
-      if (!req.body.startTime || !req.body.endTime) {
-        return res.status(400).json({
-          message: "Start time and end time are required"
-        });
-      }
-      
-      // Parse dates from ISO strings to Date objects
-      const data = {
+      // Merge in the current user ID
+      const appointmentData = {
         ...req.body,
-        userId,
-        // Convert string dates to Date objects - ensure we handle both string and Date inputs
-        startTime: new Date(req.body.startTime),
-        endTime: new Date(req.body.endTime),
+        userId: req.user?.id,
         orderNumber: await storage.getNextAppointmentOrderNumber()
       };
       
-      console.log("Creating appointment with data:", {
-        startTime: data.startTime,
-        endTime: data.endTime,
-        orderNumber: data.orderNumber
-      });
-      
-      // Now validate the data with the schema
-      const validatedData = insertAppointmentSchema.parse(data);
-      
-      // Storage method now includes audit logging internally
+      const validatedData = insertAppointmentSchema.parse(appointmentData);
       const appointment = await storage.createAppointment(validatedData);
       
+      // Create audit log entry
+      await storage.createAuditLog({
+        appointmentId: appointment.id,
+        userId: req.user?.id as number,
+        action: "created",
+        timestamp: new Date(),
+        details: "Appointment created"
+      });
+      
       // Send email notification
-      try {
-        await EmailNotificationService.appointmentCreated(appointment, req.user!);
-      } catch (emailError) {
-        console.error("Error sending email notification:", emailError);
-        // Continue even if email fails
-      }
+      await EmailNotificationService.appointmentCreated(appointment, req.user!);
       
       res.status(201).json(appointment);
     } catch (error) {
-      console.error("Error creating appointment:", error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ errors: error.errors });
+      }
       next(error);
     }
   });
-
+  
   app.get("/api/appointments/:id", isAuthenticated, async (req, res, next) => {
     try {
       const id = parseInt(req.params.id);
       const appointment = await storage.getAppointment(id);
+      
       if (!appointment) {
         return res.status(404).json({ message: "Appointment not found" });
       }
       
-      // Debug output to check the appointment data
-      console.log("Appointment data:", {
-        id: appointment.id,
-        title: appointment.title,
-        roomId: appointment.roomId,
-        hasRoomsArray: !!appointment.rooms,
-        isRoomsArray: Array.isArray(appointment.rooms),
-        roomsLength: Array.isArray(appointment.rooms) ? appointment.rooms.length : 0,
-        roomsData: appointment.rooms
-      });
+      // If not admin/director and not the owner, don't allow access
+      if (req.user?.role !== "admin" && req.user?.role !== "director" && appointment.userId !== req.user?.id) {
+        return res.status(403).json({ message: "Forbidden - You can only view your own appointments" });
+      }
       
       res.json(appointment);
     } catch (error) {
       next(error);
     }
   });
-
-  app.put("/api/appointments/:id", isAuthenticated, async (req, res, next) => {
+  
+  app.patch("/api/appointments/:id", isAuthenticated, async (req, res, next) => {
     try {
       const id = parseInt(req.params.id);
-      const userId = req.user!.id;
+      const appointment = await storage.getAppointment(id);
       
-      // Check if appointment exists
-      const originalAppointment = await storage.getAppointment(id);
-      if (!originalAppointment) {
+      if (!appointment) {
         return res.status(404).json({ message: "Appointment not found" });
       }
       
-      // Process data to convert dates if they exist in the request body
-      const processedData: any = {
-        ...req.body,
-        userId // Include userId for audit logging
-      };
-      
-      // Convert string dates to Date objects if present
-      if (req.body.startTime) {
-        processedData.startTime = new Date(req.body.startTime);
+      // If not admin/director and not the owner, don't allow update
+      if (req.user?.role !== "admin" && req.user?.role !== "director" && appointment.userId !== req.user?.id) {
+        return res.status(403).json({ message: "Forbidden - You can only update your own appointments" });
       }
       
-      if (req.body.endTime) {
-        processedData.endTime = new Date(req.body.endTime);
-      }
+      // Check if status is being changed
+      const statusChanged = req.body.status && req.body.status !== appointment.status;
+      const oldAppointment = { ...appointment };
       
-      const validatedData = insertAppointmentSchema.partial().parse(processedData);
+      // Update the appointment
+      const updatedAppointment = await storage.updateAppointment(id, req.body);
       
-      // Storage method now handles audit logging internally
-      const updatedAppointment = await storage.updateAppointment(id, validatedData);
-      if (!updatedAppointment) {
-        return res.status(404).json({ message: "Failed to update appointment" });
-      }
+      // Create audit log entry
+      await storage.createAuditLog({
+        appointmentId: id,
+        userId: req.user?.id as number,
+        action: statusChanged ? `status-changed-to-${req.body.status}` : "updated",
+        timestamp: new Date(),
+        details: statusChanged 
+          ? `Status changed from ${oldAppointment.status} to ${req.body.status}`
+          : "Appointment details updated"
+      });
       
-      // Send email notification
-      try {
-        // If status changed, send status change notification
-        if (req.body.status && originalAppointment.status !== req.body.status) {
-          await EmailNotificationService.appointmentStatusChanged(
-            updatedAppointment,
-            req.user!,
-            originalAppointment.status
-          );
-        } else {
-          // Otherwise send general update notification
-          await EmailNotificationService.appointmentUpdated(
-            updatedAppointment,
-            req.user!,
-            originalAppointment
-          );
-        }
-      } catch (emailError) {
-        console.error("Error sending email notification:", emailError);
-        // Continue even if email fails
+      // Send appropriate email notification
+      if (statusChanged) {
+        await EmailNotificationService.appointmentStatusChanged(updatedAppointment!, req.user!);
+      } else {
+        await EmailNotificationService.appointmentUpdated(updatedAppointment!, req.user!, oldAppointment);
       }
       
       res.json(updatedAppointment);
@@ -431,22 +474,26 @@ export function registerRoutes(app: Express): Server {
       next(error);
     }
   });
-
+  
   app.delete("/api/appointments/:id", isAuthenticated, async (req, res, next) => {
     try {
       const id = parseInt(req.params.id);
-      const userId = req.user!.id;
+      const appointment = await storage.getAppointment(id);
       
-      // Check if appointment exists
-      const originalAppointment = await storage.getAppointment(id);
-      if (!originalAppointment) {
+      if (!appointment) {
         return res.status(404).json({ message: "Appointment not found" });
       }
       
-      // The storage method now handles audit logging internally
-      const success = await storage.deleteAppointment(id, userId);
-      if (!success) {
-        return res.status(500).json({ message: "Failed to delete appointment" });
+      // Only allow admins, directors, or the appointment owner to delete
+      if (req.user?.role !== "admin" && req.user?.role !== "director" && appointment.userId !== req.user?.id) {
+        return res.status(403).json({ message: "Forbidden - You can only delete your own appointments" });
+      }
+      
+      // Delete the appointment, passing the user ID for audit logging
+      const result = await storage.deleteAppointment(id, req.user?.id);
+      
+      if (!result) {
+        return res.status(404).json({ message: "Appointment not found" });
       }
       
       res.status(204).end();
@@ -454,300 +501,67 @@ export function registerRoutes(app: Express): Server {
       next(error);
     }
   });
-
-  // Appointment audit logs
-  app.get("/api/appointments/:id/audit", isAuthenticated, async (req, res, next) => {
+  
+  // Statistics endpoint
+  app.get("/api/stats", isAdminOrDirector, async (req, res, next) => {
     try {
-      const id = parseInt(req.params.id);
-      const logs = await storage.getAuditLogsByAppointment(id);
-      res.json(logs);
-    } catch (error) {
-      next(error);
-    }
-  });
-
-  // Dashboard statistics
-  app.get("/api/stats", isAuthenticated, async (req, res, next) => {
-    try {
-      // Get recent date range (30 days)
-      const endDate = new Date();
-      const startDate = new Date();
-      startDate.setDate(startDate.getDate() - 30);
+      // Get basic stats
+      const totalAppointments = (await storage.getAllAppointments()).length;
+      const recentAppointments = (await storage.getRecentAppointments(10)).length;
+      const activeRooms = (await storage.getActiveRooms()).length;
+      const totalUsers = (await storage.getAllUsers()).length;
       
-      // Get counts
-      const allAppointments = await storage.getAllAppointments();
-      const recentAppointments = await storage.getAppointmentsByDateRange(startDate, endDate);
-      const activeRooms = await storage.getActiveRooms();
-      const allUsers = await storage.getAllUsers();
+      // Get room utilization for the past month
+      const now = new Date();
+      const startDate = new Date(now);
+      startDate.setMonth(now.getMonth() - 1);
       
-      // Get utilization rates
-      const roomUtilization = await storage.getOverallUtilization(startDate, endDate);
-      const averageUtilization = roomUtilization.length > 0 
-        ? roomUtilization.reduce((sum, item) => sum + item.utilization, 0) / roomUtilization.length 
-        : 0;
+      const roomUtilization = await storage.getOverallUtilization(startDate, now);
+      const utilization = roomUtilization.reduce((total, curr) => total + curr.utilization, 0) / 
+                          (roomUtilization.length || 1);
       
-      // Get popular rooms based on booking count
-      const roomCounts = allAppointments.reduce((counts, appt) => {
-        counts[appt.roomId] = (counts[appt.roomId] || 0) + 1;
-        return counts;
-      }, {} as Record<number, number>);
+      // Get popular rooms (by booking count)
+      const rooms = await storage.getAllRooms();
+      const popularRooms = [];
       
-      const popularRooms = activeRooms.map(room => ({
-        room,
-        bookings: roomCounts[room.id] || 0,
-        utilization: roomUtilization.find(u => u.roomId === room.id)?.utilization || 0
-      })).sort((a, b) => b.bookings - a.bookings);
+      for (const room of rooms) {
+        const bookings = await storage.getAppointmentsByRoom(room.id);
+        const roomUtilization = await storage.getRoomUtilization(room.id, startDate, now);
+        popularRooms.push({
+          room,
+          bookings: bookings.length,
+          utilization: roomUtilization
+        });
+      }
+      
+      // Sort by booking count descending
+      popularRooms.sort((a, b) => b.bookings - a.bookings);
+      
+      // Get recent bookings
+      const recentBookingsList = await storage.getRecentAppointments(5);
       
       res.json({
-        totalAppointments: allAppointments.length,
-        recentAppointments: recentAppointments.length,
-        activeRooms: activeRooms.length,
-        totalUsers: allUsers.length,
-        utilization: averageUtilization,
+        totalAppointments,
+        recentAppointments,
+        activeRooms,
+        totalUsers,
+        utilization,
         popularRooms,
-        recentBookings: await storage.getRecentAppointments(5)
+        recentBookings: recentBookingsList
       });
     } catch (error) {
       next(error);
     }
   });
 
-  // Users administration (all authenticated users can view)
-  app.get("/api/users", isAuthenticated, async (req, res, next) => {
-    try {
-      const users = await storage.getAllUsers();
-      res.json(users);
-    } catch (error) {
-      next(error);
-    }
-  });
-
-  app.put("/api/users/:id", isAdmin, async (req, res, next) => {
-    try {
-      const id = parseInt(req.params.id);
-      
-      // Don't allow password updates through this endpoint
-      const { password, ...updates } = req.body;
-      
-      const updatedUser = await storage.updateUser(id, updates);
-      if (!updatedUser) {
-        return res.status(404).json({ message: "User not found" });
-      }
-      res.json(updatedUser);
-    } catch (error) {
-      next(error);
-    }
-  });
-
-  app.delete("/api/users/:id", isAdmin, async (req, res, next) => {
-    try {
-      const id = parseInt(req.params.id);
-      const success = await storage.deleteUser(id);
-      if (!success) {
-        return res.status(404).json({ message: "User not found" });
-      }
-      res.status(204).end();
-    } catch (error) {
-      next(error);
-    }
-  });
-  
-  // User updating themselves
-  app.patch("/api/users/:id", isAuthenticated, async (req, res, next) => {
-    try {
-      const id = parseInt(req.params.id);
-      const currentUserId = req.user!.id;
-      
-      // Check authorization - users can only update themselves unless they're admin
-      if (id !== currentUserId && req.user!.role !== 'admin') {
-        return res.status(403).json({ message: "You can only update your own account" });
-      }
-      
-      let updateData;
-      
-      // If admin, allow role updates, otherwise strip it
-      if (req.user!.role === 'admin') {
-        // Admins can update roles but not passwords via this endpoint
-        const { password, ...adminUpdates } = req.body;
-        updateData = adminUpdates;
-      } else {
-        // Non-admins can't update roles or passwords
-        const { password, role, ...regularUpdates } = req.body;
-        updateData = regularUpdates;
-      }
-      
-      const updatedUser = await storage.updateUser(id, updateData);
-      if (!updatedUser) {
-        return res.status(404).json({ message: "User not found" });
-      }
-      res.json(updatedUser);
-    } catch (error) {
-      next(error);
-    }
-  });
-
-  // Request account deletion
-  app.post("/api/users/:id/request-deletion", isAuthenticated, async (req, res, next) => {
-    try {
-      const id = parseInt(req.params.id);
-      const currentUserId = req.user!.id;
-      
-      // Check if this is the user's own account
-      if (id !== currentUserId) {
-        return res.status(403).json({ message: "You can only request deletion for your own account" });
-      }
-      
-      const user = await storage.getUser(id);
-      if (!user) {
-        return res.status(404).json({ message: "User not found" });
-      }
-      
-      // Mark for deletion
-      const updatedUser = await storage.updateUser(id, { deletionRequested: true });
-      res.json(updatedUser);
-    } catch (error) {
-      next(error);
-    }
-  });
-  
-  // Approve account deletion (admin only)
-  app.post("/api/users/:id/approve-deletion", isAdmin, async (req, res, next) => {
-    try {
-      const id = parseInt(req.params.id);
-      
-      const user = await storage.getUser(id);
-      if (!user) {
-        return res.status(404).json({ message: "User not found" });
-      }
-      
-      if (!user.deletionRequested) {
-        return res.status(400).json({ message: "This user has not requested deletion" });
-      }
-      
-      // Actually delete the user
-      const success = await storage.deleteUser(id);
-      if (!success) {
-        return res.status(500).json({ message: "Failed to delete user" });
-      }
-      
-      res.json({ success: true, message: "User deleted successfully" });
-    } catch (error) {
-      next(error);
-    }
-  });
-  
-  // Cancel deletion request
-  app.post("/api/users/:id/cancel-deletion-request", isAuthenticated, async (req, res, next) => {
-    try {
-      const id = parseInt(req.params.id);
-      const currentUserId = req.user!.id;
-      
-      // Check if this is the user's own account or admin
-      if (id !== currentUserId && req.user!.role !== 'admin') {
-        return res.status(403).json({ message: "You can only cancel deletion of your own account" });
-      }
-      
-      const updatedUser = await storage.updateUser(id, { deletionRequested: false });
-      if (!updatedUser) {
-        return res.status(404).json({ message: "User not found" });
-      }
-      res.json({ message: "Deletion request canceled successfully" });
-    } catch (error) {
-      next(error);
-    }
-  });
-  
-  // Change password (for authenticated user)
-  app.post("/api/users/:id/change-password", isAuthenticated, async (req, res, next) => {
-    try {
-      const id = parseInt(req.params.id);
-      const currentUserId = req.user!.id;
-      
-      // Check if this is the user's own account or admin
-      if (id !== currentUserId && req.user!.role !== 'admin') {
-        return res.status(403).json({ message: "You can only change your own password" });
-      }
-      
-      const { currentPassword, newPassword } = req.body;
-      
-      // Get the user
-      const user = await storage.getUser(id);
-      if (!user) {
-        return res.status(404).json({ message: "User not found" });
-      }
-      
-      // Import comparePasswords from auth module
-      const { comparePasswords, hashPassword } = require('./auth');
-      
-      // Verify current password
-      const isPasswordValid = await comparePasswords(currentPassword, user.password);
-      if (!isPasswordValid) {
-        return res.status(400).json({ message: "Current password is incorrect" });
-      }
-      
-      // Hash the new password
-      const hashedPassword = await hashPassword(newPassword);
-      
-      // Update the user's password
-      const updatedUser = await storage.updateUser(id, { password: hashedPassword });
-      if (!updatedUser) {
-        return res.status(404).json({ message: "Failed to update password" });
-      }
-      
-      res.json({ message: "Password changed successfully" });
-    } catch (error) {
-      next(error);
-    }
-  });
-
-  // Settings
-  app.get("/api/settings", isAdmin, async (req, res, next) => {
-    try {
-      const settings = await storage.getAllSettings();
-      res.json(settings);
-    } catch (error) {
-      next(error);
-    }
-  });
-
-  app.post("/api/settings/:key", isAdmin, async (req, res, next) => {
-    try {
-      const key = req.params.key;
-      const value = req.body.value;
-      
-      const setting = await storage.createOrUpdateSetting(key, value);
-      res.json(setting);
-    } catch (error) {
-      next(error);
-    }
-  });
-
-  // Email Settings
+  // Email settings endpoints
   app.get("/api/settings/email", isAdmin, async (req, res, next) => {
     try {
       const emailSetting = await storage.getSetting('email');
-      
-      if (!emailSetting) {
-        // Return default settings if none exist
-        return res.json({
-          enabled: false,
-          mailjetApiKey: "",
-          mailjetSecretKey: "",
-          systemEmail: "",
-          systemName: "ACRDSC Reservas",
-          notifyOnCreate: true,
-          notifyOnUpdate: true,
-          notifyOnStatusChange: true,
-          emailTemplateBookingCreated: "",
-          emailTemplateBookingUpdated: "",
-          emailTemplateBookingStatusChanged: ""
-        });
-      }
-      
       console.log("Retrieved email settings:", JSON.stringify(emailSetting));
       
-      // Check if value is an empty object and return defaults if it is
-      if (emailSetting.value && Object.keys(emailSetting.value).length === 0) {
+      // Return default settings if none exist
+      if (!emailSetting || !emailSetting.value || Object.keys(emailSetting.value).length === 0) {
         return res.json({
           enabled: false,
           mailjetApiKey: "",
@@ -763,29 +577,23 @@ export function registerRoutes(app: Express): Server {
         });
       }
       
-      // Cast to EmailSettings type
-      const settings = emailSetting.value as EmailSettings;
-      res.json(settings);
+      res.json(emailSetting.value);
     } catch (error) {
+      console.error("Error retrieving email settings:", error);
       next(error);
     }
   });
 
   app.post("/api/settings/email", isAdmin, async (req, res, next) => {
     try {
-      // Check if a direct POST request was made using curl
-      console.log("API ROUTE: Received POST to /api/settings/email");
-      console.log("Headers:", req.headers);
-      
       // Log the body in different formats to debug
+      console.log("API ROUTE: Received POST to /api/settings/email");
       console.log("Body as received:", req.body);
       console.log("Body type:", typeof req.body);
       console.log("Body stringified:", JSON.stringify(req.body));
       console.log("Body keys:", Object.keys(req.body));
       
-      // We'll now pass the data directly to storage and let it handle defaults
-      
-      // Save settings to database
+      // We'll now pass the data directly to storage
       const setting = await storage.createOrUpdateSetting('email', req.body);
       console.log("Setting saved to database:", JSON.stringify(setting));
       
@@ -816,6 +624,7 @@ export function registerRoutes(app: Express): Server {
 
   app.post("/api/settings/email/test", isAdmin, async (req, res, next) => {
     try {
+      // Get email settings
       const emailSetting = await storage.getSetting('email');
       
       if (!emailSetting) {
@@ -836,16 +645,22 @@ export function registerRoutes(app: Express): Server {
       }
       
       // Import Mailjet
-      let Mailjet;
-      try {
-        const { Client } = await import('node-mailjet');
-        Mailjet = Client;
-      } catch (error) {
-        return res.status(500).json({ error: "Failed to load Mailjet library" });
+      const mailjetModule = await import('node-mailjet');
+      console.log("Mailjet module keys:", Object.keys(mailjetModule));
+      
+      // Access the Client constructor from the imported module
+      const Client = mailjetModule.Client || mailjetModule.default;
+      console.log("Client type:", typeof Client);
+      
+      if (typeof Client !== 'function') {
+        return res.status(500).json({ 
+          error: "Failed to initialize Mailjet", 
+          details: "Invalid client constructor" 
+        });
       }
       
-      // Setup Mailjet client
-      const mailjet = new Mailjet({
+      // Create a client instance
+      const mailjet = new Client({
         apiKey: settings.mailjetApiKey,
         apiSecret: settings.mailjetSecretKey
       });
@@ -853,7 +668,7 @@ export function registerRoutes(app: Express): Server {
       // Send test email
       const user = req.user!;
       
-      await mailjet.post('send', { version: 'v3.1' }).request({
+      const response = await mailjet.post('send', { version: 'v3.1' }).request({
         Messages: [
           {
             From: {
@@ -877,6 +692,7 @@ export function registerRoutes(app: Express): Server {
         ]
       });
       
+      console.log("Email sent successfully:", response.body);
       res.json({ success: true, message: "Test email sent successfully" });
     } catch (error: any) {
       console.error("Error sending test email:", error);
