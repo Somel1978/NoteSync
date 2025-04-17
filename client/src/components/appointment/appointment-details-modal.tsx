@@ -169,21 +169,38 @@ export function AppointmentDetailsModal({
       const res = await apiRequest("PUT", `/api/appointments/${appointmentId}`, data);
       return await res.json();
     },
-    onSuccess: () => {
+    onSuccess: (updatedAppointment) => {
       toast({ title: "Appointment updated successfully" });
       
-      // Invalidate all potentially affected queries to ensure fresh data
-      queryClient.invalidateQueries({ queryKey: ["/api/appointments"] });
+      // Update appointment data in cache directly
+      queryClient.setQueryData(
+        ["/api/appointments", appointmentId],
+        updatedAppointment
+      );
       
-      // Specifically refetch the current appointment to ensure state is consistent
+      // Also invalidate the appointments list
       queryClient.invalidateQueries({ 
-        queryKey: ["/api/appointments", appointmentId] 
+        queryKey: ["/api/appointments"],
+        exact: false
       });
       
-      // Delay before exiting edit mode to allow data to refresh
+      // Wait for the next render cycle
       setTimeout(() => {
+        // Ensure we have the latest data when leaving edit mode
+        if (updatedAppointment) {
+          // Update local state with server response
+          setEditedAppointment(updatedAppointment);
+          
+          // Check if we still have customFacilities in window
+          if (window.customFacilities && updatedAppointment.customFacilities) {
+            // Make sure in-memory state stays in sync
+            window.customFacilities = { ...updatedAppointment.customFacilities };
+          }
+        }
+        
+        // Exit edit mode
         setIsEditMode(false);
-      }, 100);
+      }, 200);
     },
     onError: (error: Error) => {
       toast({
@@ -409,7 +426,7 @@ export function AppointmentDetailsModal({
     if (isEditMode) {
       // Before saving, make sure we store the custom facilities data in a way
       // that will be persisted with the appointment
-      const appointmentToSave = { ...editedAppointment };
+      const appointmentToSave = JSON.parse(JSON.stringify(editedAppointment)); // Deep clone
       
       // Make sure we have a customFacilities field
       if (!appointmentToSave.customFacilities) {
@@ -417,11 +434,20 @@ export function AppointmentDetailsModal({
       }
       
       // Store window.customFacilities data in the appointment itself
-      appointmentToSave.customFacilities = window.customFacilities;
+      if (window.customFacilities) {
+        appointmentToSave.customFacilities = { ...window.customFacilities };
+      }
       
-      // Save changes
+      // Save changes - onSuccess handler will update cache and local state
       updateMutation.mutate(appointmentToSave);
     } else {
+      // Just entering edit mode - no saving needed
+      if (appointment) {
+        // Make sure editedAppointment is synchronized with appointment
+        // This prevents issues with stale data when toggling edit mode multiple times
+        setEditedAppointment({...appointment});
+      }
+      
       // Enter edit mode
       setIsEditMode(true);
     }
@@ -1373,13 +1399,12 @@ export function AppointmentDetailsModal({
                                   <div className="text-xs text-gray-600 ml-4 mt-1">
                                     {roomBooking.costType === 'flat' && (
                                       <p>
-                                        Flat Rate (One-time fee)
                                         {rooms && (() => {
                                           const room = rooms.find(r => r.id === roomBooking.roomId);
                                           if (room && room.flatRate) {
-                                            return `: €${(room.flatRate / 100).toFixed(2)}`;
+                                            return `Flat Rate (One-time fee): €${(room.flatRate / 100).toFixed(2)} = €${(room.flatRate / 100).toFixed(2)}`;
                                           }
-                                          return '';
+                                          return 'Flat Rate (One-time fee)';
                                         })()}
                                       </p>
                                     )}
@@ -1387,19 +1412,19 @@ export function AppointmentDetailsModal({
                                     {roomBooking.costType === 'hourly' && (
                                       <p>
                                         {appointment.startTime && appointment.endTime ? (
-                                          <>
-                                            Hourly Rate: {Math.max(1, Math.ceil(
+                                          (() => {
+                                            const hours = Math.max(1, Math.ceil(
                                               (new Date(appointment.endTime).getTime() - new Date(appointment.startTime).getTime()) 
                                               / (1000 * 60 * 60)
-                                            ))} hours 
-                                            {rooms && (() => {
-                                              const room = rooms.find(r => r.id === roomBooking.roomId);
-                                              if (room && room.hourlyRate) {
-                                                return ` × €${(room.hourlyRate / 100).toFixed(2)} per hour`;
-                                              }
-                                              return '';
-                                            })()}
-                                          </>
+                                            ));
+                                            const room = rooms?.find(r => r.id === roomBooking.roomId);
+                                            if (room && room.hourlyRate) {
+                                              const hourlyRate = room.hourlyRate / 100;
+                                              const total = hours * hourlyRate;
+                                              return `Hourly Rate: ${hours} hours × €${hourlyRate.toFixed(2)} per hour = €${total.toFixed(2)}`;
+                                            }
+                                            return `Hourly Rate: ${hours} hours`;
+                                          })()
                                         ) : (
                                           <>Hourly Rate</>
                                         )}
@@ -1408,13 +1433,15 @@ export function AppointmentDetailsModal({
                                     
                                     {roomBooking.costType === 'per_attendee' && (
                                       <p>
-                                        Per Attendee: {appointment.attendeesCount} attendees
-                                        {rooms && (() => {
-                                          const room = rooms.find(r => r.id === roomBooking.roomId);
+                                        {(() => {
+                                          const attendees = appointment.attendeesCount || 0;
+                                          const room = rooms?.find(r => r.id === roomBooking.roomId);
                                           if (room && room.attendeeRate) {
-                                            return ` × €${(room.attendeeRate / 100).toFixed(2)} per person`;
+                                            const attendeeRate = room.attendeeRate / 100;
+                                            const total = attendees * attendeeRate;
+                                            return `Per Attendee: ${attendees} attendees × €${attendeeRate.toFixed(2)} per person = €${total.toFixed(2)}`;
                                           }
-                                          return '';
+                                          return `Per Attendee: ${attendees} attendees`;
                                         })()}
                                       </p>
                                     )}
