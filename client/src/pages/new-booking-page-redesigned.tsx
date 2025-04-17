@@ -358,15 +358,14 @@ export default function NewBookingPage() {
 
   return (
     <AppLayout>
-      <div className="container mx-auto max-w-4xl py-6 px-4 sm:px-6">
-        <div className="flex flex-col space-y-6">
-          <div className="flex flex-col space-y-2">
-            <h1 className="text-3xl font-bold tracking-tight">New Booking</h1>
-            <p className="text-muted-foreground">Create a new room reservation request</p>
-          </div>
+      <div className="max-w-4xl py-6 px-4 sm:px-6 mx-auto">
+        <div className="mb-6">
+          <h1 className="text-3xl font-bold tracking-tight">New Booking</h1>
+          <p className="text-muted-foreground">Create a new room reservation request</p>
+        </div>
 
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 mb-0">
               {/* Step 1: Basic Information */}
               <Card>
                 <CardHeader className="pb-4">
@@ -1063,35 +1062,32 @@ export default function NewBookingPage() {
                 </Card>
               )}
 
-              <Card>
-                <CardFooter className="flex justify-between pt-6">
-                  <Button 
-                    variant="outline"
-                    type="button" 
-                    onClick={() => form.reset()}
-                  >
-                    Clear Form
-                  </Button>
-                  <Button
-                    type="submit"
-                    disabled={createBookingMutation.isPending}
-                    className="min-w-[150px]"
-                  >
-                    {createBookingMutation.isPending ? (
-                      <>Creating Booking...</>
-                    ) : (
-                      <>
-                        <Save className="h-4 w-4 mr-2" />
-                        Create Booking
-                      </>
-                    )}
-                  </Button>
-                </CardFooter>
-              </Card>
+              <div className="flex justify-between pt-6 pb-0">
+                <Button 
+                  variant="outline"
+                  type="button" 
+                  onClick={() => form.reset()}
+                >
+                  Clear Form
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={createBookingMutation.isPending}
+                  className="min-w-[150px]"
+                >
+                  {createBookingMutation.isPending ? (
+                    <>Creating Booking...</>
+                  ) : (
+                    <>
+                      <Save className="h-4 w-4 mr-2" />
+                      Create Booking
+                    </>
+                  )}
+                </Button>
+              </div>
             </form>
           </Form>
         </div>
-      </div>
-    </AppLayout>
+      </AppLayout>
   );
 }
