@@ -169,7 +169,7 @@ export function Sidebar() {
       <div className="mt-auto border-t border-gray-700 p-4">
         <Button
           variant="ghost"
-          className="text-gray-300 hover:bg-transparent w-full justify-start px-4 py-2 mb-2"
+          className="text-gray-300 hover:text-gray-300 hover:bg-transparent w-full justify-start px-4 py-2 mb-2"
           onClick={() => navigate("/")}
         >
           <Home className="h-5 w-5 mr-3" />
@@ -178,7 +178,7 @@ export function Sidebar() {
         
         <Button
           variant="ghost"
-          className="text-gray-300 hover:bg-transparent w-full justify-start px-4 py-2"
+          className="text-gray-300 hover:text-gray-300 hover:bg-transparent w-full justify-start px-4 py-2"
           onClick={handleLogout}
         >
           <LogOut className="h-5 w-5 mr-3" />
