@@ -326,85 +326,83 @@ export class DatabaseStorage implements IStorage {
     // Create a more detailed audit trail by collecting field changes and their values
     const fieldChanges: Record<string, { oldValue: any, newValue: any }> = {};
     
-    // Helper function to recursively process date strings
-    const processDateStrings = (obj: any): any => {
-      if (!obj || typeof obj !== 'object') return obj;
+    // Create an object for updating the database
+    const finalData: Record<string, any> = {
+      // Copy all fields except date fields
+      ...Object.fromEntries(
+        Object.entries(updates).filter(([key]) => 
+          key !== 'startTime' && key !== 'endTime' && key !== 'createdAt' && key !== 'updatedAt'
+        )
+      ),
       
-      // Process Arrays
-      if (Array.isArray(obj)) {
-        return obj.map(item => processDateStrings(item));
-      }
-      
-      // Process Objects
-      const result: any = {};
-      
-      for (const key in obj) {
-        const value = obj[key];
-        
-        // If it's a date-like string, convert it to Date
-        if (typeof value === 'string' && 
-            /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{3})?Z$/.test(value)) {
-          result[key] = new Date(value);
-        }
-        // If it's a nested object, process it recursively
-        else if (value && typeof value === 'object') {
-          result[key] = processDateStrings(value);
-        }
-        // Otherwise, keep the original value
-        else {
-          result[key] = value;
-        }
-      }
-      
-      return result;
+      // Set updatedAt to current timestamp
+      updatedAt: new Date()
     };
     
-    // Create a clean copy of updates with dates properly processed
-    const processedUpdates = processDateStrings({ ...updates });
-    
-    // Force convert main date fields to Date objects, handling various formats
-    try {
-      // Handle startTime
-      if (processedUpdates.startTime) {
-        if (!(processedUpdates.startTime instanceof Date)) {
-          // If it's a string, try to parse it
-          if (typeof processedUpdates.startTime === 'string') {
-            processedUpdates.startTime = new Date(processedUpdates.startTime);
-          } 
-          // If it's an object with toString, try to convert it
-          else if (typeof processedUpdates.startTime === 'object' && processedUpdates.startTime.toString) {
-            processedUpdates.startTime = new Date(processedUpdates.startTime.toString());
+    // Safely handle startTime
+    if (updates.startTime) {
+      try {
+        if (updates.startTime instanceof Date) {
+          // If it's already a Date, make sure it's valid
+          if (!isNaN(updates.startTime.getTime())) {
+            finalData.startTime = updates.startTime;
+            console.log("Storage: Valid startTime Date object:", finalData.startTime.toISOString());
+          } else {
+            // If it's an invalid Date, use the original
+            finalData.startTime = originalAppointment.startTime;
+            console.warn("Storage: Invalid Date object for startTime.");
+          }
+        } else {
+          // Try to parse from a string if possible
+          const parsedDate = new Date(updates.startTime as any);
+          
+          if (!isNaN(parsedDate.getTime())) {
+            finalData.startTime = parsedDate;
+            console.log("Storage: Converted startTime to valid Date:", finalData.startTime.toISOString());
+          } else {
+            finalData.startTime = originalAppointment.startTime;
+            console.warn("Storage: Could not parse startTime value:", updates.startTime);
           }
         }
-        console.log("Storage: processed startTime:", processedUpdates.startTime);
+      } catch (e) {
+        console.error("Storage: Error processing startTime:", e);
+        finalData.startTime = originalAppointment.startTime;
       }
-      
-      // Handle endTime
-      if (processedUpdates.endTime) {
-        if (!(processedUpdates.endTime instanceof Date)) {
-          // If it's a string, try to parse it
-          if (typeof processedUpdates.endTime === 'string') {
-            processedUpdates.endTime = new Date(processedUpdates.endTime);
-          } 
-          // If it's an object with toString, try to convert it
-          else if (typeof processedUpdates.endTime === 'object' && processedUpdates.endTime.toString) {
-            processedUpdates.endTime = new Date(processedUpdates.endTime.toString());
-          }
-        }
-        console.log("Storage: processed endTime:", processedUpdates.endTime);
-      }
-    } catch (e) {
-      console.error("Error converting dates in storage layer:", e);
     }
     
-    // Set updatedAt to current timestamp
-    const updateData = { 
-      ...processedUpdates,
-      updatedAt: new Date() 
-    };
+    // Safely handle endTime
+    if (updates.endTime) {
+      try {
+        if (updates.endTime instanceof Date) {
+          // If it's already a Date, make sure it's valid
+          if (!isNaN(updates.endTime.getTime())) {
+            finalData.endTime = updates.endTime;
+            console.log("Storage: Valid endTime Date object:", finalData.endTime.toISOString());
+          } else {
+            // If it's an invalid Date, use the original
+            finalData.endTime = originalAppointment.endTime;
+            console.warn("Storage: Invalid Date object for endTime.");
+          }
+        } else {
+          // Try to parse from a string if possible
+          const parsedDate = new Date(updates.endTime as any);
+          
+          if (!isNaN(parsedDate.getTime())) {
+            finalData.endTime = parsedDate;
+            console.log("Storage: Converted endTime to valid Date:", finalData.endTime.toISOString());
+          } else {
+            finalData.endTime = originalAppointment.endTime;
+            console.warn("Storage: Could not parse endTime value:", updates.endTime);
+          }
+        }
+      } catch (e) {
+        console.error("Storage: Error processing endTime:", e);
+        finalData.endTime = originalAppointment.endTime;
+      }
+    }
     
     // Log the update data for debugging
-    console.log("Storage: updateAppointment with processed data:", JSON.stringify(updateData, (key, value) => {
+    console.log("Storage: updateAppointment with processed data:", JSON.stringify(finalData, (key, value) => {
       if (value instanceof Date) {
         return value.toISOString();
       }
@@ -414,7 +412,7 @@ export class DatabaseStorage implements IStorage {
     // Perform the update in the database
     const [updatedAppointment] = await db
       .update(appointments)
-      .set(updateData)
+      .set(finalData)
       .where(eq(appointments.id, id))
       .returning();
     

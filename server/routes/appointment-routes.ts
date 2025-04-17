@@ -172,67 +172,67 @@ export function registerAppointmentRoutes(app: Express): void {
         return res.status(403).json({ message: "Forbidden - You can only update your own appointments" });
       }
       
-      // Helper function to recursively process date strings in the object
-      const processDateFields = (obj: any): any => {
-        // Skip null/undefined values
-        if (!obj) return obj;
-        
-        // Handle arrays
-        if (Array.isArray(obj)) {
-          return obj.map(item => processDateFields(item));
+      // Create a clean copy of the request body without any dates for now
+      const updateData: Record<string, any> = {};
+      
+      // Copy all non-date fields directly
+      Object.keys(req.body).forEach(key => {
+        if (key !== 'startTime' && key !== 'endTime' && key !== 'createdAt' && key !== 'updatedAt') {
+          updateData[key] = req.body[key];
         }
-        
-        // Handle objects
-        if (typeof obj === 'object' && !(obj instanceof Date)) {
-          const newObj: Record<string, any> = {};
+      });
+      
+      // Manually handle the date fields
+      if (req.body.startTime) {
+        try {
+          console.log("Original startTime value from client:", req.body.startTime);
           
-          for (const key in obj) {
-            // Process nested objects and arrays recursively
-            if (obj[key] && typeof obj[key] === 'object') {
-              newObj[key] = processDateFields(obj[key]);
-            } 
-            // Convert ISO date strings to Date objects
-            else if (typeof obj[key] === 'string' && 
-                     /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{3})?Z$/.test(obj[key])) {
-              try {
-                newObj[key] = new Date(obj[key]);
-              } catch (e) {
-                console.warn(`Failed to convert date string: ${obj[key]}`, e);
-                newObj[key] = obj[key]; // Keep original value if conversion fails
-              }
-            } 
-            // Keep other values as is
-            else {
-              newObj[key] = obj[key];
-            }
+          // Make sure we have a valid date string
+          const startTimeStr = String(req.body.startTime).trim();
+          
+          // Try to create a valid Date object
+          const startDate = new Date(startTimeStr);
+          
+          // Verify the date is valid
+          if (!isNaN(startDate.getTime())) {
+            console.log("Valid startTime parsed:", startDate.toISOString());
+            updateData.startTime = startDate;
+          } else {
+            console.error("Invalid startTime value:", startTimeStr);
+            // Keep the original value from the database
+            updateData.startTime = appointment.startTime;
           }
-          return newObj;
+        } catch (e) {
+          console.error("Error parsing startTime:", e);
+          // Keep the original value from the database
+          updateData.startTime = appointment.startTime;
         }
-        
-        // Return primitives and already processed values as is
-        return obj;
-      };
+      }
       
-      // Process the entire update object, including nested structures
-      const updateData = processDateFields({ ...req.body });
-      
-      // Force convert startTime and endTime to Date objects, even if they're null/undefined
-      try {
-        console.log("Original startTime:", req.body.startTime, "Type:", typeof req.body.startTime);
-        console.log("Original endTime:", req.body.endTime, "Type:", typeof req.body.endTime);
-        
-        // Always attempt to parse startTime and endTime from the original request body
-        if (req.body.startTime) {
-          updateData.startTime = new Date(req.body.startTime);
-          console.log("Converted startTime:", updateData.startTime);
+      if (req.body.endTime) {
+        try {
+          console.log("Original endTime value from client:", req.body.endTime);
+          
+          // Make sure we have a valid date string
+          const endTimeStr = String(req.body.endTime).trim();
+          
+          // Try to create a valid Date object
+          const endDate = new Date(endTimeStr);
+          
+          // Verify the date is valid
+          if (!isNaN(endDate.getTime())) {
+            console.log("Valid endTime parsed:", endDate.toISOString());
+            updateData.endTime = endDate;
+          } else {
+            console.error("Invalid endTime value:", endTimeStr);
+            // Keep the original value from the database
+            updateData.endTime = appointment.endTime;
+          }
+        } catch (e) {
+          console.error("Error parsing endTime:", e);
+          // Keep the original value from the database
+          updateData.endTime = appointment.endTime;
         }
-        
-        if (req.body.endTime) {
-          updateData.endTime = new Date(req.body.endTime);
-          console.log("Converted endTime:", updateData.endTime);
-        }
-      } catch (e) {
-        console.error("Error converting dates:", e);
       }
       
       // Log what we're updating with
