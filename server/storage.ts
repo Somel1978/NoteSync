@@ -362,13 +362,39 @@ export class DatabaseStorage implements IStorage {
     // Create a clean copy of updates with dates properly processed
     const processedUpdates = processDateStrings({ ...updates });
     
-    // Make extra sure the main date fields are Date objects 
-    if (processedUpdates.startTime && !(processedUpdates.startTime instanceof Date)) {
-      processedUpdates.startTime = new Date(processedUpdates.startTime);
-    }
-    
-    if (processedUpdates.endTime && !(processedUpdates.endTime instanceof Date)) {
-      processedUpdates.endTime = new Date(processedUpdates.endTime);
+    // Force convert main date fields to Date objects, handling various formats
+    try {
+      // Handle startTime
+      if (processedUpdates.startTime) {
+        if (!(processedUpdates.startTime instanceof Date)) {
+          // If it's a string, try to parse it
+          if (typeof processedUpdates.startTime === 'string') {
+            processedUpdates.startTime = new Date(processedUpdates.startTime);
+          } 
+          // If it's an object with toString, try to convert it
+          else if (typeof processedUpdates.startTime === 'object' && processedUpdates.startTime.toString) {
+            processedUpdates.startTime = new Date(processedUpdates.startTime.toString());
+          }
+        }
+        console.log("Storage: processed startTime:", processedUpdates.startTime);
+      }
+      
+      // Handle endTime
+      if (processedUpdates.endTime) {
+        if (!(processedUpdates.endTime instanceof Date)) {
+          // If it's a string, try to parse it
+          if (typeof processedUpdates.endTime === 'string') {
+            processedUpdates.endTime = new Date(processedUpdates.endTime);
+          } 
+          // If it's an object with toString, try to convert it
+          else if (typeof processedUpdates.endTime === 'object' && processedUpdates.endTime.toString) {
+            processedUpdates.endTime = new Date(processedUpdates.endTime.toString());
+          }
+        }
+        console.log("Storage: processed endTime:", processedUpdates.endTime);
+      }
+    } catch (e) {
+      console.error("Error converting dates in storage layer:", e);
     }
     
     // Set updatedAt to current timestamp

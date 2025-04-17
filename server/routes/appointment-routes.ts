@@ -216,13 +216,23 @@ export function registerAppointmentRoutes(app: Express): void {
       // Process the entire update object, including nested structures
       const updateData = processDateFields({ ...req.body });
       
-      // Extra safety for main date fields
-      if (updateData.startTime && !(updateData.startTime instanceof Date)) {
-        updateData.startTime = new Date(updateData.startTime);
-      }
-      
-      if (updateData.endTime && !(updateData.endTime instanceof Date)) {
-        updateData.endTime = new Date(updateData.endTime);
+      // Force convert startTime and endTime to Date objects, even if they're null/undefined
+      try {
+        console.log("Original startTime:", req.body.startTime, "Type:", typeof req.body.startTime);
+        console.log("Original endTime:", req.body.endTime, "Type:", typeof req.body.endTime);
+        
+        // Always attempt to parse startTime and endTime from the original request body
+        if (req.body.startTime) {
+          updateData.startTime = new Date(req.body.startTime);
+          console.log("Converted startTime:", updateData.startTime);
+        }
+        
+        if (req.body.endTime) {
+          updateData.endTime = new Date(req.body.endTime);
+          console.log("Converted endTime:", updateData.endTime);
+        }
+      } catch (e) {
+        console.error("Error converting dates:", e);
       }
       
       // Log what we're updating with
