@@ -353,6 +353,8 @@
     "manageLocations": "Manage Locations",
     "password": "Password",
     "editUser": "Edit User",
+    "editUserDesc": "Update user information and role for this account",
+    "userRole": "User Role",
     "userUpdated": "User Updated",
     "userUpdateSuccess": "The user has been successfully updated.",
     "userUpdateFailed": "Failed to update user",

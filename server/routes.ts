@@ -532,10 +532,20 @@ export function registerRoutes(app: Express): Server {
         return res.status(403).json({ message: "You can only update your own account" });
       }
       
-      // Don't allow password or role updates through this endpoint
-      const { password, role, ...updates } = req.body;
+      let updateData;
       
-      const updatedUser = await storage.updateUser(id, updates);
+      // If admin, allow role updates, otherwise strip it
+      if (req.user!.role === 'admin') {
+        // Admins can update roles but not passwords via this endpoint
+        const { password, ...adminUpdates } = req.body;
+        updateData = adminUpdates;
+      } else {
+        // Non-admins can't update roles or passwords
+        const { password, role, ...regularUpdates } = req.body;
+        updateData = regularUpdates;
+      }
+      
+      const updatedUser = await storage.updateUser(id, updateData);
       if (!updatedUser) {
         return res.status(404).json({ message: "User not found" });
       }

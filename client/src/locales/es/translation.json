@@ -352,6 +352,8 @@
     "deletionApproveFailed": "Error al Aprobar Eliminación",
     "approveDeleteRequest": "Aprobar Solicitud de Eliminación",
     "editUser": "Editar Usuario",
+    "editUserDesc": "Actualizar información y rol de este usuario",
+    "userRole": "Rol de Usuario",
     "userUpdated": "Usuario Actualizado",
     "userUpdateSuccess": "El usuario ha sido actualizado exitosamente.",
     "userUpdateFailed": "Error al actualizar usuario",

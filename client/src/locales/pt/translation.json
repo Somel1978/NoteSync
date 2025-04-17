@@ -343,6 +343,8 @@
     "manageLocations": "Gerenciar Localizações",
     "password": "Senha",
     "editUser": "Editar Usuário",
+    "editUserDesc": "Atualizar informações e função deste usuário",
+    "userRole": "Função do Usuário",
     "userUpdated": "Usuário Atualizado",
     "userUpdateSuccess": "O usuário foi atualizado com sucesso.",
     "userUpdateFailed": "Falha ao atualizar usuário",
