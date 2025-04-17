@@ -148,7 +148,12 @@ export function AppointmentDetailsModal({
   const rejectMutation = useMutation({
     mutationFn: async ({ id, reason }: { id: number; reason: string }) => {
       console.log(`Rejecting appointment ${id} with reason: ${reason}`);
-      const res = await apiRequest("PUT", `/api/appointments/${id}/reject`, { reason });
+      // Make sure we're sending the reason properly in the request body
+      const res = await apiRequest("PUT", `/api/appointments/${id}/reject`, { reason: reason });
+      // For 204 responses, there's no JSON to parse
+      if (res.status === 204) {
+        return { id, success: true };
+      }
       return await res.json();
     },
     onSuccess: (data) => {

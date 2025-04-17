@@ -404,6 +404,9 @@ export function registerAppointmentRoutes(app: Express): void {
     try {
       const id = parseInt(req.params.id);
       const { reason } = req.body;
+      
+      console.log(`Rejection request for appointment ${id} with reason:`, reason);
+      
       const appointment = await storage.getAppointment(id);
       
       if (!appointment) {
@@ -416,29 +419,41 @@ export function registerAppointmentRoutes(app: Express): void {
       }
       
       // Update the appointment with rejected status and reason
+      const rejectionReason = reason || "No reason provided";
+      console.log(`Updating appointment ${id} with rejection reason:`, rejectionReason);
+      
       const updatedAppointment = await storage.updateAppointment(id, {
         status: "rejected",
-        rejectionReason: reason
+        rejectionReason: rejectionReason
       });
       
       if (!updatedAppointment) {
         return res.status(500).json({ message: "Failed to reject appointment" });
       }
       
-      // Create audit log entry
+      // Create audit log entry with newData to store rejection reason
       await storage.createAuditLog({
         appointmentId: id,
         userId: req.user?.id as number,
         action: "status-changed-to-rejected",
-        details: `Status changed from ${appointment.status} to rejected. Reason: ${reason || "No reason provided"}`,
-        // Store additional data to show the rejection reason more clearly in UI
+        details: `Status changed from ${appointment.status} to rejected. Reason: ${rejectionReason}`,
         oldData: { status: appointment.status },
-        newData: { status: "rejected", rejectionReason: reason }
+        newData: { 
+          status: "rejected",
+          rejectionReason: rejectionReason
+        }
       });
       
       // Try to send notification but don't fail if email sending fails
       try {
-        await EmailNotificationService.appointmentStatusChanged(updatedAppointment, req.user!, appointment.status);
+        // Send email notification about the status change
+        if (updatedAppointment) {
+          await EmailNotificationService.appointmentStatusChanged(
+            updatedAppointment, 
+            req.user!, 
+            appointment.status
+          );
+        }
       } catch (emailError) {
         console.error("Error sending rejection notification:", emailError);
         // Continue without failing the request
