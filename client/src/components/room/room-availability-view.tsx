@@ -1,6 +1,6 @@
 import { useTranslation } from "react-i18next";
-import { useParams } from "wouter";
-import { useState, useEffect } from "react";
+import { useParams, useLocation } from "wouter";
+import { useState, useEffect, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Room, Location, Appointment } from "@shared/schema";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -12,12 +12,15 @@ import { format, addDays, isWithinInterval, isSameDay } from "date-fns";
 import { Calendar, Clock, User, MapPin, Info, ListChecks, DollarSign } from "lucide-react";
 import { ptBR, enUS, es } from "date-fns/locale";
 import { RoomAvailabilityCalendar } from "./room-availability-calendar";
+import { useAuth } from "@/hooks/use-auth";
 
 export function RoomAvailabilityView() {
   const { t, i18n } = useTranslation();
   const { id } = useParams<{ id?: string }>();
   const roomId = id ? parseInt(id) : undefined;
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [, setLocation] = useLocation();
+  const { user } = useAuth();
   
   // Get the right locale for date-fns
   const getDateLocale = () => {
@@ -31,12 +34,24 @@ export function RoomAvailabilityView() {
     }
   };
 
-  // Fetch specific room if ID is provided
+  // Memo para cache de salas
+  const roomsCache = useMemo(() => {
+    return new Map<number, Room>();
+  }, []);
+
+  // Fetch specific room if ID is provided - com cache para melhor desempenho
   const { data: room, isLoading: isRoomLoading } = useQuery<Room>({
     queryKey: ["/api/public/rooms", roomId],
     enabled: !!roomId,
+    staleTime: 5 * 60 * 1000, // 5 minutos de cache
     queryFn: async () => {
       if (!roomId) return null;
+      
+      // Verificar se já temos esta sala em cache
+      if (roomsCache.has(roomId)) {
+        return roomsCache.get(roomId)!;
+      }
+      
       // Buscar todas as salas e filtrar pelo ID
       const res = await fetch('/api/public/rooms', {
         credentials: "include",
@@ -51,6 +66,11 @@ export function RoomAvailabilityView() {
         throw new Error(`Room with ID ${roomId} not found`);
       }
       
+      // Adicionar ao cache
+      rooms.forEach((r: Room) => {
+        roomsCache.set(r.id, r);
+      });
+      
       return selectedRoom;
     },
   });
@@ -59,26 +79,35 @@ export function RoomAvailabilityView() {
   const { data: rooms = [], isLoading: isRoomsLoading } = useQuery<Room[]>({
     queryKey: ["/api/public/rooms"],
     enabled: !roomId,
+    staleTime: 5 * 60 * 1000, // 5 minutos de cache
   });
   
   // Fetch locations for context
   const { data: locations = [], isLoading: isLocationsLoading } = useQuery<Location[]>({
     queryKey: ["/api/public/locations"],
+    staleTime: 10 * 60 * 1000, // 10 minutos de cache
   });
   
   // Fetch appointments for the specific room
   const { data: appointments = [], isLoading: isAppointmentsLoading } = useQuery<Appointment[]>({
     queryKey: ["/api/public/appointments/room", roomId],
     enabled: !!roomId,
+    staleTime: 60 * 1000, // 1 minuto de cache
     queryFn: async () => {
       if (!roomId) return [];
-      const res = await fetch(`/api/public/appointments/room/${roomId}`, {
-        credentials: "include",
-      });
-      if (!res.ok) {
-        throw new Error(`Error fetching appointments: ${res.status}`);
+      try {
+        const res = await fetch(`/api/public/appointments/room/${roomId}`, {
+          credentials: "include",
+        });
+        if (!res.ok) {
+          console.error(`Error fetching appointments: ${res.status}`);
+          return [];
+        }
+        return await res.json();
+      } catch (error) {
+        console.error("Failed to fetch appointments:", error);
+        return [];
       }
-      return await res.json();
     },
   });
   
@@ -199,14 +228,17 @@ export function RoomAvailabilityView() {
                     )}
                   </div>
                   
-                  <div className="mt-6">
-                    <Button 
-                      className="w-full"
-                      onClick={() => window.location.href = "/auth"}
-                    >
-                      {t("rooms.bookNow")}
-                    </Button>
-                  </div>
+                  {/* Botão de reserva - mostra apenas para usuários logados */}
+                  {user ? (
+                    <div className="mt-6">
+                      <Button 
+                        className="w-full"
+                        onClick={() => setLocation(`/new-booking?roomId=${room.id}`)}
+                      >
+                        {t("rooms.bookNow")}
+                      </Button>
+                    </div>
+                  ) : null}
                 </div>
                 
                 <div>
