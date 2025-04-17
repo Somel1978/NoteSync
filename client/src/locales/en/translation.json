@@ -216,7 +216,14 @@
         "created": "Created",
         "approved": "Approved",
         "rejected": "Rejected",
-        "deleted": "Deleted"
+        "deleted": "Deleted",
+        "rejectionReason": "Rejection Reason",
+        "noRecords": "No history records available",
+        "loading": "Loading history...",
+        "changesNotAvailable": "No specific changes recorded",
+        "unknownDate": "Unknown date",
+        "system": "System",
+        "userWithId": "User ID: {{id}}"
       },
       "rejectAppointment": "Reject Appointment",
       "rejectReason": "Please provide a reason for rejecting this appointment. This information will be shared with the customer.",

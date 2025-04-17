@@ -172,7 +172,8 @@
         "updated": "Atualizado",
         "approved": "Aprovado",
         "rejected": "Rejeitado",
-        "deleted": "Excluído"
+        "deleted": "Excluído",
+        "rejectionReason": "Motivo da Rejeição"
       },
       "noData": "Nenhum dado de agendamento disponível",
       "reject": {
