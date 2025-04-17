@@ -7,7 +7,7 @@ import AuthPage from "@/pages/auth-page";
 import DashboardPage from "@/pages/dashboard-page";
 import AppointmentsPage from "@/pages/appointments-page";
 import RoomListPage from "@/pages/room-list-page";
-import NewBookingPage from "@/pages/new-booking-page-redesigned";
+import NewBookingPage from "@/pages/simple-booking-page";
 import SettingsPage from "@/pages/settings-page";
 import LandingPage from "@/pages/landing-page";
 import PublicRoomPage from "@/pages/public-room-page";
