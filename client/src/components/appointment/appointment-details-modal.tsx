@@ -1910,12 +1910,12 @@ export function AppointmentDetailsModal({
                       {isEditMode ? (
                         <>
                           <Save className="h-4 w-4 mr-2" />
-                          Save
+                          {t('common.save')}
                         </>
                       ) : (
                         <>
                           <Edit className="h-4 w-4 mr-2" />
-                          Edit
+                          {t('common.edit')}
                         </>
                       )}
                     </Button>
@@ -1924,30 +1924,30 @@ export function AppointmentDetailsModal({
                   {!isEditMode ? (
                     <div className="space-y-6">
                       <div>
-                        <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">Customer Name</h5>
-                        <p className="text-sm text-gray-900">{appointment.customerName || "Not provided"}</p>
+                        <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">{t('appointments.detailsModal.customerName')}</h5>
+                        <p className="text-sm text-gray-900">{appointment.customerName || t('common.notProvided')}</p>
                       </div>
                       <div>
-                        <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">Email</h5>
-                        <p className="text-sm text-gray-900">{appointment.customerEmail || "Not provided"}</p>
+                        <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">{t('appointments.detailsModal.email')}</h5>
+                        <p className="text-sm text-gray-900">{appointment.customerEmail || t('common.notProvided')}</p>
                       </div>
                       <div>
-                        <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">Phone</h5>
-                        <p className="text-sm text-gray-900">{appointment.customerPhone || "Not provided"}</p>
+                        <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">{t('appointments.detailsModal.phone')}</h5>
+                        <p className="text-sm text-gray-900">{appointment.customerPhone || t('common.notProvided')}</p>
                       </div>
                       <div>
-                        <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">Organization</h5>
-                        <p className="text-sm text-gray-900">{appointment.customerOrganization || "Not provided"}</p>
+                        <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">{t('appointments.detailsModal.organization')}</h5>
+                        <p className="text-sm text-gray-900">{appointment.customerOrganization || t('common.notProvided')}</p>
                       </div>
                       <div>
-                        <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">Notes</h5>
-                        <p className="text-sm text-gray-900 whitespace-pre-line">{appointment.notes || "No additional notes"}</p>
+                        <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">{t('appointments.detailsModal.notes')}</h5>
+                        <p className="text-sm text-gray-900 whitespace-pre-line">{appointment.notes || t('appointments.detailsModal.noNotes')}</p>
                       </div>
                     </div>
                   ) : (
                     <div className="space-y-6">
                       <div>
-                        <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">Customer Name</h5>
+                        <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">{t('appointments.detailsModal.customerName')}</h5>
                         <Input
                           value={editedAppointment.customerName || ""}
                           onChange={(e) => handleInputChange('customerName', e.target.value)}
@@ -1955,7 +1955,7 @@ export function AppointmentDetailsModal({
                         />
                       </div>
                       <div>
-                        <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">Email</h5>
+                        <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">{t('appointments.detailsModal.email')}</h5>
                         <Input
                           type="email"
                           value={editedAppointment.customerEmail || ""}
@@ -1964,7 +1964,7 @@ export function AppointmentDetailsModal({
                         />
                       </div>
                       <div>
-                        <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">Phone</h5>
+                        <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">{t('appointments.detailsModal.phone')}</h5>
                         <Input
                           value={editedAppointment.customerPhone || ""}
                           onChange={(e) => handleInputChange('customerPhone', e.target.value)}
@@ -1972,7 +1972,7 @@ export function AppointmentDetailsModal({
                         />
                       </div>
                       <div>
-                        <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">Organization</h5>
+                        <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">{t('appointments.detailsModal.organization')}</h5>
                         <Input
                           value={editedAppointment.customerOrganization || ""}
                           onChange={(e) => handleInputChange('customerOrganization', e.target.value)}
@@ -1980,7 +1980,7 @@ export function AppointmentDetailsModal({
                         />
                       </div>
                       <div>
-                        <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">Notes</h5>
+                        <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">{t('appointments.detailsModal.notes')}</h5>
                         <Textarea
                           value={editedAppointment.notes || ""}
                           onChange={(e) => handleInputChange('notes', e.target.value)}
@@ -2000,16 +2000,16 @@ export function AppointmentDetailsModal({
                       </svg>
                     </div>
                     <div className="ml-4">
-                      <h4 className="text-sm font-medium text-gray-900">Appointment History</h4>
+                      <h4 className="text-sm font-medium text-gray-900">{t('appointments.detailsModal.appointmentHistory')}</h4>
                       <p className="text-xs text-gray-500 mt-1">
-                        A log of all changes made to this appointment
+                        {t('appointments.detailsModal.historyDescription')}
                       </p>
                     </div>
                   </div>
 
                   {isLogsLoading ? (
                     <div className="flex justify-center items-center h-40">
-                      <p>Loading history...</p>
+                      <p>{t('appointments.detailsModal.history.loading')}</p>
                     </div>
                   ) : auditLogs && Array.isArray(auditLogs) && auditLogs.length > 0 ? (
                     <div className="space-y-4 max-h-[400px] overflow-y-auto">
@@ -2028,11 +2028,11 @@ export function AppointmentDetailsModal({
                           <div className="flex justify-between items-start">
                             <div>
                               <h5 className="font-medium text-sm">
-                                {log.actionType === 'create' ? 'Appointment Created' :
-                                 log.actionType === 'update' ? 'Appointment Updated' :
-                                 log.actionType === 'approve' ? 'Appointment Approved' :
-                                 log.actionType === 'reject' ? 'Appointment Rejected' :
-                                 log.actionType === 'delete' ? 'Appointment Deleted' :
+                                {log.actionType === 'create' ? t('appointments.detailsModal.history.created') :
+                                 log.actionType === 'update' ? t('appointments.detailsModal.history.updated') :
+                                 log.actionType === 'approve' ? t('appointments.detailsModal.history.approved') :
+                                 log.actionType === 'reject' ? t('appointments.detailsModal.history.rejected') :
+                                 log.actionType === 'delete' ? t('appointments.detailsModal.history.deleted') :
                                  log.actionType}
                               </h5>
                               <p className="text-xs text-gray-500 mt-1">
@@ -2049,12 +2049,12 @@ export function AppointmentDetailsModal({
                           {/* Format details to show what changed */}
                           {(log.changedFields || log.details) && (
                             <div className="mt-3">
-                              <h6 className="text-xs font-medium text-gray-700 mb-1">Changes:</h6>
+                              <h6 className="text-xs font-medium text-gray-700 mb-1">{t('appointments.detailsModal.history.changes')}:</h6>
                               {log.changedFields && Array.isArray(log.changedFields) ? (
                                 <div className="grid grid-cols-1 gap-1">
                                   {(log.changedFields as string[]).map((field: string, i: number) => (
                                     <div key={i} className="bg-white p-2 rounded border text-xs">
-                                      <span className="font-medium">{field.charAt(0).toUpperCase() + field.slice(1).replace(/([A-Z])/g, ' $1')}</span> was updated
+                                      <span className="font-medium">{field.charAt(0).toUpperCase() + field.slice(1).replace(/([A-Z])/g, ' $1')}</span> {t('appointments.detailsModal.history.wasUpdated')}
                                     </div>
                                   ))}
                                 </div>
@@ -2062,7 +2062,7 @@ export function AppointmentDetailsModal({
                                 <div className="text-xs text-gray-600 whitespace-pre-line bg-white p-2 rounded border">
                                   {typeof log.details === 'string' ? log.details : 
                                    typeof log.details === 'object' ? JSON.stringify(log.details, null, 2) : 
-                                   "Changes not available"}
+                                   t('appointments.detailsModal.history.changesNotAvailable')}
                                 </div>
                               )}
                             </div>
@@ -2072,7 +2072,7 @@ export function AppointmentDetailsModal({
                     </div>
                   ) : (
                     <div className="text-center text-gray-500 p-6">
-                      <p>No history records found for this appointment.</p>
+                      <p>{t('appointments.detailsModal.history.noRecords')}</p>
                     </div>
                   )}
                 </TabsContent>
