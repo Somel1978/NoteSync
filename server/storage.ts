@@ -425,24 +425,37 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createOrUpdateSetting(key: string, value: any): Promise<Setting> {
-    // Try to update
-    const [updatedSetting] = await db
-      .update(settings)
-      .set({ value, updatedAt: new Date() })
-      .where(eq(settings.key, key))
-      .returning();
-    
-    if (updatedSetting) {
-      return updatedSetting;
+    // Ensure value is not null or undefined
+    if (value === null || value === undefined) {
+      value = {}; // Default to empty object if value is null or undefined
     }
     
-    // If no rows were updated, insert a new one
-    const [newSetting] = await db
-      .insert(settings)
-      .values({ key, value })
-      .returning();
+    // For debugging
+    console.log(`Creating/updating setting ${key} with value:`, JSON.stringify(value));
     
-    return newSetting;
+    try {
+      // Try to update
+      const [updatedSetting] = await db
+        .update(settings)
+        .set({ value, updatedAt: new Date() })
+        .where(eq(settings.key, key))
+        .returning();
+      
+      if (updatedSetting) {
+        return updatedSetting;
+      }
+      
+      // If no rows were updated, insert a new one
+      const [newSetting] = await db
+        .insert(settings)
+        .values({ key, value })
+        .returning();
+      
+      return newSetting;
+    } catch (error) {
+      console.error(`Error in createOrUpdateSetting for key ${key}:`, error);
+      throw error;
+    }
   }
 
   async getAllSettings(): Promise<Setting[]> {
