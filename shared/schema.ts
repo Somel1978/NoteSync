@@ -83,6 +83,7 @@ export const appointments = pgTable("appointments", {
   endTime: timestamp("end_time").notNull(),
   status: appointmentStatusEnum("status").notNull().default('pending'),
   purpose: text("purpose"),
+  description: text("description"), // Detailed description of the appointment
   customerName: text("customer_name").notNull(),
   customerEmail: text("customer_email").notNull(),
   customerPhone: text("customer_phone"),
@@ -109,6 +110,7 @@ export const insertAppointmentSchema = createInsertSchema(appointments).pick({
   endTime: true,
   status: true,
   purpose: true,
+  description: true,
   customerName: true,
   customerEmail: true,
   customerPhone: true,
@@ -133,6 +135,7 @@ export const auditLogs = pgTable("audit_logs", {
   oldData: json("old_data"),
   newData: json("new_data"),
   changedFields: json("changed_fields").default([]),
+  details: json("details").default({}),  // Add a details field to store each field's change info
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -143,6 +146,7 @@ export const insertAuditLogSchema = createInsertSchema(auditLogs).pick({
   oldData: true,
   newData: true,
   changedFields: true,
+  details: true,
 });
 
 // Settings
