@@ -437,7 +437,27 @@ export function AppointmentDetailsModal({
       
       // Store window.customFacilities data in the appointment itself for persistence
       if (window.customFacilities) {
-        appointmentToSave.customFacilities = { ...window.customFacilities };
+        // Deep copy to ensure we have all values properly
+        appointmentToSave.customFacilities = JSON.parse(JSON.stringify(window.customFacilities));
+        
+        // Validate all custom facilities to ensure they have proper cost values
+        Object.keys(appointmentToSave.customFacilities).forEach(key => {
+          const facility = appointmentToSave.customFacilities[key];
+          
+          // Log for debugging
+          console.log(`Validating custom facility: ${key} with cost ${facility.cost}`);
+          
+          // Validate cost is a number and not zero
+          if (!facility.cost || isNaN(Number(facility.cost)) || Number(facility.cost) <= 0) {
+            console.warn(`Invalid cost for facility ${facility.name || key}, setting to 1500 cents (€15.00)`);
+            facility.cost = 1500; // Default to €15 if invalid cost
+          } else {
+            // Ensure cost is a number
+            facility.cost = Number(facility.cost);
+          }
+        });
+        
+        console.log("Final validated custom facilities:", JSON.stringify(appointmentToSave.customFacilities));
       }
       
       // If not using custom pricing, ensure we recalculate costs based on all current data
