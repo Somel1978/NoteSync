@@ -134,6 +134,28 @@
       "useNewBooking": "Use a página de Nova Reserva para criar um agendamento com múltiplas salas.",
       "noNotes": "Sem observações",
       "noHistory": "Não há histórico disponível",
+      "history": {
+        "changes": "Alterações",
+        "wasUpdated": "foi atualizado",
+        "changesNotAvailable": "Alterações não disponíveis",
+        "loading": "Carregando histórico...",
+        "noRecords": "Nenhum registro histórico encontrado para este agendamento.",
+        "unknownDate": "Data desconhecida",
+        "userWithId": "Usuário {{id}}",
+        "system": "Sistema",
+        "created": "Criado",
+        "updated": "Atualizado",
+        "approved": "Aprovado",
+        "rejected": "Rejeitado",
+        "deleted": "Excluído"
+      },
+      "noData": "Nenhum dado de agendamento disponível",
+      "reject": {
+        "title": "Rejeitar Agendamento",
+        "description": "Por favor, forneça um motivo para rejeitar este agendamento. Esta informação será compartilhada com o cliente.",
+        "placeholder": "Motivo da rejeição...",
+        "confirm": "Confirmar Rejeição"
+      },
       "flatRate": "Taxa Fixa",
       "hourlyRate": "Taxa por Hora",
       "perAttendee": "Por Participante",

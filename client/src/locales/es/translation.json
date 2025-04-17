@@ -139,6 +139,28 @@
       "useNewBooking": "Use la página de Nueva Reserva para crear una cita con múltiples salas.",
       "noNotes": "Sin notas",
       "noHistory": "No hay historial disponible",
+      "history": {
+        "changes": "Cambios",
+        "wasUpdated": "fue actualizado",
+        "changesNotAvailable": "Cambios no disponibles",
+        "loading": "Cargando historial...",
+        "noRecords": "No se encontraron registros históricos para esta cita.",
+        "unknownDate": "Fecha desconocida",
+        "userWithId": "Usuario {{id}}",
+        "system": "Sistema",
+        "created": "Creado",
+        "updated": "Actualizado",
+        "approved": "Aprobado",
+        "rejected": "Rechazado",
+        "deleted": "Eliminado"
+      },
+      "noData": "No hay datos de cita disponibles",
+      "reject": {
+        "title": "Rechazar Cita",
+        "description": "Por favor, proporcione un motivo para rechazar esta cita. Esta información será compartida con el cliente.",
+        "placeholder": "Motivo de rechazo...",
+        "confirm": "Confirmar Rechazo"
+      },
       "flatRate": "Tarifa Fija",
       "hourlyRate": "Tarifa por Hora",
       "perAttendee": "Por Asistente",
