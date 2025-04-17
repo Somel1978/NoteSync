@@ -13,9 +13,7 @@ export function AppLayout({ children }: AppLayoutProps) {
     <div className="bg-gray-100 font-sans flex min-h-screen max-h-screen overflow-hidden">
       <Sidebar />
       <main className={`flex-1 overflow-y-auto bg-gray-100 ${isMobile ? 'ml-0 pl-10' : 'ml-0 md:ml-64'}`}>
-        <div className="pb-6">
-          {children}
-        </div>
+        {children}
       </main>
     </div>
   );
