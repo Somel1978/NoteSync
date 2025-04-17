@@ -173,13 +173,25 @@ export function AppointmentDetailsModal({
       
       // Ensure date fields are properly formatted
       if (processedData.startTime) {
-        // If it's already a Date object, ensure it's in the proper format
-        processedData.startTime = new Date(processedData.startTime);
+        try {
+          // Create proper Date object and convert to ISO string for consistent format
+          const dateObj = new Date(processedData.startTime);
+          processedData.startTime = dateObj.toISOString();
+          console.log(`Formatted startTime to ISO string: ${processedData.startTime}`);
+        } catch (e) {
+          console.error(`Failed to format startTime: ${processedData.startTime}`, e);
+        }
       }
       
       if (processedData.endTime) {
-        // If it's already a Date object, ensure it's in the proper format
-        processedData.endTime = new Date(processedData.endTime);
+        try {
+          // Create proper Date object and convert to ISO string for consistent format
+          const dateObj = new Date(processedData.endTime);
+          processedData.endTime = dateObj.toISOString();
+          console.log(`Formatted endTime to ISO string: ${processedData.endTime}`);
+        } catch (e) {
+          console.error(`Failed to format endTime: ${processedData.endTime}`, e);
+        }
       }
       
       console.log('Sending appointment update with dates:', {
@@ -567,8 +579,18 @@ export function AppointmentDetailsModal({
         if (typeof value === 'string') {
           try {
             // If it's a valid ISO string or datetime-local value, convert to Date
-            processedValue = new Date(value);
-            console.log(`Converted ${field} string to Date: ${processedValue.toISOString()}`);
+            // Ensure the string has timezone info by appending 'Z' if it doesn't already have it
+            const dateString = value.endsWith('Z') ? value : value + 'Z';
+            processedValue = new Date(dateString);
+            
+            // Verify the date is valid before using it
+            if (!isNaN(processedValue.getTime())) {
+              console.log(`Converted ${field} string to Date: ${processedValue.toISOString()}`);
+            } else {
+              // If invalid date, try an alternative parsing approach
+              processedValue = new Date(value.replace('T', ' '));
+              console.log(`Alternative parsing for ${field}: ${processedValue.toISOString()}`);
+            }
           } catch (e) {
             console.warn(`Failed to convert ${field} value to Date: ${value}`, e);
             // Keep original value if conversion fails
