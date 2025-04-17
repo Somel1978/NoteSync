@@ -279,65 +279,76 @@ export class DatabaseStorage implements IStorage {
     // Create a clean copy with dates properly processed
     const processedAppointment = processDateStrings({ ...insertAppointment });
     
-    // First, ensure we're working with the correct input values
-    const startTimeInput = processedAppointment.startTime || insertAppointment.startTime;
-    const endTimeInput = processedAppointment.endTime || insertAppointment.endTime;
+    // Don't use processedAppointment which might lose date values in processing
+    const startTimeInput = insertAppointment.startTime;
+    const endTimeInput = insertAppointment.endTime;
     
-    console.log("Original startTime:", startTimeInput);
-    console.log("Original endTime:", endTimeInput);
+    console.log("Original startTime type:", typeof startTimeInput, startTimeInput);
+    console.log("Original endTime type:", typeof endTimeInput, endTimeInput);
     
-    // Handle startTime
+    // Handle startTime - directly update the object we're going to insert
     if (!startTimeInput) {
       throw new Error("startTime is required");
     }
     
     try {
-      // If it's already a Date object and valid
+      // If it's already a valid Date object
       if (startTimeInput instanceof Date && !isNaN(startTimeInput.getTime())) {
         processedAppointment.startTime = startTimeInput;
+        console.log("Using Date object startTime:", processedAppointment.startTime);
       } 
       // If it's a string, parse it
       else if (typeof startTimeInput === 'string') {
         const parsedDate = new Date(startTimeInput);
         if (!isNaN(parsedDate.getTime())) {
           processedAppointment.startTime = parsedDate;
-          console.log("Parsed startTime:", parsedDate.toISOString());
+          console.log("Parsed startTime to Date:", processedAppointment.startTime);
         } else {
           throw new Error(`Invalid startTime format: ${startTimeInput}`);
         }
       } else {
-        throw new Error("startTime must be a valid date string or Date object");
+        throw new Error(`startTime must be a valid date string or Date object, got ${typeof startTimeInput}`);
       }
-    } catch (e) {
+    } catch (e: any) {
       console.error("Error processing startTime:", e);
-      throw new Error(`Failed to process startTime: ${e.message}`);
+      throw new Error(`Failed to process startTime: ${e?.message || "Unknown error"}`);
     }
     
-    // Handle endTime
+    // Handle endTime - directly update the object we're going to insert
     if (!endTimeInput) {
       throw new Error("endTime is required");
     }
     
     try {
-      // If it's already a Date object and valid
+      // If it's already a valid Date object
       if (endTimeInput instanceof Date && !isNaN(endTimeInput.getTime())) {
         processedAppointment.endTime = endTimeInput;
+        console.log("Using Date object endTime:", processedAppointment.endTime);
       } 
       // If it's a string, parse it
       else if (typeof endTimeInput === 'string') {
         const parsedDate = new Date(endTimeInput);
         if (!isNaN(parsedDate.getTime())) {
           processedAppointment.endTime = parsedDate;
-          console.log("Parsed endTime:", parsedDate.toISOString());
+          console.log("Parsed endTime to Date:", processedAppointment.endTime);
         } else {
           throw new Error(`Invalid endTime format: ${endTimeInput}`);
         }
       } else {
-        throw new Error("endTime must be a valid date string or Date object");
+        throw new Error(`endTime must be a valid date string or Date object, got ${typeof endTimeInput}`);
       }
-    } catch (e) {
+    } catch (e: any) {
       console.error("Error processing endTime:", e);
-      throw new Error(`Failed to process endTime: ${e.message}`);
+      throw new Error(`Failed to process endTime: ${e?.message || "Unknown error"}`);
+    }
+    
+    // Force check that startTime and endTime are valid Date objects before proceeding
+    if (!(processedAppointment.startTime instanceof Date) || isNaN(processedAppointment.startTime.getTime())) {
+      throw new Error("Failed to convert startTime to a valid Date object");
+    }
+    
+    if (!(processedAppointment.endTime instanceof Date) || isNaN(processedAppointment.endTime.getTime())) {
+      throw new Error("Failed to convert endTime to a valid Date object");
     }
     
     // Log the processed appointment for debugging
