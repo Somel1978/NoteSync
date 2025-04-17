@@ -61,7 +61,7 @@ export default function AuthPage() {
         <form onSubmit={loginForm.handleSubmit(onLoginSubmit)} className="space-y-4">
           <div className="space-y-2">
             <Input
-              placeholder={t('auth.emailAddress', 'Email address')}
+              placeholder={t('auth.username', 'Username')}
               {...loginForm.register("username")}
               className="w-full"
             />
