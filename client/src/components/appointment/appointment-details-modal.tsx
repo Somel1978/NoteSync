@@ -2104,7 +2104,7 @@ export function AppointmentDetailsModal({
                             log.actionType === 'create' ? 'border-l-green-500 bg-green-50' :
                             log.actionType === 'update' ? 'border-l-blue-500 bg-blue-50' :
                             log.actionType === 'approve' ? 'border-l-emerald-500 bg-emerald-50' :
-                            log.actionType === 'reject' ? 'border-l-red-500 bg-red-50' :
+                            log.actionType === 'reject' || log.actionType === 'status-changed-to-rejected' ? 'border-l-red-500 bg-red-50' :
                             log.actionType === 'delete' ? 'border-l-gray-500 bg-gray-50' :
                             'border-l-gray-300 bg-gray-50'
                           }`}
@@ -2115,7 +2115,7 @@ export function AppointmentDetailsModal({
                                 {log.actionType === 'create' ? t('appointments.detailsModal.history.created') :
                                  log.actionType === 'update' ? t('appointments.detailsModal.history.updated') :
                                  log.actionType === 'approve' ? t('appointments.detailsModal.history.approved') :
-                                 log.actionType === 'reject' ? t('appointments.detailsModal.history.rejected') :
+                                 log.actionType === 'reject' || log.actionType === 'status-changed-to-rejected' ? t('appointments.detailsModal.history.rejected') :
                                  log.actionType === 'delete' ? t('appointments.detailsModal.history.deleted') :
                                  log.actionType}
                               </h5>
@@ -2131,7 +2131,18 @@ export function AppointmentDetailsModal({
                           </div>
                           
                           {/* Format details to show what changed */}
-                          {(log.changedFields || log.details) && (
+                          {/* Special handling for rejection reason */}
+                          {log.actionType === 'status-changed-to-rejected' && log.newData && log.newData.rejectionReason && (
+                            <div className="mt-3">
+                              <h6 className="text-xs font-medium text-red-700 mb-1">{t('appointments.detailsModal.history.rejectionReason')}:</h6>
+                              <div className="text-xs text-red-600 bg-red-50 p-3 rounded border border-red-200">
+                                {log.newData.rejectionReason}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Regular change details */}
+                          {(log.changedFields || log.details) && !(log.actionType === 'status-changed-to-rejected' && log.newData && log.newData.rejectionReason) && (
                             <div className="mt-3">
                               <h6 className="text-xs font-medium text-gray-700 mb-1">{t('appointments.detailsModal.history.changes')}:</h6>
                               {log.changedFields && Array.isArray(log.changedFields) ? (

@@ -430,7 +430,10 @@ export function registerAppointmentRoutes(app: Express): void {
         appointmentId: id,
         userId: req.user?.id as number,
         action: "status-changed-to-rejected",
-        details: `Status changed from ${appointment.status} to rejected. Reason: ${reason || "No reason provided"}`
+        details: `Status changed from ${appointment.status} to rejected. Reason: ${reason || "No reason provided"}`,
+        // Store additional data to show the rejection reason more clearly in UI
+        oldData: { status: appointment.status },
+        newData: { status: "rejected", rejectionReason: reason }
       });
       
       // Try to send notification but don't fail if email sending fails
