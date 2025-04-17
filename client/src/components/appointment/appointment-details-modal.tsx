@@ -1835,16 +1835,18 @@ export function AppointmentDetailsModal({
                       </div>
 
                       <div>
-                        <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">Agreed Cost (in cents)</h5>
+                        <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">Agreed Cost (€)</h5>
                         <Input
                           type="number"
-                          value={editedAppointment.agreedCost || 0}
-                          onChange={(e) => handleInputChange('agreedCost', Number(e.target.value))}
+                          min="0"
+                          step="0.01"
+                          value={((editedAppointment.agreedCost || 0) / 100).toFixed(2)}
+                          onChange={(e) => handleInputChange('agreedCost', Math.round(Number(e.target.value) * 100))}
                           disabled={!customPricing}
                           className="mt-1"
                         />
                         <p className="text-xs text-gray-500 mt-1">
-                          Displayed as: €{((editedAppointment.agreedCost || 0) / 100).toFixed(2)}
+                          Stored in cents: {editedAppointment.agreedCost || 0}
                         </p>
                       </div>
                       
