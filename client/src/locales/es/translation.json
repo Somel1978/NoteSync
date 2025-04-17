@@ -273,7 +273,16 @@
     "updateSuccess": "Sala actualizada",
     "updateSuccessDetail": "La sala ha sido actualizada con éxito.",
     "createError": "Error al crear la sala",
-    "updateError": "Error al actualizar la sala"
+    "updateError": "Error al actualizar la sala",
+    "tabs": {
+      "general": "General",
+      "pricing": "Precios",
+      "facilities": "Instalaciones",
+      "settings": "Configuración"
+    },
+    "flatRateDescription": "Precio fijo independiente de la duración",
+    "hourlyRateDescription": "Tarifa cobrada por hora de reserva",
+    "attendeeRateDescription": "Importe cobrado por persona asistente"
   },
   "settings": {
     "title": "Configuración",
