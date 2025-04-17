@@ -399,168 +399,147 @@ export class DatabaseStorage implements IStorage {
     // Deep clone the original data for comparison
     const originalForComparison = JSON.parse(JSON.stringify(originalAppointment));
     
-    // Check specifically for rejection status and reason
+    // FOCO PRINCIPAL: tratar explicitamente a rejeição
     if (updates.status === 'rejected') {
       console.log(`StorageDebug: Rejection detected with reason:`, updates.rejectionReason);
+      
+      // Verificar se o motivo de rejeição está definido
+      if (updates.rejectionReason) {
+        console.log(`StorageDebug: Rejection reason is set to "${updates.rejectionReason}"`);
+      } else {
+        console.log(`StorageDebug: Rejection reason is not set!`);
+      }
     }
     
     // Create a more detailed audit trail by collecting field changes and their values
     const fieldChanges: Record<string, { oldValue: any, newValue: any }> = {};
     
-    // Create an object for updating the database
-    const finalData: Record<string, any> = {
-      // Copy all fields except date fields
-      ...Object.fromEntries(
-        Object.entries(updates).filter(([key]) => 
-          key !== 'startTime' && key !== 'endTime' && key !== 'createdAt' && key !== 'updatedAt'
-        )
-      ),
-      
-      // Set updatedAt to current timestamp
-      updatedAt: new Date()
-    };
+    // Create an object for updating the database com todos os campos
+    const finalData: Record<string, any> = {};
     
-    // Fix specific case for rejectionReason mapping to rejection_reason in the database
-    if (updates.rejectionReason !== undefined) {
-      console.log("Explicitly setting rejection_reason field to:", updates.rejectionReason);
-      finalData.rejection_reason = updates.rejectionReason;
-      // Remove the camelCase version to avoid duplicate column issue
-      delete finalData.rejectionReason;
-    }
-    
-    // Safely handle startTime
-    if (updates.startTime) {
-      try {
-        if (updates.startTime instanceof Date) {
-          // If it's already a Date, make sure it's valid
-          if (!isNaN(updates.startTime.getTime())) {
-            finalData.startTime = updates.startTime;
-            console.log("Storage: Valid startTime Date object:", finalData.startTime.toISOString());
-          } else {
-            // If it's an invalid Date, use the original
-            finalData.startTime = originalAppointment.startTime;
-            console.warn("Storage: Invalid Date object for startTime.");
+    // Adicionar cada campo do update manualmente no finalData para maior controle
+    Object.entries(updates).forEach(([key, value]) => {
+      // Não copiar campos de timestamps
+      if (key !== 'createdAt' && key !== 'updatedAt') {
+        // Caso especial para datas
+        if (key === 'startTime' || key === 'endTime') {
+          if (value instanceof Date && !isNaN(value.getTime())) {
+            finalData[key] = value;
+          } else if (value) {
+            try {
+              const parsedDate = new Date(value as any);
+              if (!isNaN(parsedDate.getTime())) {
+                finalData[key] = parsedDate;
+              } else {
+                finalData[key] = originalAppointment[key as keyof Appointment];
+              }
+            } catch (e) {
+              finalData[key] = originalAppointment[key as keyof Appointment];
+            }
           }
-        } else {
-          // Try to parse from a string if possible
-          const parsedDate = new Date(updates.startTime as any);
-          
-          if (!isNaN(parsedDate.getTime())) {
-            finalData.startTime = parsedDate;
-            console.log("Storage: Converted startTime to valid Date:", finalData.startTime.toISOString());
-          } else {
-            finalData.startTime = originalAppointment.startTime;
-            console.warn("Storage: Could not parse startTime value:", updates.startTime);
-          }
+        } 
+        // Caso especial para rejectionReason - CRUCIAL PARA RESOLVER O PROBLEMA
+        else if (key === 'rejectionReason') {
+          console.log("StorageDebug: Processando campo rejectionReason:", value);
+          finalData.rejection_reason = value; // Crucial: usar o nome da coluna SQL
+        } 
+        // Todos os outros campos
+        else {
+          finalData[key] = value;
         }
-      } catch (e) {
-        console.error("Storage: Error processing startTime:", e);
-        finalData.startTime = originalAppointment.startTime;
       }
-    }
+    });
     
-    // Safely handle endTime
-    if (updates.endTime) {
-      try {
-        if (updates.endTime instanceof Date) {
-          // If it's already a Date, make sure it's valid
-          if (!isNaN(updates.endTime.getTime())) {
-            finalData.endTime = updates.endTime;
-            console.log("Storage: Valid endTime Date object:", finalData.endTime.toISOString());
-          } else {
-            // If it's an invalid Date, use the original
-            finalData.endTime = originalAppointment.endTime;
-            console.warn("Storage: Invalid Date object for endTime.");
-          }
-        } else {
-          // Try to parse from a string if possible
-          const parsedDate = new Date(updates.endTime as any);
-          
-          if (!isNaN(parsedDate.getTime())) {
-            finalData.endTime = parsedDate;
-            console.log("Storage: Converted endTime to valid Date:", finalData.endTime.toISOString());
-          } else {
-            finalData.endTime = originalAppointment.endTime;
-            console.warn("Storage: Could not parse endTime value:", updates.endTime);
-          }
-        }
-      } catch (e) {
-        console.error("Storage: Error processing endTime:", e);
-        finalData.endTime = originalAppointment.endTime;
+    // Sempre definir updatedAt
+    finalData.updatedAt = new Date();
+    
+    // Logs detalhados para verificar os dados que serão enviados
+    console.log("StorageDebug: finalData para update:", JSON.stringify(finalData, null, 2));
+    
+    // Verificando especificamente o campo rejectionReason/rejection_reason
+    console.log("StorageDebug: rejection_reason incluído?", 
+      finalData.rejection_reason !== undefined ? `Sim: "${finalData.rejection_reason}"` : "Não");
+    
+    try {
+      // Executar a atualização no banco de dados
+      const [updatedAppointment] = await db
+        .update(appointmentsTable)
+        .set(finalData)
+        .where(eq(appointmentsTable.id, id))
+        .returning();
+      
+      // Verificar o resultado imediatamente e fazer log
+      console.log("StorageDebug: Resultado bruto do update:", JSON.stringify(updatedAppointment, null, 2));
+      
+      // Importante: mapear o campo snake_case para camelCase no resultado
+      if (updatedAppointment && updatedAppointment.rejection_reason !== undefined) {
+        console.log("StorageDebug: Mapeando rejection_reason para rejectionReason:", updatedAppointment.rejection_reason);
+        (updatedAppointment as any).rejectionReason = updatedAppointment.rejection_reason;
       }
-    }
-    
-    // Log the update data for debugging
-    console.log("Storage: updateAppointment with processed data:", JSON.stringify(finalData, (key, value) => {
-      if (value instanceof Date) {
-        return value.toISOString();
-      }
-      return value;
-    }));
-    
-    // Perform the update in the database
-    const [updatedAppointment] = await db
-      .update(appointmentsTable)
-      .set(finalData)
-      .where(eq(appointmentsTable.id, id))
-      .returning();
-    
-    // Create audit log for update if we have a valid updated appointment
-    if (updatedAppointment) {
-      // If userId not specified, use the original appointment's userId for the audit log
-      const userId = updates.userId || originalAppointment.userId;
       
-      // Get a clean copy of the updated data for comparison
-      const newForComparison = JSON.parse(JSON.stringify(updatedAppointment));
+      // Log do appointment atualizado após mapping
+      console.log("StorageDebug: Appointment após mapping:", JSON.stringify(updatedAppointment, null, 2));
       
-      // Determine what fields have changed and collect old and new values
-      const changedFields: string[] = [];
-      
-      // Check all fields in the original or updated appointment
-      const allFields = new Set([
-        ...Object.keys(originalForComparison),
-        ...Object.keys(newForComparison)
-      ]);
-      
-      allFields.forEach(key => {
-        // Skip timestamps and internal fields in comparison
-        if (key === 'updatedAt' || key === 'createdAt' || key === 'userId') return;
+      // Criar log de auditoria
+      if (updatedAppointment) {
+        // Usar userId do update ou do appointment original
+        const userId = updates.userId || originalAppointment.userId;
         
-        // Get deep string representations for comparison
-        const oldValue = JSON.stringify(originalForComparison[key]);
-        const newValue = JSON.stringify(newForComparison[key]);
+        // Obter cópia limpa para comparação
+        const newForComparison = JSON.parse(JSON.stringify(updatedAppointment));
         
-        // Check if there's an actual change
-        if (oldValue !== newValue) {
-          changedFields.push(key);
+        // Determinar campos alterados
+        const changedFields: string[] = [];
+        
+        // Verificar todos os campos
+        const allFields = new Set([
+          ...Object.keys(originalForComparison),
+          ...Object.keys(newForComparison)
+        ]);
+        
+        allFields.forEach(key => {
+          // Ignorar campos de sistema na comparação
+          if (key === 'updatedAt' || key === 'createdAt' || key === 'userId') return;
           
-          // Store the actual values (not string representations) for each changed field
-          fieldChanges[key] = {
-            oldValue: originalForComparison[key],
-            newValue: newForComparison[key]
-          };
-        }
-      });
-      
-      // Only create audit log if something actually changed
-      if (changedFields.length > 0) {
-        await this.createAuditLog({
-          appointmentId: updatedAppointment.id,
-          userId: userId,
-          action: 'update',
-          oldData: originalAppointment,
-          newData: updatedAppointment,
-          changedFields: changedFields,
-          details: fieldChanges // Add the detailed field change information
+          // Comparar usando representações em string
+          const oldValue = JSON.stringify(originalForComparison[key]);
+          const newValue = JSON.stringify(newForComparison[key]);
+          
+          // Verificar mudanças
+          if (oldValue !== newValue) {
+            changedFields.push(key);
+            
+            // Armazenar valores para cada campo alterado
+            fieldChanges[key] = {
+              oldValue: originalForComparison[key],
+              newValue: newForComparison[key]
+            };
+          }
         });
         
-        console.log(`Audit log created for appointment ${id}. Changed fields: ${changedFields.join(', ')}`);
-      } else {
-        console.log(`No changes detected for appointment ${id}, no audit log created`);
+        // Criar log de auditoria apenas se houver mudanças
+        if (changedFields.length > 0) {
+          await this.createAuditLog({
+            appointmentId: updatedAppointment.id,
+            userId: userId,
+            action: 'update',
+            oldData: originalAppointment,
+            newData: updatedAppointment,
+            changedFields: changedFields,
+            details: fieldChanges
+          });
+          
+          console.log(`Audit log criado para appointment ${id}. Campos alterados: ${changedFields.join(', ')}`);
+        } else {
+          console.log(`Nenhuma alteração detectada para appointment ${id}, log de auditoria não criado`);
+        }
       }
+      
+      return updatedAppointment;
+    } catch (error) {
+      console.error("StorageDebug: Erro ao atualizar appointment:", error);
+      throw error;
     }
-    
-    return updatedAppointment;
   }
 
   async deleteAppointment(id: number, userId?: number): Promise<boolean> {
