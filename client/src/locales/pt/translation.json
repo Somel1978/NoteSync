@@ -104,6 +104,10 @@
     "rejectSuccess": "Agendamento rejeitado",
     "rejectError": "Falha ao rejeitar agendamento",
     "searchPlaceholder": "Pesquisar agendamentos...",
+    "pending": "Pendente",
+    "approved": "Aprovado",
+    "rejected": "Rejeitado",
+    "cancelled": "Cancelado",
     "detailsModal": {
       "statusPending": "Status: Pendente",
       "statusApproved": "Status: Aprovado",
