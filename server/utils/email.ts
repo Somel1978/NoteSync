@@ -177,61 +177,117 @@ export class EmailNotificationService {
       const startDate = new Date(appointment.startTime).toLocaleString();
       const endDate = new Date(appointment.endTime).toLocaleString();
       
-      // Get email template or use default
-      let emailTemplate = settings.emailTemplateBookingCreated;
-      if (!emailTemplate) {
-        emailTemplate = `
-          <h2>New Booking Confirmation</h2>
-          <p>A new booking has been created:</p>
-          <ul>
-            <li><strong>Event:</strong> {eventTitle}</li>
-            <li><strong>Room:</strong> {roomName}</li>
-            <li><strong>Location:</strong> {locationName}</li>
-            <li><strong>Start:</strong> {startTime}</li>
-            <li><strong>End:</strong> {endTime}</li>
-            <li><strong>Status:</strong> {status}</li>
-            <li><strong>Cost:</strong> {cost}</li>
-            <li><strong>Purpose:</strong> {purpose}</li>
-            <li><strong>Attendees:</strong> {attendeesCount}</li>
-            <li><strong>Membership #:</strong> {membershipNumber}</li>
-            <li><strong>Notes:</strong> {notes}</li>
-          </ul>
-          <p>Customer Details:</p>
-          <ul>
-            <li><strong>Name:</strong> {customerName}</li>
-            <li><strong>Email:</strong> {customerEmail}</li>
-            <li><strong>Phone:</strong> {customerPhone}</li>
-            <li><strong>Organization:</strong> {customerOrganization}</li>
-          </ul>
-          <p>Reserved Rooms:</p>
-          {roomsTable}
-          <p>For more details, please log in to the system.</p>
-          <p>Best regards,<br>{systemName}</p>
-        `;
-      }
+      // Get custom email template
+      const customTemplate = settings.emailTemplateBookingCreated || '';
+      
+      // Generate booking details HTML section
+      const bookingDetailsHtml = `
+        <div style="margin: 20px 0; padding: 15px; border-radius: 5px; border: 1px solid #e0e0e0; background-color: #f9f9f9;">
+          <h3 style="color: #3b82f6; margin-bottom: 15px; border-bottom: 1px solid #e0e0e0; padding-bottom: 8px;">Detalhes da Reserva:</h3>
+          <table style="width: 100%; border-collapse: collapse;">
+            <tr>
+              <td style="padding: 8px; width: 40%; font-weight: bold;">Evento:</td>
+              <td style="padding: 8px;">${appointment.title}</td>
+            </tr>
+            <tr style="background-color: #f3f4f6;">
+              <td style="padding: 8px; font-weight: bold;">Sala:</td>
+              <td style="padding: 8px;">${room.name}</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px; font-weight: bold;">Local:</td>
+              <td style="padding: 8px;">${location.name}</td>
+            </tr>
+            <tr style="background-color: #f3f4f6;">
+              <td style="padding: 8px; font-weight: bold;">Início:</td>
+              <td style="padding: 8px;">${startDate}</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px; font-weight: bold;">Fim:</td>
+              <td style="padding: 8px;">${endDate}</td>
+            </tr>
+            <tr style="background-color: #f3f4f6;">
+              <td style="padding: 8px; font-weight: bold;">Estado:</td>
+              <td style="padding: 8px;">${appointment.status}</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px; font-weight: bold;">Custo:</td>
+              <td style="padding: 8px;">€${(appointment.agreedCost / 100).toFixed(2)}</td>
+            </tr>
+            <tr style="background-color: #f3f4f6;">
+              <td style="padding: 8px; font-weight: bold;">Finalidade:</td>
+              <td style="padding: 8px;">${appointment.purpose || 'N/A'}</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px; font-weight: bold;">Participantes:</td>
+              <td style="padding: 8px;">${appointment.attendeesCount?.toString() || 'N/A'}</td>
+            </tr>
+            <tr style="background-color: #f3f4f6;">
+              <td style="padding: 8px; font-weight: bold;">Nº de Sócio:</td>
+              <td style="padding: 8px;">${appointment.membershipNumber || 'N/A'}</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px; font-weight: bold;">Notas:</td>
+              <td style="padding: 8px;">${appointment.notes || 'N/A'}</td>
+            </tr>
+          </table>
+        </div>
+      `;
+      
+      // Generate customer details HTML section
+      const customerDetailsHtml = `
+        <div style="margin: 20px 0; padding: 15px; border-radius: 5px; border: 1px solid #e0e0e0; background-color: #f9f9f9;">
+          <h3 style="color: #3b82f6; margin-bottom: 15px; border-bottom: 1px solid #e0e0e0; padding-bottom: 8px;">Dados do Cliente:</h3>
+          <table style="width: 100%; border-collapse: collapse;">
+            <tr>
+              <td style="padding: 8px; width: 40%; font-weight: bold;">Nome:</td>
+              <td style="padding: 8px;">${appointment.customerName}</td>
+            </tr>
+            <tr style="background-color: #f3f4f6;">
+              <td style="padding: 8px; font-weight: bold;">Email:</td>
+              <td style="padding: 8px;">${appointment.customerEmail}</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px; font-weight: bold;">Telefone:</td>
+              <td style="padding: 8px;">${appointment.customerPhone || 'N/A'}</td>
+            </tr>
+            <tr style="background-color: #f3f4f6;">
+              <td style="padding: 8px; font-weight: bold;">Organização:</td>
+              <td style="padding: 8px;">${appointment.customerOrganization || 'N/A'}</td>
+            </tr>
+          </table>
+        </div>
+      `;
       
       // Generate rooms table HTML
       const roomsTable = this.generateRoomsTableHtml(appointment);
       
-      // Replace placeholders with actual data
-      const htmlContent = emailTemplate
-        .replace(/{eventTitle}/g, appointment.title)
-        .replace(/{roomName}/g, room.name)
-        .replace(/{locationName}/g, location.name)
-        .replace(/{startTime}/g, startDate)
-        .replace(/{endTime}/g, endDate)
-        .replace(/{status}/g, appointment.status)
-        .replace(/{cost}/g, `€${(appointment.agreedCost / 100).toFixed(2)}`)
-        .replace(/{customerName}/g, appointment.customerName)
-        .replace(/{customerEmail}/g, appointment.customerEmail)
-        .replace(/{customerPhone}/g, appointment.customerPhone || 'N/A')
-        .replace(/{customerOrganization}/g, appointment.customerOrganization || 'N/A')
-        .replace(/{purpose}/g, appointment.purpose || 'N/A')
-        .replace(/{notes}/g, appointment.notes || 'N/A')
-        .replace(/{membershipNumber}/g, appointment.membershipNumber || 'N/A')
-        .replace(/{attendeesCount}/g, appointment.attendeesCount?.toString() || 'N/A')
-        .replace(/{roomsTable}/g, roomsTable)
-        .replace(/{systemName}/g, settings.systemName);
+      // Format custom template as HTML
+      const formattedCustomTemplate = this.formatCustomTemplate(customTemplate);
+      
+      // Combine everything into a beautiful HTML email
+      const htmlContent = `
+        <div style="font-family: Arial, sans-serif; max-width: 650px; margin: 0 auto;">
+          <div style="background-color: #3b82f6; color: white; padding: 20px; border-radius: 5px 5px 0 0; margin-bottom: 20px;">
+            <h2 style="margin: 0; font-weight: 600;">${settings.systemName} - Confirmação de Reserva</h2>
+          </div>
+          
+          ${formattedCustomTemplate}
+          
+          ${bookingDetailsHtml}
+          
+          ${customerDetailsHtml}
+          
+          <div style="margin: 20px 0;">
+            <h3 style="color: #3b82f6; margin-bottom: 15px; border-bottom: 1px solid #e0e0e0; padding-bottom: 8px;">Salas Reservadas:</h3>
+            ${roomsTable}
+          </div>
+          
+          <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e0e0e0; color: #666; font-size: 14px;">
+            <p>Para algum esclarecimento, entre em contacto conosco pelo email <a href="mailto:geral@acrdsc.org" style="color: #3b82f6; text-decoration: none;">geral@acrdsc.org</a>.</p>
+            <p>Atenciosamente,<br>${settings.systemName}</p>
+          </div>
+        </div>
+      `;
       
       // Set up recipients
       const recipients = [
@@ -290,45 +346,74 @@ export class EmailNotificationService {
       const startDate = new Date(appointment.startTime).toLocaleString();
       const endDate = new Date(appointment.endTime).toLocaleString();
       
-      // Get email template or use default
-      let emailTemplate = settings.emailTemplateBookingUpdated;
-      if (!emailTemplate) {
-        emailTemplate = `
-          <h2>Booking Update Notification</h2>
-          <p>A booking has been updated:</p>
-          
-          <h3>Updated Details:</h3>
-          <ul>
-            <li><strong>Event:</strong> {eventTitle}</li>
-            <li><strong>Room:</strong> {roomName}</li>
-            <li><strong>Location:</strong> {locationName}</li>
-            <li><strong>Start:</strong> {startTime}</li>
-            <li><strong>End:</strong> {endTime}</li>
-            <li><strong>Status:</strong> {status}</li>
-            <li><strong>Cost:</strong> {cost}</li>
-            <li><strong>Purpose:</strong> {purpose}</li>
-            <li><strong>Attendees:</strong> {attendeesCount}</li>
-            <li><strong>Membership #:</strong> {membershipNumber}</li>
-            <li><strong>Notes:</strong> {notes}</li>
-          </ul>
-          
-          <p>Customer Details:</p>
-          <ul>
-            <li><strong>Name:</strong> {customerName}</li>
-            <li><strong>Email:</strong> {customerEmail}</li>
-            <li><strong>Phone:</strong> {customerPhone}</li>
-            <li><strong>Organization:</strong> {customerOrganization}</li>
-          </ul>
-          
-          <p>Reserved Rooms:</p>
-          {roomsTable}
-          
-          {changesTable}
-          
-          <p>For more details, please log in to the system.</p>
-          <p>Best regards,<br>{systemName}</p>
-        `;
-      }
+      // Get custom email template
+      const customTemplate = settings.emailTemplateBookingUpdated || '';
+      
+      // Generate booking details HTML section
+      const bookingDetailsHtml = `
+        <div style="margin: 20px 0; padding: 15px; border-radius: 5px; border: 1px solid #e0e0e0; background-color: #f9f9f9;">
+          <h3 style="color: #3b82f6; margin-bottom: 15px; border-bottom: 1px solid #e0e0e0; padding-bottom: 8px;">Detalhes Atualizados:</h3>
+          <table style="width: 100%; border-collapse: collapse;">
+            <tr>
+              <td style="padding: 8px; width: 40%; font-weight: bold;">Evento:</td>
+              <td style="padding: 8px;">${appointment.title}</td>
+            </tr>
+            <tr style="background-color: #f3f4f6;">
+              <td style="padding: 8px; font-weight: bold;">Sala:</td>
+              <td style="padding: 8px;">${room.name}</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px; font-weight: bold;">Local:</td>
+              <td style="padding: 8px;">${location.name}</td>
+            </tr>
+            <tr style="background-color: #f3f4f6;">
+              <td style="padding: 8px; font-weight: bold;">Início:</td>
+              <td style="padding: 8px;">${startDate}</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px; font-weight: bold;">Fim:</td>
+              <td style="padding: 8px;">${endDate}</td>
+            </tr>
+            <tr style="background-color: #f3f4f6;">
+              <td style="padding: 8px; font-weight: bold;">Estado:</td>
+              <td style="padding: 8px;">${appointment.status}</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px; font-weight: bold;">Custo:</td>
+              <td style="padding: 8px;">€${(appointment.agreedCost / 100).toFixed(2)}</td>
+            </tr>
+            <tr style="background-color: #f3f4f6;">
+              <td style="padding: 8px; font-weight: bold;">Finalidade:</td>
+              <td style="padding: 8px;">${appointment.purpose || 'N/A'}</td>
+            </tr>
+          </table>
+        </div>
+      `;
+      
+      // Generate customer details HTML section
+      const customerDetailsHtml = `
+        <div style="margin: 20px 0; padding: 15px; border-radius: 5px; border: 1px solid #e0e0e0; background-color: #f9f9f9;">
+          <h3 style="color: #3b82f6; margin-bottom: 15px; border-bottom: 1px solid #e0e0e0; padding-bottom: 8px;">Dados do Cliente:</h3>
+          <table style="width: 100%; border-collapse: collapse;">
+            <tr>
+              <td style="padding: 8px; width: 40%; font-weight: bold;">Nome:</td>
+              <td style="padding: 8px;">${appointment.customerName}</td>
+            </tr>
+            <tr style="background-color: #f3f4f6;">
+              <td style="padding: 8px; font-weight: bold;">Email:</td>
+              <td style="padding: 8px;">${appointment.customerEmail}</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px; font-weight: bold;">Telefone:</td>
+              <td style="padding: 8px;">${appointment.customerPhone || 'N/A'}</td>
+            </tr>
+            <tr style="background-color: #f3f4f6;">
+              <td style="padding: 8px; font-weight: bold;">Organização:</td>
+              <td style="padding: 8px;">${appointment.customerOrganization || 'N/A'}</td>
+            </tr>
+          </table>
+        </div>
+      `;
       
       // Generate rooms table HTML
       const roomsTable = this.generateRoomsTableHtml(appointment);
@@ -339,26 +424,35 @@ export class EmailNotificationService {
         changesTable = this.generateChangesTableHtml(appointment, oldAppointment);
       }
       
-      // Replace placeholders with actual data
-      const htmlContent = emailTemplate
-        .replace(/{eventTitle}/g, appointment.title)
-        .replace(/{roomName}/g, room.name)
-        .replace(/{locationName}/g, location.name)
-        .replace(/{startTime}/g, startDate)
-        .replace(/{endTime}/g, endDate)
-        .replace(/{status}/g, appointment.status)
-        .replace(/{cost}/g, `€${(appointment.agreedCost / 100).toFixed(2)}`)
-        .replace(/{customerName}/g, appointment.customerName)
-        .replace(/{customerEmail}/g, appointment.customerEmail)
-        .replace(/{customerPhone}/g, appointment.customerPhone || 'N/A')
-        .replace(/{customerOrganization}/g, appointment.customerOrganization || 'N/A')
-        .replace(/{purpose}/g, appointment.purpose || 'N/A')
-        .replace(/{notes}/g, appointment.notes || 'N/A')
-        .replace(/{membershipNumber}/g, appointment.membershipNumber || 'N/A')
-        .replace(/{attendeesCount}/g, appointment.attendeesCount?.toString() || 'N/A')
-        .replace(/{roomsTable}/g, roomsTable)
-        .replace(/{changesTable}/g, changesTable)
-        .replace(/{systemName}/g, settings.systemName);
+      // Format custom template as HTML
+      const formattedCustomTemplate = this.formatCustomTemplate(customTemplate);
+      
+      // Combine everything into a beautiful HTML email
+      const htmlContent = `
+        <div style="font-family: Arial, sans-serif; max-width: 650px; margin: 0 auto;">
+          <div style="background-color: #3b82f6; color: white; padding: 20px; border-radius: 5px 5px 0 0; margin-bottom: 20px;">
+            <h2 style="margin: 0; font-weight: 600;">${settings.systemName} - Atualização de Reserva</h2>
+          </div>
+          
+          ${formattedCustomTemplate}
+          
+          ${bookingDetailsHtml}
+          
+          ${customerDetailsHtml}
+          
+          <div style="margin: 20px 0;">
+            <h3 style="color: #3b82f6; margin-bottom: 15px; border-bottom: 1px solid #e0e0e0; padding-bottom: 8px;">Salas Reservadas:</h3>
+            ${roomsTable}
+          </div>
+          
+          ${changesTable}
+          
+          <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e0e0e0; color: #666; font-size: 14px;">
+            <p>Para algum esclarecimento, entre em contacto conosco pelo email <a href="mailto:geral@acrdsc.org" style="color: #3b82f6; text-decoration: none;">geral@acrdsc.org</a>.</p>
+            <p>Atenciosamente,<br>${settings.systemName}</p>
+          </div>
+        </div>
+      `;
       
       // Set up recipients
       const recipients = [
@@ -425,77 +519,119 @@ export class EmailNotificationService {
       const startDate = new Date(appointment.startTime).toLocaleString();
       const endDate = new Date(appointment.endTime).toLocaleString();
       
-      // Get email template or use default
-      let emailTemplate = settings.emailTemplateBookingStatusChanged;
-      if (!emailTemplate) {
-        emailTemplate = `
-          <h2>Booking Status Update</h2>
-          <p>The status of your booking has changed from <strong>{oldStatus}</strong> to <strong>{newStatus}</strong>:</p>
-          
-          <ul>
-            <li><strong>Event:</strong> {eventTitle}</li>
-            <li><strong>Room:</strong> {roomName}</li>
-            <li><strong>Location:</strong> {locationName}</li>
-            <li><strong>Start:</strong> {startTime}</li>
-            <li><strong>End:</strong> {endTime}</li>
-            <li><strong>New Status:</strong> {status}</li>
-            <li><strong>Cost:</strong> {cost}</li>
-            <li><strong>Purpose:</strong> {purpose}</li>
-            <li><strong>Attendees:</strong> {attendeesCount}</li>
-          </ul>
-          
-          {rejectionReason}
-          
-          <p>Customer Details:</p>
-          <ul>
-            <li><strong>Name:</strong> {customerName}</li>
-            <li><strong>Email:</strong> {customerEmail}</li>
-            <li><strong>Phone:</strong> {customerPhone}</li>
-            <li><strong>Organization:</strong> {customerOrganization}</li>
-          </ul>
-          
-          <p>Reserved Rooms:</p>
-          {roomsTable}
-          
-          <p>For more details, please log in to the system.</p>
-          <p>Best regards,<br>{systemName}</p>
+      // Get custom email template
+      const customTemplate = settings.emailTemplateBookingStatusChanged || '';
+      
+      // Generate status change banner
+      const statusBanner = `
+        <div style="margin: 20px 0; padding: 15px; border-radius: 5px; 
+            ${appointment.status === 'approved' ? 'background-color: #dcfce7; border: 1px solid #22c55e;' : 
+             appointment.status === 'rejected' ? 'background-color: #fee2e2; border: 1px solid #ef4444;' :
+             appointment.status === 'cancelled' ? 'background-color: #fef3c7; border: 1px solid #f59e0b;' :
+             'background-color: #eff6ff; border: 1px solid #3b82f6;'}">
+          <h3 style="margin-top: 0; margin-bottom: 10px; 
+              ${appointment.status === 'approved' ? 'color: #15803d;' : 
+               appointment.status === 'rejected' ? 'color: #b91c1c;' :
+               appointment.status === 'cancelled' ? 'color: #b45309;' :
+               'color: #1e40af;'}">
+            Alteração de Estado da Reserva
+          </h3>
+          <p style="margin-bottom: 0; font-size: 16px;">
+            O estado da sua reserva mudou de <strong>${oldStatus}</strong> para <strong>${appointment.status}</strong>.
+          </p>
+        </div>
+      `;
+      
+      // Generate booking details HTML section
+      const bookingDetailsHtml = `
+        <div style="margin: 20px 0; padding: 15px; border-radius: 5px; border: 1px solid #e0e0e0; background-color: #f9f9f9;">
+          <h3 style="color: #3b82f6; margin-bottom: 15px; border-bottom: 1px solid #e0e0e0; padding-bottom: 8px;">Detalhes da Reserva:</h3>
+          <table style="width: 100%; border-collapse: collapse;">
+            <tr>
+              <td style="padding: 8px; width: 40%; font-weight: bold;">Evento:</td>
+              <td style="padding: 8px;">${appointment.title}</td>
+            </tr>
+            <tr style="background-color: #f3f4f6;">
+              <td style="padding: 8px; font-weight: bold;">Sala:</td>
+              <td style="padding: 8px;">${room.name}</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px; font-weight: bold;">Local:</td>
+              <td style="padding: 8px;">${location.name}</td>
+            </tr>
+            <tr style="background-color: #f3f4f6;">
+              <td style="padding: 8px; font-weight: bold;">Início:</td>
+              <td style="padding: 8px;">${startDate}</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px; font-weight: bold;">Fim:</td>
+              <td style="padding: 8px;">${endDate}</td>
+            </tr>
+            <tr style="background-color: #f3f4f6;">
+              <td style="padding: 8px; font-weight: bold;">Novo Estado:</td>
+              <td style="padding: 8px; font-weight: bold;
+                  ${appointment.status === 'approved' ? 'color: #15803d;' : 
+                   appointment.status === 'rejected' ? 'color: #b91c1c;' :
+                   appointment.status === 'cancelled' ? 'color: #b45309;' :
+                   'color: #1e40af;'}">
+                ${appointment.status}
+              </td>
+            </tr>
+            <tr>
+              <td style="padding: 8px; font-weight: bold;">Custo:</td>
+              <td style="padding: 8px;">€${(appointment.agreedCost / 100).toFixed(2)}</td>
+            </tr>
+            <tr style="background-color: #f3f4f6;">
+              <td style="padding: 8px; font-weight: bold;">Finalidade:</td>
+              <td style="padding: 8px;">${appointment.purpose || 'N/A'}</td>
+            </tr>
+          </table>
+        </div>
+      `;
+      
+      // Generate rejection reason HTML if applicable
+      let rejectionReasonHtml = '';
+      if (appointment.status === 'rejected' && appointment.rejectionReason) {
+        rejectionReasonHtml = `
+          <div style="margin: 20px 0; padding: 15px; border-radius: 5px; background-color: #fee2e2; border: 1px solid #ef4444;">
+            <h3 style="color: #b91c1c; margin-top: 0; margin-bottom: 10px;">Motivo da Rejeição:</h3>
+            <p style="margin-bottom: 0;">${appointment.rejectionReason}</p>
+          </div>
         `;
       }
       
       // Generate rooms table HTML
       const roomsTable = this.generateRoomsTableHtml(appointment);
       
-      // Generate rejection reason HTML if applicable
-      let rejectionReasonHtml = '';
-      if (appointment.status === 'rejected' && appointment.rejectionReason) {
-        rejectionReasonHtml = `
-          <p><strong>Reason for rejection:</strong></p>
-          <p style="padding: 10px; background-color: #f8f8f8; border-left: 4px solid #d0021b;">
-            ${appointment.rejectionReason}
-          </p>
-        `;
-      }
+      // Format custom template as HTML
+      const formattedCustomTemplate = this.formatCustomTemplate(customTemplate);
       
-      // Replace placeholders with actual data
-      const htmlContent = emailTemplate
-        .replace(/{eventTitle}/g, appointment.title)
-        .replace(/{roomName}/g, room.name)
-        .replace(/{locationName}/g, location.name)
-        .replace(/{startTime}/g, startDate)
-        .replace(/{endTime}/g, endDate)
-        .replace(/{oldStatus}/g, oldStatus)
-        .replace(/{newStatus}/g, appointment.status)
-        .replace(/{status}/g, appointment.status)
-        .replace(/{cost}/g, `€${(appointment.agreedCost / 100).toFixed(2)}`)
-        .replace(/{customerName}/g, appointment.customerName)
-        .replace(/{customerEmail}/g, appointment.customerEmail)
-        .replace(/{customerPhone}/g, appointment.customerPhone || 'N/A')
-        .replace(/{customerOrganization}/g, appointment.customerOrganization || 'N/A')
-        .replace(/{purpose}/g, appointment.purpose || 'N/A')
-        .replace(/{attendeesCount}/g, appointment.attendeesCount?.toString() || 'N/A')
-        .replace(/{rejectionReason}/g, rejectionReasonHtml)
-        .replace(/{roomsTable}/g, roomsTable)
-        .replace(/{systemName}/g, settings.systemName);
+      // Combine everything into a beautiful HTML email
+      const htmlContent = `
+        <div style="font-family: Arial, sans-serif; max-width: 650px; margin: 0 auto;">
+          <div style="background-color: #3b82f6; color: white; padding: 20px; border-radius: 5px 5px 0 0; margin-bottom: 20px;">
+            <h2 style="margin: 0; font-weight: 600;">${settings.systemName} - Atualização de Estado</h2>
+          </div>
+          
+          ${statusBanner}
+          
+          ${formattedCustomTemplate}
+          
+          ${bookingDetailsHtml}
+          
+          ${rejectionReasonHtml}
+          
+          <div style="margin: 20px 0;">
+            <h3 style="color: #3b82f6; margin-bottom: 15px; border-bottom: 1px solid #e0e0e0; padding-bottom: 8px;">Salas Reservadas:</h3>
+            ${roomsTable}
+          </div>
+          
+          <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e0e0e0; color: #666; font-size: 14px;">
+            <p>Para algum esclarecimento, entre em contacto conosco pelo email <a href="mailto:geral@acrdsc.org" style="color: #3b82f6; text-decoration: none;">geral@acrdsc.org</a>.</p>
+            <p>Atenciosamente,<br>${settings.systemName}</p>
+          </div>
+        </div>
+      `;
       
       // Set up recipients
       const recipients = [
@@ -541,21 +677,42 @@ export class EmailNotificationService {
   }
   
   /**
+   * Format custom template text into nicely styled HTML paragraphs
+   */
+  private static formatCustomTemplate(templateText: string): string {
+    if (!templateText || templateText.trim() === '') {
+      return '';
+    }
+    
+    // Split by new lines and filter empty lines
+    const paragraphs = templateText.split('\n')
+      .map(line => line.trim())
+      .filter(line => line.length > 0);
+    
+    // Format each paragraph with styling
+    return `
+      <div style="margin: 20px 0; line-height: 1.6;">
+        ${paragraphs.map(para => `<p style="margin-bottom: 12px;">${para}</p>`).join('')}
+      </div>
+    `;
+  }
+
+  /**
    * Generate HTML table for rooms list
    */
   private static generateRoomsTableHtml(appointment: Appointment): string {
     if (!appointment.rooms || appointment.rooms.length === 0) {
-      return '<p><em>No rooms selected</em></p>';
+      return '<p><em>Nenhuma sala selecionada</em></p>';
     }
     
     let tableHtml = `
       <table border="1" cellpadding="8" cellspacing="0" style="border-collapse: collapse; width: 100%; max-width: 600px; margin-bottom: 20px;">
         <thead>
           <tr style="background-color: #f3f4f6;">
-            <th align="left">Room</th>
-            <th align="left">Pricing Type</th>
-            <th align="left">Facilities</th>
-            <th align="right">Cost</th>
+            <th align="left">Sala</th>
+            <th align="left">Tipo de Preço</th>
+            <th align="left">Facilidades</th>
+            <th align="right">Custo</th>
           </tr>
         </thead>
         <tbody>
@@ -565,12 +722,12 @@ export class EmailNotificationService {
     
     // Add rows for each room
     appointment.rooms.forEach(room => {
-      const costTypeDisplay = room.costType === 'flat' ? 'Flat Rate' : 
-                             room.costType === 'hourly' ? 'Hourly Rate' : 'Per Attendee';
+      const costTypeDisplay = room.costType === 'flat' ? 'Preço Fixo' : 
+                             room.costType === 'hourly' ? 'Preço/Hora' : 'Por Participante';
       
       const facilitiesList = room.requestedFacilities && room.requestedFacilities.length > 0 
         ? room.requestedFacilities.join(', ') 
-        : 'None';
+        : 'Nenhuma';
         
       const costFormatted = `€${(room.cost / 100).toFixed(2)}`;
       totalCost += room.cost;
@@ -604,14 +761,14 @@ export class EmailNotificationService {
   private static generateChangesTableHtml(newAppointment: Appointment, oldAppointment: Appointment): string {
     // Fields to compare
     const fieldsToCompare = [
-      { key: 'title', label: 'Event Title' },
-      { key: 'startTime', label: 'Start Time', formatter: (val: string) => new Date(val).toLocaleString() },
-      { key: 'endTime', label: 'End Time', formatter: (val: string) => new Date(val).toLocaleString() },
-      { key: 'status', label: 'Status' },
-      { key: 'purpose', label: 'Purpose' },
-      { key: 'attendeesCount', label: 'Attendees Count' },
-      { key: 'agreedCost', label: 'Total Cost', formatter: (val: number) => `€${(val / 100).toFixed(2)}` },
-      { key: 'notes', label: 'Notes' }
+      { key: 'title', label: 'Evento' },
+      { key: 'startTime', label: 'Data/Hora Início', formatter: (val: string) => new Date(val).toLocaleString() },
+      { key: 'endTime', label: 'Data/Hora Fim', formatter: (val: string) => new Date(val).toLocaleString() },
+      { key: 'status', label: 'Estado' },
+      { key: 'purpose', label: 'Finalidade' },
+      { key: 'attendeesCount', label: 'Nº de Participantes' },
+      { key: 'agreedCost', label: 'Custo Total', formatter: (val: number) => `€${(val / 100).toFixed(2)}` },
+      { key: 'notes', label: 'Notas' }
     ];
     
     // Find differences
@@ -626,8 +783,8 @@ export class EmailNotificationService {
         const formatter = field.formatter || ((val: any) => val);
         changes.push({
           field: field.label,
-          old: oldValue ? formatter(oldValue) : 'Not specified',
-          new: newValue ? formatter(newValue) : 'Not specified'
+          old: oldValue ? formatter(oldValue) : 'Não especificado',
+          new: newValue ? formatter(newValue) : 'Não especificado'
         });
       }
     }
@@ -637,34 +794,36 @@ export class EmailNotificationService {
       return '';
     }
     
-    // Generate HTML table
+    // Generate HTML table with styled header
     let changesHtml = `
-      <h3>What Changed:</h3>
-      <table border="1" cellpadding="8" cellspacing="0" style="border-collapse: collapse; width: 100%; max-width: 600px; margin-bottom: 20px;">
-        <thead>
-          <tr style="background-color: #f3f4f6;">
-            <th align="left">Field</th>
-            <th align="left">Previous Value</th>
-            <th align="left">New Value</th>
-          </tr>
-        </thead>
-        <tbody>
+      <div style="margin: 20px 0;">
+        <h3 style="color: #3b82f6; margin-bottom: 15px; border-bottom: 1px solid #e0e0e0; padding-bottom: 8px;">O Que Mudou:</h3>
+        <table border="1" cellpadding="8" cellspacing="0" style="border-collapse: collapse; width: 100%; margin-bottom: 20px;">
+          <thead>
+            <tr style="background-color: #f3f4f6;">
+              <th align="left">Campo</th>
+              <th align="left">Valor Anterior</th>
+              <th align="left">Novo Valor</th>
+            </tr>
+          </thead>
+          <tbody>
     `;
     
     // Add rows for each change
     changes.forEach(change => {
       changesHtml += `
         <tr>
-          <td><strong>${change.field}</strong></td>
-          <td>${change.old}</td>
-          <td>${change.new}</td>
+          <td style="padding: 8px; width: 30%;"><strong>${change.field}</strong></td>
+          <td style="padding: 8px;">${change.old}</td>
+          <td style="padding: 8px; background-color: #f0f9ff;">${change.new}</td>
         </tr>
       `;
     });
     
     changesHtml += `
-      </tbody>
-    </table>
+          </tbody>
+        </table>
+      </div>
     `;
     
     return changesHtml;
