@@ -168,7 +168,26 @@ export function AppointmentDetailsModal({
   // Mutation for updating appointment
   const updateMutation = useMutation({
     mutationFn: async (data: Partial<Appointment>) => {
-      const res = await apiRequest("PUT", `/api/appointments/${appointmentId}`, data);
+      // Deep copy to avoid modifying the original data
+      const processedData = { ...data };
+      
+      // Ensure date fields are properly formatted
+      if (processedData.startTime) {
+        // If it's already a Date object, ensure it's in the proper format
+        processedData.startTime = new Date(processedData.startTime);
+      }
+      
+      if (processedData.endTime) {
+        // If it's already a Date object, ensure it's in the proper format
+        processedData.endTime = new Date(processedData.endTime);
+      }
+      
+      console.log('Sending appointment update with dates:', {
+        startTime: processedData.startTime,
+        endTime: processedData.endTime
+      });
+      
+      const res = await apiRequest("PUT", `/api/appointments/${appointmentId}`, processedData);
       return await res.json();
     },
     onSuccess: (updatedAppointment) => {
@@ -540,9 +559,27 @@ export function AppointmentDetailsModal({
 
   const handleInputChange = (field: string, value: any) => {
     setEditedAppointment((prev) => {
+      // Special handling for date fields from datetime-local inputs
+      let processedValue = value;
+      
+      // Convert datetime-local string inputs to proper Date objects
+      if (field === 'startTime' || field === 'endTime') {
+        if (typeof value === 'string') {
+          try {
+            // If it's a valid ISO string or datetime-local value, convert to Date
+            processedValue = new Date(value);
+            console.log(`Converted ${field} string to Date: ${processedValue.toISOString()}`);
+          } catch (e) {
+            console.warn(`Failed to convert ${field} value to Date: ${value}`, e);
+            // Keep original value if conversion fails
+            processedValue = value;
+          }
+        }
+      }
+      
       const updatedAppointment = {
         ...prev,
-        [field]: value,
+        [field]: processedValue,
       };
       
       // For fields that affect cost calculation, auto-update costs only if not using custom pricing
@@ -562,8 +599,15 @@ export function AppointmentDetailsModal({
               const tempAppointment = { ...editedAppointment };
               
               // Use type-safe approach to set the field
-              if (field === 'startTime' || field === 'endTime' || field === 'attendeesCount') {
-                tempAppointment[field] = value;
+              if (field === 'startTime' || field === 'endTime') {
+                // Ensure dates are properly set as Date objects
+                if (typeof value === 'string') {
+                  tempAppointment[field] = new Date(value);
+                } else {
+                  tempAppointment[field] = value;
+                }
+              } else if (field === 'attendeesCount') {
+                tempAppointment[field] = Number(value);
               }
               
               // Calculate new cost with updated field value
