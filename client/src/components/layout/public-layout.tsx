@@ -91,7 +91,7 @@ export function PublicLayout({ children }: PublicLayoutProps) {
       {/* Logo and Title */}
       <div className="p-4 flex items-center justify-between border-b border-gray-700">
         <div className="flex items-center">
-          <div className="bg-white p-2 rounded-md w-10 h-10 flex items-center justify-center overflow-hidden">
+          <div className="bg-white p-2 rounded-md w-12.5 h-12.5 flex items-center justify-center overflow-hidden">
             {useLogoImage && logoUrl ? (
               <img 
                 src={logoUrl} 
@@ -99,12 +99,12 @@ export function PublicLayout({ children }: PublicLayoutProps) {
                 className="object-contain w-full h-full"
               />
             ) : (
-              <div className="text-xl font-bold text-primary">{logoText}</div>
+              <div className="text-2xl font-bold text-primary">{logoText}</div>
             )}
           </div>
           <div className="ml-3 text-white">
-            <div className="font-semibold text-sm">{title}</div>
-            <div className="text-xs">{subtitle}</div>
+            <div className="font-semibold text-base">{title}</div>
+            <div className="text-sm">{subtitle}</div>
           </div>
         </div>
         {isMobile && (
@@ -175,9 +175,9 @@ export function PublicLayout({ children }: PublicLayoutProps) {
           variant="ghost"
           size="icon"
           onClick={() => setIsOpen(true)}
-          className="fixed top-4 left-2 z-50 rounded-full bg-primary text-white shadow-lg h-8 w-8 p-1.5"
+          className="fixed top-8 left-3 z-50 rounded-full bg-primary text-white shadow-lg h-10 w-10 p-2"
         >
-          <Menu className="h-3.5 w-3.5" />
+          <Menu className="h-5 w-5" />
         </Button>
         
         {/* Mobile sidebar */}
