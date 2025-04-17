@@ -345,10 +345,13 @@ export function AppointmentDetailsModal({
       }
     });
     
-    // Create a list of custom facilities (facilities in requestedFacilities but not in standard list)
-    // We'll use a customFacilities cache to track costs of custom facilities
+    // Initialize custom facilities caches if needed
     if (!window.customFacilities) {
       window.customFacilities = {};
+    }
+    
+    if (!editedAppointment.customFacilities) {
+      editedAppointment.customFacilities = {};
     }
     
     // Add custom facilities that aren't in the standard list
@@ -358,17 +361,38 @@ export function AppointmentDetailsModal({
         // This is likely a custom facility
         const cacheKey = `${roomId}-${facilityName}`;
         
-        // Use cached cost if available
-        const cachedFacility = window.customFacilities[cacheKey];
-        const facilityObj = cachedFacility || {
-          id: `custom-${facilityName}`,
-          name: facilityName,
-          cost: customFacilityCost || 0,
-          isCustom: true
-        };
+        // First check in appointment.customFacilities (persisted data)
+        let facilityObj = null;
         
-        // Cache it for future use
+        if (appointment && appointment.customFacilities && appointment.customFacilities[cacheKey]) {
+          facilityObj = appointment.customFacilities[cacheKey];
+        } 
+        // Then check in editedAppointment.customFacilities (current session)
+        else if (editedAppointment.customFacilities && editedAppointment.customFacilities[cacheKey]) {
+          facilityObj = editedAppointment.customFacilities[cacheKey];
+        } 
+        // Then check window cache
+        else if (window.customFacilities[cacheKey]) {
+          facilityObj = window.customFacilities[cacheKey];
+        } 
+        // If no existing facility found, create a new one
+        else {
+          facilityObj = {
+            id: `custom-${facilityName}`,
+            name: facilityName,
+            cost: customFacilityCost || 0,
+            isCustom: true
+          };
+        }
+        
+        // Make sure cost is always a number and not zero (if it has a cost)
+        if (facilityObj && 'cost' in facilityObj) {
+          facilityObj.cost = Number(facilityObj.cost) || 0;
+        }
+        
+        // Cache in all locations for consistency
         window.customFacilities[cacheKey] = facilityObj;
+        editedAppointment.customFacilities[cacheKey] = facilityObj;
         
         // Add to results
         result.push(facilityObj);
@@ -584,17 +608,36 @@ export function AppointmentDetailsModal({
     // Log values to debug
     console.log("Adding custom facility:", customFacilityName, "with cost:", customFacilityCost);
     
+    // Ensure the cost is a number and not zero
+    const facilityCost = Math.max(Number(customFacilityCost), 0);
+    
     // Create the custom facility object - cost is already in cents
     const customFacility = {
       id: `custom-${Date.now()}`,
       name: customFacilityName,
-      cost: customFacilityCost
+      cost: facilityCost,
+      isCustom: true
     };
     
     // Save this custom facility in our tracking system 
     const roomId = (editedAppointment.rooms as RoomBooking[])[roomIndex].roomId;
     const cacheKey = `${roomId}-${customFacilityName}`;
+    
+    // Initialize customFacilities object if it doesn't exist
+    if (!window.customFacilities) {
+      window.customFacilities = {};
+    }
+    
+    // Store the custom facility in the global cache
     window.customFacilities[cacheKey] = customFacility;
+    
+    // Make sure we have a customFacilities field on the appointment
+    if (!editedAppointment.customFacilities) {
+      editedAppointment.customFacilities = {};
+    }
+    
+    // Also store it in the appointment.customFacilities to ensure persistence
+    editedAppointment.customFacilities[cacheKey] = customFacility;
     
     // Add it to the room's facilities
     const updatedRooms = [...(editedAppointment.rooms as RoomBooking[])];
@@ -607,10 +650,10 @@ export function AppointmentDetailsModal({
     // Get existing cost, default to 0 if undefined
     const existingCost = Number(updatedRooms[roomIndex].cost || 0);
     console.log("Existing cost:", existingCost, "Type:", typeof existingCost);
-    console.log("Custom facility cost:", customFacilityCost, "Type:", typeof customFacilityCost);
+    console.log("Custom facility cost:", facilityCost, "Type:", typeof facilityCost);
     
     // Use Number to ensure we're working with numbers
-    const newCost = existingCost + Number(customFacilityCost);
+    const newCost = existingCost + facilityCost;
     console.log("Calculated new cost:", newCost);
     
     updatedRooms[roomIndex] = {
@@ -621,6 +664,7 @@ export function AppointmentDetailsModal({
     
     // Update the edited appointment state
     handleInputChange('rooms', updatedRooms);
+    handleInputChange('customFacilities', editedAppointment.customFacilities);
     
     // Update the total cost if not using custom pricing
     if (!customPricing) {
@@ -640,7 +684,7 @@ export function AppointmentDetailsModal({
     // Show success message
     toast({
       title: "Custom facility added",
-      description: `Added ${customFacilityName} (€${(customFacilityCost/100).toFixed(2)})`,
+      description: `Added ${customFacilityName} (€${(facilityCost/100).toFixed(2)})`,
     });
   };
 
