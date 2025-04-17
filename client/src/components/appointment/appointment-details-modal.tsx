@@ -1643,13 +1643,13 @@ export function AppointmentDetailsModal({
                     <div className="space-y-6">
                       {/* Cost type is now handled per room, not globally */}
                       <div>
-                        <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">Cost Calculation</h5>
+                        <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">{t('appointments.detailsModal.costCalculation')}</h5>
                         <p className="text-sm text-gray-900">
-                          Individual room pricing ({getRoomsArray(appointment).length} room{getRoomsArray(appointment).length !== 1 ? 's' : ''})
+                          {t('appointments.detailsModal.individualRoomPricing')} ({getRoomsArray(appointment).length} {getRoomsArray(appointment).length !== 1 ? t('appointments.detailsModal.rooms') : t('appointments.detailsModal.room')})
                         </p>
                       </div>
                       <div>
-                        <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">Agreed Cost</h5>
+                        <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">{t('appointments.detailsModal.agreedCost')}</h5>
                         <p className="text-sm text-gray-900">€{(appointment.agreedCost / 100).toFixed(2)}</p>
                         
                         {appointment.costBreakdown && 
@@ -1659,7 +1659,7 @@ export function AppointmentDetailsModal({
                         )}
                       </div>
                       <div>
-                        <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">Cost Breakdown</h5>
+                        <h5 className="text-xs font-medium text-gray-500 uppercase mb-1">{t('appointments.detailsModal.costBreakdown')}</h5>
                         <div className="mt-1 bg-gray-50 rounded-md p-4">
                           {getRoomsArray(appointment).length > 0 ? (
                             <>
@@ -1787,7 +1787,7 @@ export function AppointmentDetailsModal({
                               ))}
                               
                               <div className="flex justify-between font-medium text-sm mt-2">
-                                <span>Total:</span>
+                                <span>{t('appointments.detailsModal.total')}:</span>
                                 <span>€{(appointment.agreedCost / 100).toFixed(2)}</span>
                               </div>
                               
@@ -1795,22 +1795,22 @@ export function AppointmentDetailsModal({
                                typeof appointment.costBreakdown === 'object' && 
                                (appointment.costBreakdown as any).isCustom && (
                                 <p className="text-xs text-gray-500 italic mt-2 text-center">
-                                  Custom price applied
+                                  {t('appointments.detailsModal.customPriceApplied')}
                                 </p>
                               )}
                             </>
                           ) : appointment.costBreakdown && typeof appointment.costBreakdown === 'object' ? (
                             <>
                               <div className="flex justify-between font-medium text-sm">
-                                <span>Total Cost:</span>
+                                <span>{t('appointments.detailsModal.totalCost')}:</span>
                                 <span>€{(appointment.agreedCost / 100).toFixed(2)}</span>
                               </div>
                               <p className="text-sm text-gray-500 mt-2">
-                                No detailed breakdown available for individual rooms.
+                                {t('appointments.detailsModal.noDetailedBreakdownRooms')}
                               </p>
                             </>
                           ) : (
-                            <p className="text-sm text-gray-500">No detailed breakdown available</p>
+                            <p className="text-sm text-gray-500">{t('appointments.detailsModal.noDetailedBreakdown')}</p>
                           )}
                         </div>
                       </div>

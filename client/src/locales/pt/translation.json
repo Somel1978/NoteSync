@@ -155,7 +155,18 @@
       "addCustomFacility": "Adicionar Instalação Personalizada",
       "facilityName": "Nome da instalação",
       "customPrice": "Preço personalizado",
-      "customPriceApplied": "Preço personalizado aplicado"
+      "customPriceApplied": "Preço personalizado aplicado",
+      "costCalculation": "Cálculo de Custo",
+      "agreedCost": "Custo Acordado",
+      "costBreakdown": "Detalhamento de Custos",
+      "totalCost": "Custo Total",
+      "noDetailedBreakdown": "Não há detalhamento disponível",
+      "noDetailedBreakdownRooms": "Não há detalhamento disponível para salas individuais",
+      "individualRoomPricing": "Preços de salas individuais",
+      "room": "sala",
+      "rooms": "salas",
+      "additionalFacilities": "Instalações Adicionais",
+      "total": "Total"
     }
   },
   "rooms": {
