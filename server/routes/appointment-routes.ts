@@ -54,30 +54,40 @@ export function registerAppointmentRoutes(app: Express): void {
       // Explicitly handle date fields
       try {
         // Handle startTime
-        console.log("Original startTime:", processedData.startTime);
+        console.log("Original startTime:", processedData.startTime, "Type:", typeof processedData.startTime);
         if (processedData.startTime) {
-          const startDate = new Date(processedData.startTime);
-          // Verify it's a valid date
-          if (!isNaN(startDate.getTime())) {
-            formattedData.startTime = startDate;
-            console.log("Parsed startTime:", startDate.toISOString());
-          } else {
-            throw new Error(`Invalid startTime value: ${processedData.startTime}`);
+          try {
+            const startDate = new Date(processedData.startTime);
+            // Verify it's a valid date
+            if (!isNaN(startDate.getTime())) {
+              formattedData.startTime = startDate;
+              console.log("Parsed startTime:", startDate.toISOString());
+            } else {
+              throw new Error(`Invalid startTime value: ${processedData.startTime}`);
+            }
+          } catch (error) {
+            console.error("Failed to parse startTime:", error);
+            throw new Error(`Failed to parse startTime: ${error instanceof Error ? error.message : String(error)}`);
           }
         } else {
           throw new Error("Missing required startTime field");
         }
         
         // Handle endTime
-        console.log("Original endTime:", processedData.endTime);
+        console.log("Original endTime:", processedData.endTime, "Type:", typeof processedData.endTime);
         if (processedData.endTime) {
-          const endDate = new Date(processedData.endTime);
-          // Verify it's a valid date
-          if (!isNaN(endDate.getTime())) {
-            formattedData.endTime = endDate;
-            console.log("Parsed endTime:", endDate.toISOString());
-          } else {
-            throw new Error(`Invalid endTime value: ${processedData.endTime}`);
+          try {
+            const endDate = new Date(processedData.endTime);
+            // Verify it's a valid date
+            if (!isNaN(endDate.getTime())) {
+              formattedData.endTime = endDate;
+              console.log("Parsed endTime:", endDate.toISOString());
+            } else {
+              throw new Error(`Invalid endTime value: ${processedData.endTime}`);
+            }
+          } catch (error) {
+            console.error("Failed to parse endTime:", error);
+            throw new Error(`Failed to parse endTime: ${error instanceof Error ? error.message : String(error)}`);
           }
         } else {
           throw new Error("Missing required endTime field");
