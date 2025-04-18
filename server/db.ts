@@ -1,35 +1,73 @@
-import { Pool, neonConfig } from '@neondatabase/serverless';
-import { drizzle } from 'drizzle-orm/neon-serverless';
-import ws from "ws";
-import * as schema from "@shared/schema";
-import * as path from 'path';
+// ESM versão compatível com Node.js v18
+console.log("===== CARREGANDO server/db.ts PADRÃO =====");
+console.log("Caminho completo:", import.meta.url);
+console.log("Node.js version:", process.version);
 
-// O arquivo .env é carregado automaticamente pelo framework ou
-// durante a inicialização do servidor
+// Usando importação dinâmica para resolver o problema com o módulo pg
+let pool;
+let db;
 
-neonConfig.webSocketConstructor = ws;
-
-// Tenta usar DATABASE_URL, caso contrário usa as variáveis PGXXX individuais
-let connectionConfig: any = {};
+// Configurações de conexão
+const connectionConfig = {};
 
 if (process.env.DATABASE_URL) {
   connectionConfig.connectionString = process.env.DATABASE_URL;
+  console.log("Usando configuração via DATABASE_URL");
 } else if (process.env.PGHOST && process.env.PGUSER && process.env.PGDATABASE) {
-  connectionConfig = {
-    host: process.env.PGHOST,
-    port: parseInt(process.env.PGPORT || '5432'),
-    user: process.env.PGUSER,
-    password: process.env.PGPASSWORD,
-    database: process.env.PGDATABASE,
-  };
+  connectionConfig.host = process.env.PGHOST;
+  connectionConfig.port = parseInt(process.env.PGPORT || '5432');
+  connectionConfig.user = process.env.PGUSER;
+  connectionConfig.password = process.env.PGPASSWORD;
+  connectionConfig.database = process.env.PGDATABASE;
+  connectionConfig.ssl = false; // Desabilita SSL para conexões locais
+  console.log("Usando configuração via variáveis individuais PG*");
 } else {
-  throw new Error(
-    "DATABASE_URL ou variáveis PGHOST, PGUSER, PGPASSWORD, PGDATABASE devem estar configuradas. Verifique seu arquivo .env"
-  );
+  connectionConfig.host = 'localhost';
+  connectionConfig.port = 5432;
+  connectionConfig.user = 'postgres';
+  connectionConfig.password = 'postgres';
+  connectionConfig.database = 'acrdsc_reservas';
+  connectionConfig.ssl = false;
+  console.log("AVISO: Usando valores padrão para conexão local");
 }
 
-console.log("Conectando ao banco de dados com as configurações:", 
-  JSON.stringify({...connectionConfig, password: connectionConfig.password ? '***' : undefined}));
+console.log("Configurações de banco:", JSON.stringify({
+  ...connectionConfig, 
+  password: connectionConfig.password ? '***' : undefined
+}));
 
-export const pool = new Pool(connectionConfig);
-export const db = drizzle({ client: pool, schema });
+// Exportações iniciais (serão substituídas após inicialização)
+export { pool, db };
+
+// Inicializar de forma assíncrona
+async function init() {
+  try {
+    console.log("Inicializando módulos de banco de dados...");
+    
+    // Importar pg usando dynamic import
+    const pg = await import('pg');
+    
+    // Importar drizzle usando dynamic import
+    const { drizzle } = await import('drizzle-orm/node-postgres');
+    const schema = await import("@shared/schema");
+
+    // Criar pool e conexão
+    console.log("Criando pool de conexão...");
+    pool = new pg.Pool(connectionConfig);
+    
+    // Criar instância drizzle
+    console.log("Inicializando ORM...");
+    db = drizzle(pool, { schema });
+
+    console.log("Banco de dados inicializado com sucesso!");
+  } catch (error) {
+    console.error("ERRO AO INICIALIZAR BANCO DE DADOS:", error);
+    process.exit(1);
+  }
+}
+
+// Iniciar processo de inicialização
+init().catch(error => {
+  console.error("Falha na inicialização:", error);
+  process.exit(1);
+});

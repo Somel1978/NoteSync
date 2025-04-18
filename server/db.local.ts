@@ -1,14 +1,13 @@
-// Usando require() para importar pg no estilo CommonJS (mais compatível)
-// @ts-ignore
-const pg = require('pg');
-const { Pool } = pg;
-import * as schema from "@shared/schema";
+// ESM versão compatível com Node.js v18
+console.log("===== CARREGANDO server/db.local.ts =====");
+console.log("Caminho completo:", import.meta.url);
+console.log("Node.js version:", process.version);
+
 import * as fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
 // Carrega o arquivo .env manualmente
-// Essa função encontra e carrega o arquivo .env manualmente
 function loadEnvFile() {
   try {
     // Obtém o diretório atual usando ESM
@@ -69,112 +68,83 @@ function loadEnvFile() {
 // Tenta carregar o arquivo .env
 loadEnvFile();
 
-// Imprime as variáveis de ambiente relacionadas ao banco de dados (sem mostrar senhas)
-console.log("Variáveis de ambiente disponíveis:");
-console.log("DATABASE_URL:", process.env.DATABASE_URL ? "***" : "não definido");
-console.log("PGHOST:", process.env.PGHOST || "não definido");
-console.log("PGPORT:", process.env.PGPORT || "não definido");
-console.log("PGUSER:", process.env.PGUSER || "não definido");
-console.log("PGDATABASE:", process.env.PGDATABASE || "não definido");
-console.log("PGPASSWORD:", process.env.PGPASSWORD ? "***" : "não definido");
+// Referências que serão preenchidas assincronamente
+let pool;
+let db;
 
-// Tenta usar DATABASE_URL, caso contrário usa as variáveis PGXXX individuais
-let connectionConfig = {};
+// Exportações iniciais
+export { pool, db };
+
+// Configurações de conexão
+const connectionConfig = {};
 
 if (process.env.DATABASE_URL) {
-  // @ts-ignore
   connectionConfig.connectionString = process.env.DATABASE_URL;
   console.log("Usando configuração via DATABASE_URL");
 } else if (process.env.PGHOST && process.env.PGUSER && process.env.PGDATABASE) {
-  connectionConfig = {
-    host: process.env.PGHOST,
-    port: parseInt(process.env.PGPORT || '5432'),
-    user: process.env.PGUSER,
-    password: process.env.PGPASSWORD,
-    database: process.env.PGDATABASE,
-    ssl: false // Desabilita SSL para conexões locais
-  };
+  connectionConfig.host = process.env.PGHOST;
+  connectionConfig.port = parseInt(process.env.PGPORT || '5432');
+  connectionConfig.user = process.env.PGUSER;
+  connectionConfig.password = process.env.PGPASSWORD;
+  connectionConfig.database = process.env.PGDATABASE;
+  connectionConfig.ssl = false; // Desabilita SSL para conexões locais
   console.log("Usando configuração via variáveis individuais PG*");
 } else {
-  // Como último recurso, tenta usar valores padrão para desenvolvimento local
-  connectionConfig = {
-    host: 'localhost',
-    port: 5432,
-    user: 'postgres',
-    password: 'postgres',
-    database: 'acrdsc_reservas',
-    ssl: false // Desabilita SSL para conexões locais
-  };
-  console.log("AVISO: Usando valores padrão para conexão local pois nenhuma variável de ambiente foi definida!");
-  console.log("Tentando conectar com:", {
-    ...connectionConfig, 
-    // @ts-ignore
-    password: '****'
-  });
+  connectionConfig.host = 'localhost';
+  connectionConfig.port = 5432;
+  connectionConfig.user = 'postgres';
+  connectionConfig.password = 'postgres';
+  connectionConfig.database = 'acrdsc_reservas';
+  connectionConfig.ssl = false;
+  console.log("AVISO: Usando valores padrão para conexão local");
 }
 
-// Cria o pool de conexões
-// @ts-ignore
-export const pool = new Pool(connectionConfig);
+console.log("Configurações de banco:", JSON.stringify({
+  ...connectionConfig, 
+  password: connectionConfig.password ? '***' : undefined
+}));
 
-// Teste de conexão ao iniciar
-pool.query('SELECT NOW()')
-  .then(result => {
-    console.log('Conexão com o banco de dados estabelecida com sucesso!');
-    console.log('Timestamp do servidor:', result.rows[0].now);
-  })
-  .catch(err => {
-    console.error('ERRO ao conectar ao banco de dados:', err.message);
-    console.error('Verifique suas credenciais e configurações no arquivo .env');
-  });
+// Inicializar de forma assíncrona
+async function init() {
+  try {
+    console.log("Inicializando módulos de banco de dados (ambiente local)...");
+    
+    // Importar pg usando dynamic import
+    const pg = await import('pg');
+    
+    // Importar drizzle usando dynamic import
+    const { drizzle } = await import('drizzle-orm/node-postgres');
+    const schema = await import("@shared/schema");
 
-// Para compatibilidade com a versão original
-// @ts-ignore
-export const db = {
-  query: (text, params) => pool.query(text, params),
-  // Implementamos uma versão simplificada do drizzle
-  select: () => {
-    return {
-      from: (table) => {
-        return {
-          where: (condition) => {
-            // Aqui implementamos uma versão básica para consultas simples
-            const sql = `SELECT * FROM "${table.$type.name}" WHERE ${condition}`;
-            return pool.query(sql).then(result => result.rows);
-          },
-          // Para consultas sem condição
-          execute: () => {
-            const sql = `SELECT * FROM "${table.$type.name}"`;
-            return pool.query(sql).then(result => result.rows);
-          }
-        };
-      }
-    };
-  },
-  insert: (table) => {
-    return {
-      values: (values) => {
-        if (Array.isArray(values)) {
-          // Implementação básica para inserir múltiplos valores
-          const promises = values.map(value => {
-            const keys = Object.keys(value);
-            const placeholders = keys.map((_, i) => `$${i + 1}`).join(', ');
-            const sql = `INSERT INTO "${table.$type.name}" (${keys.join(', ')}) VALUES (${placeholders}) RETURNING *`;
-            return pool.query(sql, Object.values(value)).then(result => result.rows[0]);
-          });
-          return Promise.all(promises);
-        } else {
-          // Implementação básica para inserir um único valor
-          const keys = Object.keys(values);
-          const placeholders = keys.map((_, i) => `$${i + 1}`).join(', ');
-          const sql = `INSERT INTO "${table.$type.name}" (${keys.join(', ')}) VALUES (${placeholders}) RETURNING *`;
-          return pool.query(sql, Object.values(values)).then(result => {
-            return {
-              returning: () => Promise.resolve([result.rows[0]])
-            };
-          });
-        }
-      }
-    };
+    // Criar pool e conexão
+    console.log("Criando pool de conexão local...");
+    pool = new pg.Pool(connectionConfig);
+    
+    // Testar conexão
+    try {
+      const testResult = await pool.query('SELECT NOW()');
+      console.log("Conexão com banco de dados local estabelecida com sucesso!");
+      console.log("Timestamp do servidor:", testResult.rows[0].now);
+    } catch (testError) {
+      console.error("Erro ao testar conexão:", testError);
+      throw new Error(`Não foi possível conectar ao banco de dados: ${testError.message}`);
+    }
+    
+    // Criar instância drizzle
+    console.log("Inicializando ORM local...");
+    db = drizzle(pool, { schema });
+
+    console.log("Banco de dados local inicializado com sucesso!");
+  } catch (error) {
+    console.error("ERRO FATAL AO INICIALIZAR BANCO DE DADOS LOCAL:", error);
+    console.error("Certifique-se que o pacote pg está instalado: npm install pg");
+    console.error("Se o erro persistir, tente: npm install -g pg");
+    process.exit(1);
   }
-};
+}
+
+// Iniciar processo de inicialização
+init().catch(error => {
+  console.error("Falha crítica na inicialização local:", error);
+  process.exit(1);
+});
