@@ -33,6 +33,10 @@ const viteLocalPath = path.join(__dirname, 'vite.config.local.ts');
 const viteOriginalPath = path.join(__dirname, 'vite.config.ts');
 const viteBackupPath = path.join(__dirname, 'vite.config.ts.bak');
 
+const viteServerLocalPath = path.join(__dirname, 'server', 'vite.local.ts');
+const viteServerOriginalPath = path.join(__dirname, 'server', 'vite.ts');
+const viteServerBackupPath = path.join(__dirname, 'server', 'vite.ts.bak');
+
 if (!fs.existsSync(dbLocalPath)) {
   console.error(`${colors.red}Erro: Arquivo server/db.local.ts não encontrado!${colors.reset}`);
   console.error(`Verifique se você está executando este script na raiz do projeto.`);
@@ -41,6 +45,12 @@ if (!fs.existsSync(dbLocalPath)) {
 
 if (!fs.existsSync(viteLocalPath)) {
   console.error(`${colors.red}Erro: Arquivo vite.config.local.ts não encontrado!${colors.reset}`);
+  console.error(`Verifique se você está executando este script na raiz do projeto.`);
+  process.exit(1);
+}
+
+if (!fs.existsSync(viteServerLocalPath)) {
+  console.error(`${colors.red}Erro: Arquivo server/vite.local.ts não encontrado!${colors.reset}`);
   console.error(`Verifique se você está executando este script na raiz do projeto.`);
   process.exit(1);
 }
@@ -62,6 +72,14 @@ try {
   }
   console.log(`${colors.yellow}Aplicando configuração de Vite compatível com Node.js v18...${colors.reset}`);
   fs.copyFileSync(viteLocalPath, viteOriginalPath);
+  
+  // Backup e substituição de server/vite.ts
+  if (!fs.existsSync(viteServerBackupPath) && fs.existsSync(viteServerOriginalPath)) {
+    console.log(`${colors.yellow}Criando backup de server/vite.ts...${colors.reset}`);
+    fs.copyFileSync(viteServerOriginalPath, viteServerBackupPath);
+  }
+  console.log(`${colors.yellow}Aplicando configuração de server/vite.ts compatível com Node.js v18...${colors.reset}`);
+  fs.copyFileSync(viteServerLocalPath, viteServerOriginalPath);
 } catch (error) {
   console.error(`${colors.red}Erro ao manipular arquivos:${colors.reset}`, error);
   process.exit(1);
@@ -105,6 +123,10 @@ MAILJET_SECRET_KEY=
     fs.copyFileSync(viteBackupPath, viteOriginalPath);
   }
   
+  if (fs.existsSync(viteServerBackupPath)) {
+    fs.copyFileSync(viteServerBackupPath, viteServerOriginalPath);
+  }
+  
   process.exit(0);
 }
 
@@ -131,6 +153,12 @@ const cleanup = () => {
   // Restaurar vite.config.ts
   if (fs.existsSync(viteBackupPath)) {
     fs.copyFileSync(viteBackupPath, viteOriginalPath);
+    restored = true;
+  }
+  
+  // Restaurar server/vite.ts
+  if (fs.existsSync(viteServerBackupPath)) {
+    fs.copyFileSync(viteServerBackupPath, viteServerOriginalPath);
     restored = true;
   }
   
