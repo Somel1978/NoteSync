@@ -715,8 +715,47 @@ export class DatabaseStorage implements IStorage {
 
   // Settings Operations
   async getSetting(key: string): Promise<Setting | undefined> {
-    const [setting] = await db.select().from(settings).where(eq(settings.key, key));
-    return setting;
+    try {
+      // Primeiro tentar usando o ORM
+      const [setting] = await db.select().from(settings).where(eq(settings.key, key));
+      
+      if (setting) {
+        // Garantir que o valor seja um objeto
+        if (typeof setting.value === 'string') {
+          try {
+            setting.value = JSON.parse(setting.value);
+          } catch (e) {
+            console.error(`Error parsing setting value for key ${key}:`, e);
+          }
+        }
+        return setting;
+      }
+      
+      // Se não encontrar, tentar usar SQL direto para compatibilidade
+      console.log(`Getting setting ${key} using direct SQL query`);
+      const query = `SELECT * FROM settings WHERE key = $1`;
+      const result = await pool.query(query, [key]);
+      
+      if (result.rows && result.rows.length > 0) {
+        const dbSetting = result.rows[0];
+        
+        // Garantir que o valor seja um objeto
+        if (typeof dbSetting.value === 'string') {
+          try {
+            dbSetting.value = JSON.parse(dbSetting.value);
+          } catch (e) {
+            console.error(`Error parsing setting value for key ${key}:`, e);
+          }
+        }
+        
+        return dbSetting;
+      }
+      
+      return undefined;
+    } catch (error) {
+      console.error(`Error in getSetting for key ${key}:`, error);
+      throw error;
+    }
   }
 
   async createOrUpdateSetting(key: string, value: any): Promise<Setting> {
@@ -752,24 +791,55 @@ export class DatabaseStorage implements IStorage {
     console.log(`Creating/updating setting ${key} with value:`, JSON.stringify(value, null, 2));
     
     try {
-      // Try to update
-      const [updatedSetting] = await db
-        .update(settings)
-        .set({ value, updatedAt: new Date() })
-        .where(eq(settings.key, key))
-        .returning();
+      // Primeiro, verificar se o registro existe
+      const existingSetting = await this.getSetting(key);
       
-      if (updatedSetting) {
-        return updatedSetting;
+      if (existingSetting) {
+        // Atualizar o registro existente com SQL direto para compatibilidade
+        console.log(`Setting ${key} exists, updating...`);
+        const updateQuery = `
+          UPDATE settings 
+          SET value = $1, "updatedAt" = NOW() 
+          WHERE key = $2 
+          RETURNING *
+        `;
+        
+        const updateResult = await pool.query(updateQuery, [JSON.stringify(value), key]);
+        console.log(`Update result:`, updateResult.rows[0]);
+        
+        if (updateResult.rows && updateResult.rows.length > 0) {
+          const updatedSetting = updateResult.rows[0];
+          // Converter o valor de volta para o formato esperado
+          updatedSetting.value = typeof updatedSetting.value === 'string'
+            ? JSON.parse(updatedSetting.value)
+            : updatedSetting.value;
+            
+          return updatedSetting;
+        }
       }
       
-      // If no rows were updated, insert a new one
-      const [newSetting] = await db
-        .insert(settings)
-        .values({ key, value })
-        .returning();
+      // Inserir novo registro com SQL direto para compatibilidade
+      console.log(`Setting ${key} does not exist, inserting...`);
+      const insertQuery = `
+        INSERT INTO settings (key, value, "createdAt", "updatedAt")
+        VALUES ($1, $2, NOW(), NOW())
+        RETURNING *
+      `;
       
-      return newSetting;
+      const insertResult = await pool.query(insertQuery, [key, JSON.stringify(value)]);
+      console.log(`Insert result:`, insertResult.rows[0]);
+      
+      if (insertResult.rows && insertResult.rows.length > 0) {
+        const newSetting = insertResult.rows[0];
+        // Converter o valor de volta para o formato esperado
+        newSetting.value = typeof newSetting.value === 'string'
+          ? JSON.parse(newSetting.value)
+          : newSetting.value;
+          
+        return newSetting;
+      }
+      
+      throw new Error(`Failed to create or update setting ${key}`);
     } catch (error) {
       console.error(`Error in createOrUpdateSetting for key ${key}:`, error);
       throw error;
@@ -777,7 +847,49 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getAllSettings(): Promise<Setting[]> {
-    return db.select().from(settings);
+    try {
+      // Primeiro tentar usando o ORM
+      const allSettings = await db.select().from(settings);
+      
+      if (allSettings && allSettings.length > 0) {
+        // Processar cada configuração
+        return allSettings.map(setting => {
+          // Garantir que o valor seja um objeto
+          if (typeof setting.value === 'string') {
+            try {
+              setting.value = JSON.parse(setting.value);
+            } catch (e) {
+              console.error(`Error parsing setting value for key ${setting.key}:`, e);
+            }
+          }
+          return setting;
+        });
+      }
+      
+      // Se não conseguir via ORM, tentar via SQL direto
+      console.log('Getting all settings using direct SQL query');
+      const query = 'SELECT * FROM settings';
+      const result = await pool.query(query);
+      
+      if (result.rows && result.rows.length > 0) {
+        return result.rows.map(setting => {
+          // Garantir que o valor seja um objeto
+          if (typeof setting.value === 'string') {
+            try {
+              setting.value = JSON.parse(setting.value);
+            } catch (e) {
+              console.error(`Error parsing setting value for key ${setting.key}:`, e);
+            }
+          }
+          return setting;
+        });
+      }
+      
+      return [];
+    } catch (error) {
+      console.error('Error in getAllSettings:', error);
+      throw error;
+    }
   }
 
   // Room Utilization
