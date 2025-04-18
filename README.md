@@ -132,6 +132,20 @@ O sistema permite personalização da aparência através do painel de administr
 
 ## Solução de Problemas
 
+### Script Especial para Ambiente Local
+
+Se você estiver tendo problemas para executar o projeto localmente, especialmente com a conexão ao banco de dados, utilize o script especial criado para ambiente local:
+
+```bash
+node local-server.js
+```
+
+Este script:
+- Substitui temporariamente o arquivo db.ts com uma versão otimizada para ambiente local
+- Carrega as variáveis de ambiente do arquivo .env de forma mais robusta
+- Fornece mensagens de erro mais claras sobre problemas de configuração
+- Restaura automaticamente os arquivos originais ao encerrar
+
 ### Problemas de Conexão com o Banco de Dados
 
 Se você encontrar erros de conexão com o banco de dados:

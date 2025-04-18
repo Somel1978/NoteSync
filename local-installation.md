@@ -156,6 +156,19 @@ npm install
 
 ### 6. Iniciar a Aplicação
 
+Existem duas maneiras de iniciar a aplicação:
+
+**Método 1 (Recomendado para Ambiente Local)**:
+```bash
+node local-server.js
+```
+Este script especial:
+- Verifica e cria o arquivo .env se necessário
+- Configura automaticamente a conexão com o banco de dados
+- Inicia o servidor em modo de desenvolvimento
+- Garante que as variáveis de ambiente sejam carregadas corretamente
+
+**Método 2 (Padrão)**:
 ```bash
 npm run dev
 ```
@@ -182,10 +195,20 @@ nvm use 20
 
 ### Problema: Erro "DATABASE_URL must be set"
 
-**Solução**:
+**Solução recomendada**:
+Use o script especial criado para resolver problemas de variáveis de ambiente:
+```bash
+node local-server.js
+```
+
+**Soluções alternativas**:
 1. Verifique se o arquivo `.env` está na raiz do projeto (não em alguma subpasta)
 2. Confirme que as variáveis de ambiente estão formatadas corretamente (sem espaços extras)
 3. Tente usar o formato de parâmetros individuais (PGHOST, PGUSER, etc.) em vez da URL completa
+4. Passe as variáveis diretamente no comando:
+   ```bash
+   PGHOST=localhost PGUSER=seu_usuario PGPASSWORD=sua_senha PGDATABASE=acrdsc_reservas npm run dev
+   ```
 
 ### Problema: Erro de Conexão com o PostgreSQL
 
