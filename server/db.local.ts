@@ -1,6 +1,5 @@
-import { Pool, neonConfig } from '@neondatabase/serverless';
-import { drizzle } from 'drizzle-orm/neon-serverless';
-import ws from "ws";
+import { Pool } from 'pg';
+import { drizzle } from 'drizzle-orm/node-postgres';
 import * as schema from "@shared/schema";
 import * as fs from 'fs';
 import path from 'path';
@@ -68,9 +67,6 @@ function loadEnvFile() {
 // Tenta carregar o arquivo .env
 loadEnvFile();
 
-// Configuração para o cliente neon serverless
-neonConfig.webSocketConstructor = ws;
-
 // Imprime as variáveis de ambiente relacionadas ao banco de dados (sem mostrar senhas)
 console.log("Variáveis de ambiente disponíveis:");
 console.log("DATABASE_URL:", process.env.DATABASE_URL ? "***" : "não definido");
@@ -93,6 +89,7 @@ if (process.env.DATABASE_URL) {
     user: process.env.PGUSER,
     password: process.env.PGPASSWORD,
     database: process.env.PGDATABASE,
+    ssl: false // Desabilita SSL para conexões locais
   };
   console.log("Usando configuração via variáveis individuais PG*");
 } else {
@@ -103,6 +100,7 @@ if (process.env.DATABASE_URL) {
     user: 'postgres',
     password: 'postgres',
     database: 'acrdsc_reservas',
+    ssl: false // Desabilita SSL para conexões locais
   };
   console.log("AVISO: Usando valores padrão para conexão local pois nenhuma variável de ambiente foi definida!");
   console.log("Tentando conectar com:", {
@@ -125,4 +123,4 @@ pool.query('SELECT NOW()')
     console.error('Verifique suas credenciais e configurações no arquivo .env');
   });
 
-export const db = drizzle({ client: pool, schema });
+export const db = drizzle(pool, { schema });
