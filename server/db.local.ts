@@ -1,8 +1,11 @@
-// ESM versão compatível com Node.js v18
+// ESM versão para Node.js v23+
 console.log("===== CARREGANDO server/db.local.ts =====");
 console.log("Caminho completo:", import.meta.url);
 console.log("Node.js version:", process.version);
 
+import { Pool } from 'pg';
+import { drizzle } from 'drizzle-orm/node-postgres';
+import * as schema from "@shared/schema";
 import * as fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -68,15 +71,8 @@ function loadEnvFile() {
 // Tenta carregar o arquivo .env
 loadEnvFile();
 
-// Referências que serão preenchidas assincronamente
-let pool;
-let db;
-
-// Exportações iniciais
-export { pool, db };
-
 // Configurações de conexão
-const connectionConfig = {};
+const connectionConfig: any = {};
 
 if (process.env.DATABASE_URL) {
   connectionConfig.connectionString = process.env.DATABASE_URL;
@@ -104,47 +100,20 @@ console.log("Configurações de banco:", JSON.stringify({
   password: connectionConfig.password ? '***' : undefined
 }));
 
-// Inicializar de forma assíncrona
-async function init() {
-  try {
-    console.log("Inicializando módulos de banco de dados (ambiente local)...");
-    
-    // Importar pg usando dynamic import
-    const pg = await import('pg');
-    
-    // Importar drizzle usando dynamic import
-    const { drizzle } = await import('drizzle-orm/node-postgres');
-    const schema = await import("@shared/schema");
+// Criar pool e conexão
+console.log("Criando pool de conexão local...");
+export const pool = new Pool(connectionConfig);
 
-    // Criar pool e conexão
-    console.log("Criando pool de conexão local...");
-    pool = new pg.Pool(connectionConfig);
-    
-    // Testar conexão
-    try {
-      const testResult = await pool.query('SELECT NOW()');
-      console.log("Conexão com banco de dados local estabelecida com sucesso!");
-      console.log("Timestamp do servidor:", testResult.rows[0].now);
-    } catch (testError) {
-      console.error("Erro ao testar conexão:", testError);
-      throw new Error(`Não foi possível conectar ao banco de dados: ${testError.message}`);
-    }
-    
-    // Criar instância drizzle
-    console.log("Inicializando ORM local...");
-    db = drizzle(pool, { schema });
-
-    console.log("Banco de dados local inicializado com sucesso!");
-  } catch (error) {
-    console.error("ERRO FATAL AO INICIALIZAR BANCO DE DADOS LOCAL:", error);
-    console.error("Certifique-se que o pacote pg está instalado: npm install pg");
-    console.error("Se o erro persistir, tente: npm install -g pg");
-    process.exit(1);
-  }
-}
-
-// Iniciar processo de inicialização
-init().catch(error => {
-  console.error("Falha crítica na inicialização local:", error);
+// Testar conexão
+pool.query('SELECT NOW()').then(result => {
+  console.log("Conexão com banco de dados local estabelecida com sucesso!");
+  console.log("Timestamp do servidor:", result.rows[0].now);
+}).catch(error => {
+  console.error("ERRO ao conectar ao banco de dados:", error.message);
+  console.error("Verifique suas credenciais e configurações no arquivo .env");
   process.exit(1);
 });
+
+// Criar instância drizzle
+console.log("Inicializando ORM local...");
+export const db = drizzle(pool, { schema });

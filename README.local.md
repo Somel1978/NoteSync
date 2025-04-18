@@ -4,7 +4,7 @@ Este guia fornece instruções detalhadas para configurar e executar o sistema A
 
 ## Requisitos
 
-- Node.js v18+ instalado
+- Node.js v18+ instalado (recomendado v23+ para melhor compatibilidade)
 - PostgreSQL v13+ instalado e em execução
 - npm (gerenciador de pacotes do Node.js)
 
@@ -100,8 +100,20 @@ Se você encontrar erros de conexão com o banco de dados:
 Se encontrar erros relacionados ao módulo 'pg':
 
 ```
-Execute o script install-deps.sh para instalar as dependências necessárias
+# Instale manualmente o pacote pg
+npm install pg @types/pg
+
+# Ou execute o script de instalação completo
+./install-deps.sh
 ```
+
+### Compatibilidade com Node.js
+
+- **Node.js v23+**: Suporte completo, sem problemas de importação ES Module
+- **Node.js v18-v22**: Pode precisar de ajustes para compatibilidade ES Module
+- **Node.js v16 ou anterior**: Não suportado
+
+Se você estiver usando Node.js v23+, como é o seu caso, o sistema deve funcionar sem necessidade de ajustes especiais relacionados ao ES Module.
 
 ### Outros erros
 
