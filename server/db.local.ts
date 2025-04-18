@@ -1,13 +1,13 @@
-// ESM versão para Node.js v23+
-console.log("===== CARREGANDO server/db.local.ts =====");
+// Versão usando 'pg' para conexão PostgreSQL normal
+console.log("===== CARREGANDO server/db.local.ts VERSÃO PG =====");
 console.log("Caminho completo:", import.meta.url);
 console.log("Node.js version:", process.version);
 
-// Importar pg usando import padrão (CommonJS module)
+// Importação correta para Node.js v23 com pg
 import pg from 'pg';
 const { Pool } = pg;
 
-import { drizzle } from 'drizzle-orm/node-postgres';
+import { drizzle } from 'drizzle-orm/node-postgres'; // Use o adaptador certo para pg
 import * as schema from "@shared/schema";
 import * as fs from 'fs';
 import path from 'path';
@@ -103,8 +103,7 @@ console.log("Configurações de banco:", JSON.stringify({
   password: connectionConfig.password ? '***' : undefined
 }));
 
-// Criar pool e conexão
-console.log("Criando pool de conexão local...");
+// Criação do pool e db usando a importação correta
 export const pool = new Pool(connectionConfig);
 
 // Testar conexão
@@ -114,9 +113,7 @@ pool.query('SELECT NOW()').then(result => {
 }).catch(error => {
   console.error("ERRO ao conectar ao banco de dados:", error.message);
   console.error("Verifique suas credenciais e configurações no arquivo .env");
-  process.exit(1);
 });
 
 // Criar instância drizzle
-console.log("Inicializando ORM local...");
 export const db = drizzle(pool, { schema });
