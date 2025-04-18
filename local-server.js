@@ -24,10 +24,14 @@ const colors = {
 
 console.log(`${colors.blue}${colors.bold}=== ACRDSC Reservas - Iniciando Servidor Local ===${colors.reset}\n`);
 
-// Verificar se o arquivo server/db.local.ts existe
+// Verificar arquivos locais
 const dbLocalPath = path.join(__dirname, 'server', 'db.local.ts');
 const dbOriginalPath = path.join(__dirname, 'server', 'db.ts');
 const dbBackupPath = path.join(__dirname, 'server', 'db.ts.bak');
+
+const viteLocalPath = path.join(__dirname, 'vite.config.local.ts');
+const viteOriginalPath = path.join(__dirname, 'vite.config.ts');
+const viteBackupPath = path.join(__dirname, 'vite.config.ts.bak');
 
 if (!fs.existsSync(dbLocalPath)) {
   console.error(`${colors.red}Erro: Arquivo server/db.local.ts não encontrado!${colors.reset}`);
@@ -35,17 +39,29 @@ if (!fs.existsSync(dbLocalPath)) {
   process.exit(1);
 }
 
-// Backup e substituição do arquivo db.ts
+if (!fs.existsSync(viteLocalPath)) {
+  console.error(`${colors.red}Erro: Arquivo vite.config.local.ts não encontrado!${colors.reset}`);
+  console.error(`Verifique se você está executando este script na raiz do projeto.`);
+  process.exit(1);
+}
+
+// Backup e substituição dos arquivos
 try {
-  // Criar backup se ainda não existir
+  // Backup e substituição de db.ts
   if (!fs.existsSync(dbBackupPath) && fs.existsSync(dbOriginalPath)) {
     console.log(`${colors.yellow}Criando backup de db.ts...${colors.reset}`);
     fs.copyFileSync(dbOriginalPath, dbBackupPath);
   }
-
-  // Substituir db.ts pelo db.local.ts
   console.log(`${colors.yellow}Aplicando configuração de banco de dados local...${colors.reset}`);
   fs.copyFileSync(dbLocalPath, dbOriginalPath);
+  
+  // Backup e substituição de vite.config.ts
+  if (!fs.existsSync(viteBackupPath) && fs.existsSync(viteOriginalPath)) {
+    console.log(`${colors.yellow}Criando backup de vite.config.ts...${colors.reset}`);
+    fs.copyFileSync(viteOriginalPath, viteBackupPath);
+  }
+  console.log(`${colors.yellow}Aplicando configuração de Vite compatível com Node.js v18...${colors.reset}`);
+  fs.copyFileSync(viteLocalPath, viteOriginalPath);
 } catch (error) {
   console.error(`${colors.red}Erro ao manipular arquivos:${colors.reset}`, error);
   process.exit(1);
@@ -80,9 +96,13 @@ MAILJET_SECRET_KEY=
   console.log(`${colors.green}✓ Arquivo .env de exemplo criado.${colors.reset}`);
   console.log(`${colors.yellow}Por favor, edite o arquivo .env com suas configurações e reinicie este script.${colors.reset}`);
   
-  // Restaurar o arquivo db.ts original
+  // Restaurar os arquivos originais
   if (fs.existsSync(dbBackupPath)) {
     fs.copyFileSync(dbBackupPath, dbOriginalPath);
+  }
+  
+  if (fs.existsSync(viteBackupPath)) {
+    fs.copyFileSync(viteBackupPath, viteOriginalPath);
   }
   
   process.exit(0);
@@ -97,13 +117,27 @@ const serverProcess = spawn('npm', ['run', 'dev'], {
   env: { ...process.env, NODE_ENV: 'development' }
 });
 
-// Restaurar o arquivo original ao encerrar
+// Restaurar os arquivos originais ao encerrar
 const cleanup = () => {
-  console.log(`\n${colors.yellow}Restaurando configuração original...${colors.reset}`);
+  console.log(`\n${colors.yellow}Restaurando configurações originais...${colors.reset}`);
+  let restored = false;
+  
+  // Restaurar db.ts
   if (fs.existsSync(dbBackupPath)) {
     fs.copyFileSync(dbBackupPath, dbOriginalPath);
-    console.log(`${colors.green}Configuração original restaurada.${colors.reset}`);
+    restored = true;
   }
+  
+  // Restaurar vite.config.ts
+  if (fs.existsSync(viteBackupPath)) {
+    fs.copyFileSync(viteBackupPath, viteOriginalPath);
+    restored = true;
+  }
+  
+  if (restored) {
+    console.log(`${colors.green}Configurações originais restauradas.${colors.reset}`);
+  }
+  
   process.exit(0);
 };
 
