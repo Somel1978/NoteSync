@@ -3,7 +3,10 @@ console.log("===== CARREGANDO server/db.local.ts =====");
 console.log("Caminho completo:", import.meta.url);
 console.log("Node.js version:", process.version);
 
-import { Pool } from 'pg';
+// Importar pg usando import padrão (CommonJS module)
+import pg from 'pg';
+const { Pool } = pg;
+
 import { drizzle } from 'drizzle-orm/node-postgres';
 import * as schema from "@shared/schema";
 import * as fs from 'fs';

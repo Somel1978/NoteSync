@@ -13,7 +13,7 @@ import * as schema from "@shared/schema";
 neonConfig.webSocketConstructor = ws;
 
 // Configurações de conexão
-const connectionConfig = {};
+const connectionConfig: any = {};
 
 if (process.env.DATABASE_URL) {
   connectionConfig.connectionString = process.env.DATABASE_URL;
