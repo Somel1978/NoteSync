@@ -7,9 +7,14 @@
  * e fornece instruções para corrigir problemas comuns.
  */
 
-const fs = require('fs');
-const path = require('path');
-const { exec } = require('child_process');
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import { exec } from 'child_process';
+
+// Obtém o diretório atual para ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Cores para saída no console
 const colors = {
@@ -23,14 +28,22 @@ const colors = {
 
 console.log(`${colors.blue}${colors.bold}=== ACRDSC Reservas - Configuração Local ===${colors.reset}\n`);
 
-// Verificar versão do Node.js
-exec('node --version', (error, stdout) => {
-  if (error) {
-    console.error(`${colors.red}Erro ao verificar versão do Node.js${colors.reset}`);
-    return;
-  }
+// Função para executar comandos como promessa
+function execPromise(cmd) {
+  return new Promise((resolve, reject) => {
+    exec(cmd, (error, stdout, stderr) => {
+      if (error) {
+        reject(error);
+      } else {
+        resolve(stdout.trim());
+      }
+    });
+  });
+}
 
-  const version = stdout.trim();
+// Verificar versão do Node.js
+try {
+  const version = await execPromise('node --version');
   console.log(`${colors.blue}Versão do Node.js:${colors.reset} ${version}`);
   
   // Verificar se a versão é compatível (v18+)
@@ -41,7 +54,9 @@ exec('node --version', (error, stdout) => {
   } else {
     console.log(`${colors.green}✓ Versão do Node.js compatível${colors.reset}\n`);
   }
-});
+} catch (error) {
+  console.error(`${colors.red}Erro ao verificar versão do Node.js${colors.reset}`);
+}
 
 // Verificar arquivo .env
 const envPath = path.join(__dirname, '.env');
@@ -99,12 +114,14 @@ PGDATABASE=acrdsc_reservas
 }
 
 // Verificar PostgreSQL
-exec('which psql', (error, stdout) => {
-  if (error || !stdout.trim()) {
+try {
+  const psqlPath = await execPromise('which psql');
+  
+  if (!psqlPath) {
     console.warn(`${colors.yellow}PostgreSQL CLI (psql) não encontrado no PATH.${colors.reset}`);
     console.warn(`${colors.yellow}Certifique-se de que o PostgreSQL está instalado e configurado corretamente.${colors.reset}\n`);
   } else {
-    console.log(`${colors.green}✓ PostgreSQL CLI (psql) encontrado: ${stdout.trim()}${colors.reset}`);
+    console.log(`${colors.green}✓ PostgreSQL CLI (psql) encontrado: ${psqlPath}${colors.reset}`);
     
     // Verificar se o banco de dados existe
     const envContent = fs.readFileSync(envPath, 'utf8');
@@ -127,7 +144,10 @@ exec('which psql', (error, stdout) => {
     console.log(`\n${colors.blue}Para aplicar o esquema e migrações:${colors.reset}`);
     console.log(`npm run db:push\n`);
   }
-});
+} catch (error) {
+  console.warn(`${colors.yellow}PostgreSQL CLI (psql) não encontrado no PATH.${colors.reset}`);
+  console.warn(`${colors.yellow}Certifique-se de que o PostgreSQL está instalado e configurado corretamente.${colors.reset}\n`);
+}
 
 // Instruções finais
 console.log(`${colors.bold}${colors.blue}Próximos passos:${colors.reset}`);
