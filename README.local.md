@@ -114,7 +114,15 @@ Para executar o sistema em produção usando PM2 (recomendado para ambientes de 
    pm2 status
    ```
 
-**OBS**: O modo de produção com PM2 usa o script `production-server.js` que não requer nenhuma substituição de arquivos, tornando-o mais adequado para ambientes de produção.
+**Método alternativo (mais simples)**: 
+Se você tiver problemas com o PM2, pode iniciar diretamente com o Node.js:
+
+```bash
+# Iniciar o servidor diretamente
+node server.js
+```
+
+Esse script simplificado (`server.js`) funciona para Node.js v18 e v23 sem necessidade de sudo, sendo compatível tanto com o ambiente local quanto o de produção.
 
 ## Solução de Problemas
 

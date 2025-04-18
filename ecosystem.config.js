@@ -1,7 +1,7 @@
 module.exports = {
   apps : [{
     name: "acrdsc-reservas",
-    script: "./production-server.js",
+    script: "./server.js",
     instances: 1,
     exec_mode: "fork",
     autorestart: true,
