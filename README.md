@@ -36,7 +36,12 @@ createdb acrdsc_reservas
 O arquivo `schema.sql` contém todas as tabelas e dados iniciais necessários:
 
 ```bash
-psql -d acrdsc_reservas -f schema.sql
+# Método 1: Conectar e executar o script
+psql -h localhost -U seu_usuario -d acrdsc_reservas
+\i schema.sql
+
+# Método 2 (alternativo): Importar diretamente
+psql -h localhost -U seu_usuario -d acrdsc_reservas -f schema.sql
 ```
 
 ### 4. Configurar Variáveis de Ambiente

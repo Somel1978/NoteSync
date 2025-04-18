@@ -89,14 +89,34 @@ createdb acrdsc_reservas
 
 #### 3.3 Importar o Esquema do Banco de Dados
 
+Existem três métodos para importar o esquema:
+
+**Método 1**: Conectar diretamente ao PostgreSQL e executar o script:
 ```bash
-psql -d acrdsc_reservas -f schema.sql
+# Primeiro conectar ao PostgreSQL
+psql -h localhost -U seu_usuario -d acrdsc_reservas
+
+# Quando estiver no prompt do psql, executar o comando:
+\i schema.sql
+
+# Para sair após a importação:
+\q
 ```
 
-Ou use o Drizzle ORM para criar o esquema automaticamente:
+**Método 2**: Importar o esquema diretamente com um único comando:
+```bash
+psql -h localhost -U seu_usuario -d acrdsc_reservas -f schema.sql
+```
+
+**Método 3**: Usar o Drizzle ORM (se preferir):
 ```bash
 npm run db:push
 ```
+
+> **Notas importantes**: 
+> - Substituir `seu_usuario` pelo seu nome de usuário PostgreSQL
+> - Se receber erro de autenticação, adicione a opção `-W` para solicitar a senha: `psql -h localhost -U seu_usuario -W -d acrdsc_reservas`
+> - O arquivo schema.sql precisa estar no diretório onde o comando está sendo executado
 
 ### 4. Configurar Variáveis de Ambiente
 
