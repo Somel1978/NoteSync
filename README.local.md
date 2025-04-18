@@ -58,7 +58,7 @@ Este guia fornecerá instruções para instalar e executar o sistema ACRDSC Rese
 
 ### 3. Executar o Sistema
 
-**Modo de desenvolvimento**
+#### Modo de Desenvolvimento
 
 Para iniciar o sistema em modo de desenvolvimento com suporte a hot-reload:
 
@@ -73,6 +73,48 @@ Caso receba algum erro relacionado ao módulo 'pg', você pode executar o script
 ```bash
 /caminho/completo/para/node23 local-server.js
 ```
+
+#### Modo de Produção com PM2
+
+Para executar o sistema em produção usando PM2 (recomendado para ambientes de produção):
+
+1. Instale o PM2 globalmente se ainda não tiver instalado:
+   ```bash
+   npm install -g pm2
+   ```
+
+2. Execute o script de configuração de produção (isso também instala o PM2 se necessário):
+   ```bash
+   ./setup-production.sh
+   ```
+
+3. Inicie o servidor usando PM2:
+   ```bash
+   pm2 start ecosystem.config.js
+   ```
+
+4. Configuração para inicialização automática após reboot:
+   ```bash
+   pm2 startup
+   pm2 save
+   ```
+
+5. Comandos úteis do PM2:
+   ```bash
+   # Ver logs da aplicação
+   pm2 logs acrdsc-reservas
+
+   # Reiniciar aplicação
+   pm2 restart acrdsc-reservas
+
+   # Parar aplicação
+   pm2 stop acrdsc-reservas
+
+   # Ver status
+   pm2 status
+   ```
+
+**OBS**: O modo de produção com PM2 usa o script `production-server.js` que não requer nenhuma substituição de arquivos, tornando-o mais adequado para ambientes de produção.
 
 ## Solução de Problemas
 
