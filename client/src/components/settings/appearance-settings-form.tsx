@@ -38,6 +38,7 @@ export const AppearanceSettingsForm = () => {
     enabled: true,
   });
   
+  // Important to initialize with all fields defined to avoid undefined values
   const appearanceSettingsForm = useForm<AppearanceSettingsFormValues>({
     resolver: zodResolver(appearanceSettingsSchema),
     defaultValues: {

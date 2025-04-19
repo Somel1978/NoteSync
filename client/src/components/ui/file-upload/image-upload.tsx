@@ -29,6 +29,8 @@ export function ImageUpload({ value, onChange, disabled = false }: ImageUploadPr
     const file = event.target.files?.[0];
     if (!file) return;
 
+    console.log("Selected file:", file.name, "Size:", (file.size / 1024).toFixed(2), "KB");
+
     if (file.size > 1024 * 1024 * 2) { // 2MB limit
       alert(t('errors.fileTooLarge'));
       return;
@@ -37,8 +39,13 @@ export function ImageUpload({ value, onChange, disabled = false }: ImageUploadPr
     const reader = new FileReader();
     reader.onloadend = () => {
       const base64String = reader.result as string;
+      console.log("File converted to base64, length:", base64String.length);
       setPreview(base64String);
       onChange(base64String);
+    };
+    reader.onerror = (error) => {
+      console.error("Error reading file:", error);
+      alert(t('errors.fileReadError') || "Error reading file");
     };
     reader.readAsDataURL(file);
   };

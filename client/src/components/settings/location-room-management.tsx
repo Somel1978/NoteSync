@@ -282,19 +282,29 @@ export const LocationRoomManagement = () => {
       )}
       
       {/* Room Modal */}
-      {selectedRoom && (
-        <RoomFormModal
-          room={selectedRoom}
-          open={roomModalOpen}
-          onOpenChange={setRoomModalOpen}
-        />
-      )}
+      <RoomFormModal
+        room={selectedRoom || undefined}
+        open={roomModalOpen}
+        onOpenChange={(open) => {
+          setRoomModalOpen(open);
+          if (!open) {
+            // When modal is closed, invalidate the queries to refresh the data
+            queryClient.invalidateQueries({ queryKey: ['/api/rooms'] });
+          }
+        }}
+      />
       
       {/* Location Modal */}
       <LocationFormModal
         location={selectedLocation || undefined}
         open={locationModalOpen}
-        onOpenChange={setLocationModalOpen}
+        onOpenChange={(open) => {
+          setLocationModalOpen(open);
+          if (!open) {
+            // When modal is closed, invalidate the queries to refresh the data
+            queryClient.invalidateQueries({ queryKey: ['/api/locations'] });
+          }
+        }}
       />
     </>
   );
