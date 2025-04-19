@@ -1271,7 +1271,7 @@ export function AppointmentDetailsModal({
                         </p>
                       )}
                       
-                      {appointment.status === "finished" && appointment.finalRevenue !== undefined && (
+                      {appointment.status === "finished" && appointment.finalRevenue !== undefined && appointment.finalRevenue !== null && (
                         <p className="mt-2 text-sm">
                           <span className="font-medium">{t('appointments.detailsModal.finalRevenue', 'Receita Final')}:</span> €{(appointment.finalRevenue / 100).toFixed(2)}
                         </p>

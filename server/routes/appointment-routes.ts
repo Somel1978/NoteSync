@@ -439,6 +439,67 @@ export function registerAppointmentRoutes(app: Express): void {
   app.get("/api/appointments/:id/audit", isAuthenticated, getAuditLogs);
   app.get("/api/appointments/:id/auditlogs", isAuthenticated, getAuditLogs);
   
+  // Mark appointment as finished with final revenue
+  app.put("/api/appointments/:id/finish", isAuthenticated, async (req: Request, res: Response, next: Function) => {
+    try {
+      const id = parseInt(req.params.id);
+      console.log(`Received finish request for appointment ${id}. Full request body:`, req.body);
+      const { finalRevenue } = req.body;
+      
+      console.log(`Finish request for appointment ${id} with finalRevenue:`, finalRevenue);
+      
+      const appointment = await storage.getAppointment(id);
+      
+      if (!appointment) {
+        return res.status(404).json({ message: "Appointment not found" });
+      }
+      
+      // Only allow admins, directors, or the appointment owner to mark as finished
+      if (req.user?.role !== "admin" && req.user?.role !== "director" && appointment.userId !== req.user?.id) {
+        return res.status(403).json({ message: "Forbidden - You can only finish your own appointments" });
+      }
+      
+      // Verify the appointment is in approved status before finishing
+      if (appointment.status !== "approved") {
+        return res.status(400).json({ 
+          message: "Cannot finish appointment", 
+          error: "Only approved appointments can be marked as finished" 
+        });
+      }
+      
+      // Update the appointment status to finished and add final revenue
+      const updatedAppointment = await storage.updateAppointment(id, {
+        status: "finished",
+        finalRevenue: finalRevenue
+      });
+      
+      if (!updatedAppointment) {
+        return res.status(500).json({ message: "Failed to update appointment status" });
+      }
+      
+      // Create audit log entry
+      await storage.createAuditLog({
+        appointmentId: id,
+        userId: req.user?.id as number,
+        action: "status-changed-to-finished",
+        details: `Appointment marked as finished with final revenue: €${(finalRevenue / 100).toFixed(2)}`
+      });
+      
+      // Send email notification
+      try {
+        await EmailNotificationService.appointmentStatusChanged(updatedAppointment, req.user!, "approved");
+      } catch (emailError) {
+        console.error("Error sending appointment finished notification:", emailError);
+        // Continue without failing the request
+      }
+      
+      res.json(updatedAppointment);
+    } catch (error) {
+      console.error("Error finishing appointment:", error);
+      next(error);
+    }
+  });
+  
   // Appointment rejection endpoint with reason
   app.put("/api/appointments/:id/reject", isAuthenticated, async (req: Request, res: Response, next: Function) => {
     try {
