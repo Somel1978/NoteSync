@@ -29,19 +29,38 @@ export function ImageUpload({ value, onChange, disabled = false }: ImageUploadPr
     const file = event.target.files?.[0];
     if (!file) return;
 
-    console.log("Selected file:", file.name, "Size:", (file.size / 1024).toFixed(2), "KB");
+    console.log("Selected file:", file.name, "Size:", (file.size / 1024).toFixed(2), "KB", "Type:", file.type);
 
-    if (file.size > 1024 * 1024 * 2) { // 2MB limit
-      alert(t('errors.fileTooLarge'));
+    // Validate file type (must be an image)
+    if (!file.type.startsWith('image/')) {
+      alert(t('errors.fileTypeInvalid') || "Please select an image file");
       return;
+    }
+
+    // 2MB limit for logo images
+    if (file.size > 1024 * 1024 * 2) {
+      alert(t('errors.fileTooLarge') || "File is too large (max 2MB)");
+      return;
+    }
+
+    // Use smaller image sizes for logos
+    if (file.size > 1024 * 500) {
+      console.log("Large image detected, consider compressing before upload");
     }
 
     const reader = new FileReader();
     reader.onloadend = () => {
-      const base64String = reader.result as string;
-      console.log("File converted to base64, length:", base64String.length);
-      setPreview(base64String);
-      onChange(base64String);
+      try {
+        const base64String = reader.result as string;
+        console.log("File converted to base64, length:", base64String.length);
+        
+        // Set the preview and update form value
+        setPreview(base64String);
+        onChange(base64String);
+      } catch (error) {
+        console.error("Error processing file:", error);
+        alert(t('errors.fileProcessingError') || "Error processing the image");
+      }
     };
     reader.onerror = (error) => {
       console.error("Error reading file:", error);

@@ -249,10 +249,12 @@ export function registerSettingsRoutes(app: Express): void {
   // Get appearance settings
   app.get("/api/settings/appearance", async (req: Request, res: Response, next: Function) => {
     try {
+      console.log("API: Fetching appearance settings");
       const appearanceSetting = await storage.getSetting('appearance');
       
       // Return default settings if none exist
       if (!appearanceSetting || !appearanceSetting.value) {
+        console.log("API: No appearance settings found, returning defaults");
         return res.json({
           logoText: "AC",
           logoUrl: null,
@@ -262,8 +264,24 @@ export function registerSettingsRoutes(app: Express): void {
         });
       }
       
-      res.json(appearanceSetting.value);
+      // Validate the returned settings
+      const settings = appearanceSetting.value as AppearanceSettings;
+      if (!settings.logoText) settings.logoText = "AC";
+      if (!settings.title) settings.title = "ACRDSC";
+      if (!settings.subtitle) settings.subtitle = "Reservas";
+      
+      // Ensure useLogoImage and logoUrl are consistent
+      if (settings.useLogoImage && !settings.logoUrl) {
+        console.log("API: Warning - useLogoImage is true but logoUrl is empty");
+        settings.useLogoImage = false;
+      }
+      
+      console.log("API: Returning appearance settings with logoUrl length:", 
+        settings.logoUrl ? settings.logoUrl.length : 0);
+      
+      res.json(settings);
     } catch (error) {
+      console.error("API: Error fetching appearance settings:", error);
       next(error);
     }
   });
@@ -272,32 +290,39 @@ export function registerSettingsRoutes(app: Express): void {
   app.post("/api/settings/appearance", isAdmin, async (req: Request, res: Response, next: Function) => {
     try {
       console.log("API: Received appearance settings update");
-      console.log("Request body:", JSON.stringify(req.body));
       
-      // Check if we're using a logo image
-      if (req.body.useLogoImage) {
-        console.log("Using logo image. Logo URL length:", req.body.logoUrl ? req.body.logoUrl.length : 0);
-        
-        // Make sure logoUrl is not null or undefined if useLogoImage is true
-        if (!req.body.logoUrl) {
-          console.log("Warning: useLogoImage is true but logoUrl is empty");
-          // Set a default value to prevent errors
-          req.body.logoUrl = null;
-        }
+      // Create a clean settings object with only the expected properties
+      const cleanSettings: AppearanceSettings = {
+        logoText: req.body.logoText || "AC",
+        logoUrl: req.body.useLogoImage ? req.body.logoUrl : null,
+        useLogoImage: Boolean(req.body.useLogoImage),
+        title: req.body.title || "ACRDSC",
+        subtitle: req.body.subtitle || "Reservas"
+      };
+      
+      console.log("API: Clean settings prepared. Fields:", Object.keys(cleanSettings).join(", "));
+      console.log("API: Logo URL length:", cleanSettings.logoUrl ? cleanSettings.logoUrl.length : 0);
+      
+      // Ensure useLogoImage and logoUrl are consistent
+      if (cleanSettings.useLogoImage && !cleanSettings.logoUrl) {
+        console.log("API: Warning - Cannot enable logo image without uploading an image");
+        cleanSettings.useLogoImage = false;
       }
       
-      const setting = await storage.createOrUpdateSetting('appearance', req.body);
-      console.log("Updated appearance settings:", setting ? "Success" : "Failed");
+      const setting = await storage.createOrUpdateSetting('appearance', cleanSettings);
+      console.log("API: Updated appearance settings:", setting ? "Success" : "Failed");
       
       if (setting && setting.value) {
-        console.log("Returning updated settings with value type:", typeof setting.value);
+        // Return the sanitized settings object
+        console.log("API: Returning updated settings with logoUrl length:", 
+          ((setting.value as AppearanceSettings).logoUrl?.length || 0));
         res.json(setting.value);
       } else {
-        console.log("Failed to update appearance settings");
+        console.log("API: Failed to update appearance settings");
         res.status(500).json({ message: "Failed to update appearance settings" });
       }
     } catch (error) {
-      console.error("Error updating appearance settings:", error);
+      console.error("API: Error updating appearance settings:", error);
       next(error);
     }
   });

@@ -60,14 +60,32 @@ export const AppearanceSettingsForm = () => {
   // Save appearance settings mutation
   const saveAppearanceSettingsMutation = useMutation({
     mutationFn: async (data: AppearanceSettingsFormValues) => {
-      const res = await apiRequest("POST", "/api/settings/appearance", data);
+      // Ensure all fields are present before sending
+      const cleanData: AppearanceSettingsFormValues = {
+        logoText: data.logoText || "AC",
+        logoUrl: data.useLogoImage ? data.logoUrl : null,
+        useLogoImage: Boolean(data.useLogoImage),
+        title: data.title || "ACRDSC",
+        subtitle: data.subtitle || "Reservas"
+      };
+      
+      console.log("Clean data prepared for API:", {
+        ...cleanData,
+        logoUrl: cleanData.logoUrl ? `[Base64 string of length ${cleanData.logoUrl?.length}]` : null,
+      });
+      
+      const res = await apiRequest("POST", "/api/settings/appearance", cleanData);
       if (!res.ok) {
         const errorText = await res.text();
         throw new Error(`Failed to save appearance settings: ${errorText}`);
       }
       return await res.json();
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      console.log("Successfully saved appearance settings:", {
+        ...data, 
+        logoUrl: data.logoUrl ? `[Base64 string of length ${data.logoUrl?.length}]` : null
+      });
       queryClient.invalidateQueries({ queryKey: ['/api/settings/appearance'] });
       toast({
         title: t('settings.appearanceSettingsSaved'),
@@ -75,6 +93,7 @@ export const AppearanceSettingsForm = () => {
       });
     },
     onError: (error: Error) => {
+      console.error("Error saving appearance settings:", error);
       toast({
         title: t('settings.appearanceSettingsSaveError'),
         description: error.message,
@@ -85,10 +104,20 @@ export const AppearanceSettingsForm = () => {
   
   // Form submission
   const onSubmit = (data: AppearanceSettingsFormValues) => {
-    console.log("Submitting appearance settings:", data);
-    if (data.useLogoImage) {
-      console.log("Logo URL being submitted:", data.logoUrl);
+    console.log("Form values before submission:", {
+      ...data,
+      logoUrl: data.logoUrl ? `[Base64 string of length ${data.logoUrl?.length}]` : null
+    });
+    
+    if (data.useLogoImage && !data.logoUrl) {
+      toast({
+        title: t('settings.logoError') || "Logo Error",
+        description: t('settings.logoRequiredIfImageEnabled') || "You must upload a logo image or disable the logo image option",
+        variant: "destructive",
+      });
+      return;
     }
+    
     saveAppearanceSettingsMutation.mutate(data);
   };
   
