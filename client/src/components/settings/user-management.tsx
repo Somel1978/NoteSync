@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useForm } from "react-hook-form";
@@ -155,10 +155,18 @@ export const UserManagement = () => {
     addUserMutation.mutate(data);
   };
   
-  // Filter and group users by role for the admin view
-  const adminUsers = users.filter((u: User) => u.role === 'admin');
-  const directorUsers = users.filter((u: User) => u.role === 'director');
-  const guestUsers = users.filter((u: User) => u.role === 'guest');
+  // Filter and group users by role for the admin view - use state to ensure UI updates
+  // when users array changes (especially after role changes)
+  const [adminUsers, setAdminUsers] = useState<User[]>([]);
+  const [directorUsers, setDirectorUsers] = useState<User[]>([]);
+  const [guestUsers, setGuestUsers] = useState<User[]>([]);
+  
+  // Update filtered lists when users array changes
+  useEffect(() => {
+    setAdminUsers(users.filter((u: User) => u.role === 'admin'));
+    setDirectorUsers(users.filter((u: User) => u.role === 'director'));
+    setGuestUsers(users.filter((u: User) => u.role === 'guest'));
+  }, [users]);
   
   return (
     <>
