@@ -32,9 +32,10 @@ export async function addFinishedStatus() {
     `;
     
     const columnResult = await db.execute(sql.raw(checkColumnsQuery));
-    const rows = columnResult as any[];
+    // Usar o operador casting correto para evitar o erro TypeScript
+    const hasColumn = (columnResult as any).rowCount > 0;
     
-    if (rows.length === 0) {
+    if (!hasColumn) {
       // Adicionar coluna final_revenue à tabela appointments
       console.log("Adicionando coluna final_revenue à tabela appointments");
       
