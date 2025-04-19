@@ -139,11 +139,75 @@ O sistema permite personalização da aparência através do painel de administr
 
 ### Problemas de Conexão com o Banco de Dados
 
-Se você encontrar erros de conexão com o banco de dados:
+Se você encontrar erros de conexão com o banco de dados, o aplicativo mostrará mensagens detalhadas no console para ajudar a diagnosticar o problema. Aqui estão as etapas detalhadas para resolver problemas comuns:
 
-1. Verifique se o PostgreSQL está em execução
-2. Confirme se as credenciais no arquivo `.env` estão corretas
-3. Verifique se o banco de dados foi criado corretamente
+#### 1. Verificar se o PostgreSQL está instalado e em execução
+
+Ubuntu/Debian:
+```bash
+sudo systemctl status postgresql
+# Se não estiver rodando:
+sudo systemctl start postgresql
+```
+
+macOS (com Homebrew):
+```bash
+brew services list
+# Se não estiver rodando:
+brew services start postgresql
+```
+
+Windows:
+- Verifique o "Gerenciador de Serviços" e procure por "PostgreSQL"
+- Alternativa: Verifique na bandeja do sistema se há um ícone do PostgreSQL
+
+#### 2. Verificar/criar o banco de dados
+
+```bash
+# Conectar ao PostgreSQL 
+psql -U postgres
+
+# No prompt do PostgreSQL, verifique se o banco existe
+\l
+
+# Se não existir, saia (com \q) e crie o banco de dados
+createdb -U postgres acrdsc_reservas
+
+# Se seu usuário não tiver permissão, crie o banco como administrador
+sudo -u postgres createdb acrdsc_reservas
+```
+
+#### 3. Verificar/criar o usuário do banco de dados
+
+Se estiver usando as configurações padrão (`acrdscdb` / `acrdsc00`), execute:
+
+```bash
+# Conecte como usuário postgres
+sudo -u postgres psql
+
+# No prompt do psql, crie o usuário
+CREATE USER acrdscdb WITH PASSWORD 'acrdsc00';
+
+# Dê permissões ao usuário
+GRANT ALL PRIVILEGES ON DATABASE acrdsc_reservas TO acrdscdb;
+
+# Saia do psql
+\q
+```
+
+#### 4. Configurar o arquivo .env (se as credenciais padrão não funcionarem)
+
+```
+# Crie o arquivo .env na raiz do projeto
+DATABASE_URL=postgres://seu_usuario:sua_senha@localhost:5432/acrdsc_reservas
+```
+
+#### 5. Outros problemas específicos
+
+- **Erro "psql: erro: connection to server on socket... failed"**: O PostgreSQL não está executando
+- **Erro "password authentication failed"**: Senha incorreta no arquivo `.env`
+- **Erro "database does not exist"**: Execute o comando para criar o banco de dados
+- **Erro "role does not exist"**: O usuário especificado não existe no PostgreSQL
 
 #### Configuração para Ambiente Local vs. Neon Serverless
 

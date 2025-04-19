@@ -54,4 +54,18 @@ if (isLocalEnvironment) {
 // Teste a conexão
 pool.query('SELECT 1')
   .then(() => log('Conexão com banco de dados estabelecida com sucesso'))
-  .catch((err) => log(`Erro ao conectar ao banco de dados: ${err.message}`));
+  .catch((err) => {
+    log(`Erro ao conectar ao banco de dados: ${err.message}`);
+    log(`Tentou conectar usando DATABASE_URL: ${databaseUrl.replace(/:[^:]*@/, ':****@')}`); // Mascara a senha
+    
+    // Verifica problemas comuns
+    if (err.message.includes('password authentication failed')) {
+      log('Problema: credenciais incorretas. Verifique o usuário e senha do banco de dados.');
+    } 
+    else if (err.message.includes('database') && err.message.includes('does not exist')) {
+      log('Problema: o banco de dados não existe. Execute "createdb acrdsc_reservas" para criá-lo.');
+    }
+    else if (err.message.includes('connect ECONNREFUSED')) {
+      log('Problema: não foi possível conectar ao servidor PostgreSQL. Verifique se o PostgreSQL está em execução.');
+    }
+  });
