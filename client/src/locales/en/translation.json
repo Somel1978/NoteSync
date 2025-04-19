@@ -122,6 +122,7 @@
     "approved": "Approved",
     "rejected": "Rejected",
     "cancelled": "Cancelled",
+    "finished": "Finished",
     "orderNumber": "Order #",
     "dateTime": "Date & Time",
     "details": "Details",
@@ -146,6 +147,7 @@
       "statusApproved": "Status: Approved",
       "statusRejected": "Status: Rejected",
       "statusCancelled": "Status: Cancelled",
+      "statusFinished": "Status: Finished",
       "title": "Appointment Details",
       "tabs": {
         "details": "Details",
