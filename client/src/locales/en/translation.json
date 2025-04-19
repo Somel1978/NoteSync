@@ -594,6 +594,7 @@
     "latitude": "Latitude",
     "longitude": "Longitude",
     "coordinates": "GPS Coordinates",
+    "location": "Location",
     "addLocation": "Add Location",
     "editLocation": "Edit Location",
     "namePlaceholder": "Enter location name",
