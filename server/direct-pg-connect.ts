@@ -7,10 +7,13 @@
  * Para executar: tsx server/direct-pg-connect.ts
  */
 
-import { Pool } from 'pg';
+import pg from 'pg';
 import { readFileSync } from 'fs';
 import { resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';
+
+// Quando usado com ESM, precisamos acessar o Pool desta forma
+const { Pool } = pg;
 
 // Obtém o equivalente a __dirname em ESM
 const __filename = fileURLToPath(import.meta.url);

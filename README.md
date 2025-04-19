@@ -216,6 +216,9 @@ Se você estiver enfrentando problemas de conexão com o banco de dados e suspei
 ```bash
 # Este comando testa a conexão direta com PostgreSQL sem usar o Drizzle ORM
 npx tsx server/direct-pg-connect.ts
+
+# Ou adicione os seguintes scripts ao seu package.json e execute:
+# npm run db:test-connection
 ```
 
 Este script:
@@ -225,21 +228,33 @@ Este script:
 
 Se este teste funcionar mas a aplicação não, o problema provavelmente está relacionado ao Drizzle ORM ou ao adaptador Neon Serverless.
 
-#### 7. Alternativa: Usar conexão direta com PostgreSQL em vez de Neon Serverless
+#### 7. Alternativa: Selecionar o Driver de Banco de Dados
 
-Se você continuar encontrando problemas com a conexão do banco de dados usando a biblioteca Neon Serverless, há uma versão alternativa do arquivo de conexão que usa diretamente o driver pg padrão:
+O sistema agora oferece uma ferramenta interativa para escolher entre o driver Neon Serverless (padrão) e o driver PostgreSQL padrão:
 
 ```bash
-# Substituir o arquivo db.ts com a versão que usa apenas pg
-cp server/db-pg.ts server/db.ts
+# Execute este comando para selecionar qual driver usar
+npx tsx server/select-db-driver.ts
 
-# Ou copiar manualmente o conteúdo do arquivo server/db-pg.ts para server/db.ts
+# Ou adicione os seguintes scripts ao seu package.json e execute:
+# npm run db:select-driver
 ```
 
-Esta versão alternativa:
-- Usa o driver pg padrão em vez do adaptador Neon Serverless
-- Continua a usar o Drizzle ORM, mas com o adaptador node-postgres
-- Deve resolver problemas específicos relacionados ao WebSocket ou TLS
+Esta ferramenta:
+- Detecta qual driver está atualmente em uso
+- Cria um backup do arquivo atual como `db.ts.bak`
+- Permite alternar entre os drivers com um menu interativo
+- Mantém os mesmos parâmetros de conexão (URL, credenciais, etc.)
+
+**Quando usar qual driver:**
+
+- **Neon Serverless**: Melhor para produção e ambientes sem PostgreSQL instalado localmente
+- **PostgreSQL padrão**: Melhor para desenvolvimento local, especialmente se estiver enfrentando erros de conexão
+
+A versão que usa o driver PostgreSQL padrão:
+- É mais compatível com instalações locais do PostgreSQL
+- Não depende de WebSockets ou outros recursos específicos do Neon
+- Mantém a mesma funcionalidade com o Drizzle ORM
 
 #### Configuração para Ambiente Local vs. Neon Serverless
 

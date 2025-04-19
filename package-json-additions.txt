@@ -1,0 +1,21 @@
+// Adicione estes novos scripts no arquivo package.json, na seção "scripts"
+
+"db:select-driver": "tsx server/select-db-driver.ts",
+"db:test-connection": "tsx server/direct-pg-connect.ts",
+
+// O package.json deve ficar parecido com isto:
+{
+  "name": "rest-express",
+  "version": "1.0.0",
+  "license": "MIT",
+  "scripts": {
+    "dev": "NODE_ENV=development tsx server/index.ts",
+    "build": "vite build",
+    "start": "NODE_ENV=production node dist/server/index.js",
+    "db:push": "drizzle-kit push:pg",
+    "db:studio": "drizzle-kit studio",
+    "db:select-driver": "tsx server/select-db-driver.ts",
+    "db:test-connection": "tsx server/direct-pg-connect.ts"
+  },
+  // resto do arquivo...
+}

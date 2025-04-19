@@ -9,7 +9,10 @@
 import * as schema from "@shared/schema";
 import { log } from "./vite";
 import { drizzle } from "drizzle-orm/node-postgres";
-import { Pool } from "pg";
+import pg from "pg";
+
+// Quando usado com ESM, precisamos acessar o Pool desta forma
+const { Pool } = pg;
 
 // Verifica o ambiente para decidir qual conexão usar
 const isLocalEnvironment = process.env.NODE_ENV === 'development';
