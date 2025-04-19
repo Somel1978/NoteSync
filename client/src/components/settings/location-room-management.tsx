@@ -285,7 +285,7 @@ export const LocationRoomManagement = () => {
       {selectedRoom && (
         <RoomFormModal
           room={selectedRoom}
-          isOpen={roomModalOpen}
+          open={roomModalOpen}
           onClose={() => setRoomModalOpen(false)}
           onSuccess={() => {
             setRoomModalOpen(false);
@@ -296,8 +296,8 @@ export const LocationRoomManagement = () => {
       
       {/* Location Modal */}
       <LocationFormModal
-        location={selectedLocation}
-        isOpen={locationModalOpen}
+        location={selectedLocation || undefined}
+        open={locationModalOpen}
         onClose={() => setLocationModalOpen(false)}
         onSuccess={() => {
           setLocationModalOpen(false);

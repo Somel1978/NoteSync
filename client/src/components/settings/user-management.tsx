@@ -389,12 +389,8 @@ export const UserManagement = () => {
       {selectedUser && (
         <UserFormModal
           user={selectedUser}
-          isOpen={userModalOpen}
-          onClose={() => setUserModalOpen(false)}
-          onSuccess={() => {
-            setUserModalOpen(false);
-            queryClient.invalidateQueries({ queryKey: ['/api/users'] });
-          }}
+          open={userModalOpen}
+          onOpenChange={setUserModalOpen}
         />
       )}
     </>
