@@ -69,6 +69,14 @@ export function registerAppointmentRoutes(app: Express): void {
         }
       }
       
+      // Filter by status if specified
+      if (req.query.status) {
+        const status = req.query.status as string;
+        if (status && ['pending', 'approved', 'rejected', 'cancelled', 'finished'].includes(status)) {
+          appointments = appointments.filter(a => a.status === status);
+        }
+      }
+      
       res.json(appointments);
     } catch (error) {
       next(error);
