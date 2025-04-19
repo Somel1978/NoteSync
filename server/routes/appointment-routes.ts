@@ -596,23 +596,52 @@ export function registerAppointmentRoutes(app: Express): void {
         const approvedBookings = roomBookings.filter(b => b.status === 'approved');
         const rejectedBookings = roomBookings.filter(b => b.status === 'rejected');
         
-        // Current month utilization in hours
-        const currentMonthBookings = approvedBookings.filter(booking => 
-          new Date(booking.startTime) >= currentMonthStart && 
-          new Date(booking.endTime) <= currentMonthEnd
-        );
+        // Current month utilization in hours - include bookings that overlap with the month
+        const currentMonthBookings = approvedBookings.filter(booking => {
+          const bookingStart = new Date(booking.startTime);
+          const bookingEnd = new Date(booking.endTime);
+          
+          // A booking is in the current month if:
+          // 1. It starts in the month, or
+          // 2. It ends in the month, or
+          // 3. It spans the entire month (starts before and ends after)
+          return (
+            (bookingStart >= currentMonthStart && bookingStart <= currentMonthEnd) || // starts in month
+            (bookingEnd >= currentMonthStart && bookingEnd <= currentMonthEnd) || // ends in month
+            (bookingStart <= currentMonthStart && bookingEnd >= currentMonthEnd) // spans entire month
+          );
+        });
         
-        // Year to date bookings
-        const ytdBookings = approvedBookings.filter(booking => 
-          new Date(booking.startTime) >= yearStart
-        );
+        // Year to date bookings - include bookings that started this year or overlap with this year
+        const ytdBookings = approvedBookings.filter(booking => {
+          const bookingStart = new Date(booking.startTime);
+          const bookingEnd = new Date(booking.endTime);
+          
+          return (
+            bookingStart >= yearStart || // started this year
+            (bookingStart < yearStart && bookingEnd >= yearStart) // started before this year but ends in this year
+          );
+        });
         
-        // Calculate utilization in hours
+        // Calculate utilization in hours - only count the hours within the current month
         let monthlyHours = 0;
         currentMonthBookings.forEach(booking => {
-          const start = new Date(booking.startTime);
-          const end = new Date(booking.endTime);
-          const durationHours = (end.getTime() - start.getTime()) / (1000 * 60 * 60);
+          // Calculate the effective start and end times within the current month
+          let effectiveStart = new Date(booking.startTime);
+          let effectiveEnd = new Date(booking.endTime);
+          
+          // If the booking started before this month, use the month start
+          if (effectiveStart < currentMonthStart) {
+            effectiveStart = new Date(currentMonthStart);
+          }
+          
+          // If the booking ends after this month, use the month end
+          if (effectiveEnd > currentMonthEnd) {
+            effectiveEnd = new Date(currentMonthEnd);
+          }
+          
+          // Calculate the duration in hours only for the part within this month
+          const durationHours = (effectiveEnd.getTime() - effectiveStart.getTime()) / (1000 * 60 * 60);
           monthlyHours += durationHours;
         });
         
@@ -645,6 +674,13 @@ export function registerAppointmentRoutes(app: Express): void {
           ? monthlyRevenue / currentMonthBookings.length 
           : 0;
         
+        // Calculate utilization rate for the month (percentage)
+        // Assuming rooms are available for 12 hours per day (adjust as needed)
+        const hoursPerDay = 12;
+        const daysInMonth = new Date(currentMonthEnd.getFullYear(), currentMonthEnd.getMonth() + 1, 0).getDate();
+        const totalAvailableHours = daysInMonth * hoursPerDay;
+        const utilization = (monthlyHours / totalAvailableHours) * 100;
+        
         return {
           id: room.id,
           name: room.name,
@@ -654,6 +690,7 @@ export function registerAppointmentRoutes(app: Express): void {
           monthlyRevenue,
           ytdRevenue,
           avgRevenuePerBooking,
+          utilization,
           totalBookings: roomBookings.length,
           approvedBookings: approvedBookings.length,
           rejectedBookings: rejectedBookings.length,
@@ -678,6 +715,16 @@ export function registerAppointmentRoutes(app: Express): void {
         const avgRevenuePerBooking = approvedBookings > 0 
           ? monthlyRevenue / approvedBookings
           : 0;
+          
+        // Calculate location utilization - assuming same hours per day
+        const hoursPerDay = 12;
+        const daysInMonth = new Date(currentMonthEnd.getFullYear(), currentMonthEnd.getMonth() + 1, 0).getDate();
+        // Total available hours for all rooms in the location
+        const totalRoomsInLocation = locationRooms.length;
+        const totalAvailableHours = totalRoomsInLocation > 0 
+          ? daysInMonth * hoursPerDay * totalRoomsInLocation 
+          : 1; // avoid division by zero
+        const utilization = (monthlyHours / totalAvailableHours) * 100;
         
         return {
           id: location.id,
@@ -686,6 +733,7 @@ export function registerAppointmentRoutes(app: Express): void {
           monthlyRevenue, 
           ytdRevenue,
           avgRevenuePerBooking,
+          utilization,
           totalBookings,
           approvedBookings,
           rejectedBookings,
