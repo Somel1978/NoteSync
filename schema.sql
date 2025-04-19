@@ -152,3 +152,8 @@ CREATE INDEX IF NOT EXISTS idx_appointments_end_time ON appointments(end_time);
 CREATE INDEX IF NOT EXISTS idx_rooms_location_id ON rooms(location_id);
 CREATE INDEX IF NOT EXISTS idx_audit_logs_appointment_id ON audit_logs(appointment_id);
 CREATE INDEX IF NOT EXISTS idx_session_expire ON session(expire);
+CREATE INDEX IF NOT EXISTS idx_appointments_final_revenue ON appointments(final_revenue) WHERE final_revenue IS NOT NULL;
+
+-- Adicionar comentários às colunas para documentação
+COMMENT ON COLUMN appointments.final_revenue IS 'Receita final confirmada após conclusão do agendamento (em centavos)';
+COMMENT ON COLUMN appointments.status IS 'Status do agendamento: pending, approved, rejected, cancelled, finished';
