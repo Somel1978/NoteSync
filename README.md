@@ -209,6 +209,38 @@ DATABASE_URL=postgres://seu_usuario:sua_senha@localhost:5432/acrdsc_reservas
 - **Erro "database does not exist"**: Execute o comando para criar o banco de dados
 - **Erro "role does not exist"**: O usuário especificado não existe no PostgreSQL
 
+#### 6. Teste de conexão direta com PostgreSQL
+
+Se você estiver enfrentando problemas de conexão com o banco de dados e suspeita que pode ser um problema com o Drizzle ORM ou outras bibliotecas, você pode executar um teste de conexão direta usando apenas o driver `pg`:
+
+```bash
+# Este comando testa a conexão direta com PostgreSQL sem usar o Drizzle ORM
+npx tsx server/direct-pg-connect.ts
+```
+
+Este script:
+- Tentará conectar diretamente ao PostgreSQL usando as mesmas configurações da aplicação
+- Fornecerá mensagens detalhadas de diagnóstico se houver problemas
+- Mostrará informações do servidor (versão, timestamp) se a conexão for bem-sucedida
+
+Se este teste funcionar mas a aplicação não, o problema provavelmente está relacionado ao Drizzle ORM ou ao adaptador Neon Serverless.
+
+#### 7. Alternativa: Usar conexão direta com PostgreSQL em vez de Neon Serverless
+
+Se você continuar encontrando problemas com a conexão do banco de dados usando a biblioteca Neon Serverless, há uma versão alternativa do arquivo de conexão que usa diretamente o driver pg padrão:
+
+```bash
+# Substituir o arquivo db.ts com a versão que usa apenas pg
+cp server/db-pg.ts server/db.ts
+
+# Ou copiar manualmente o conteúdo do arquivo server/db-pg.ts para server/db.ts
+```
+
+Esta versão alternativa:
+- Usa o driver pg padrão em vez do adaptador Neon Serverless
+- Continua a usar o Drizzle ORM, mas com o adaptador node-postgres
+- Deve resolver problemas específicos relacionados ao WebSocket ou TLS
+
 #### Configuração para Ambiente Local vs. Neon Serverless
 
 O sistema está configurado para usar o PostgreSQL tanto em ambiente local quanto em produção:
