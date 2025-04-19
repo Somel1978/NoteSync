@@ -5,7 +5,7 @@
 DO $$
 BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'appointment_status') THEN
-        CREATE TYPE appointment_status AS ENUM ('pending', 'approved', 'rejected', 'cancelled');
+        CREATE TYPE appointment_status AS ENUM ('pending', 'approved', 'rejected', 'cancelled', 'finished');
     END IF;
     
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'user_role') THEN
@@ -79,6 +79,7 @@ CREATE TABLE IF NOT EXISTS appointments (
     requested_facilities JSONB,
     custom_facilities JSONB,
     agreed_cost INTEGER,
+    final_revenue INTEGER, -- Receita final confirmada após finalização do agendamento
     cost_breakdown JSONB,
     cost_type TEXT,
     order_number INTEGER,
