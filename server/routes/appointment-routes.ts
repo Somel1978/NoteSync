@@ -569,15 +569,13 @@ export function registerAppointmentRoutes(app: Express): void {
       const statusCounts = {
         approved: 0,
         pending: 0,
-        rejected: 0,
-        cancelled: 0
+        rejected: 0
       };
       
       allAppointments.forEach(appointment => {
         if (appointment.status === 'approved') statusCounts.approved++;
         else if (appointment.status === 'pending') statusCounts.pending++;
         else if (appointment.status === 'rejected') statusCounts.rejected++;
-        else if (appointment.status === 'cancelled') statusCounts.cancelled++;
       });
       
       // Get active bookings (upcoming approved bookings)
