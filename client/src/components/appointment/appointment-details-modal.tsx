@@ -1214,6 +1214,17 @@ export function AppointmentDetailsModal({
                         </>
                       )}
                       
+                      {appointment.status === "approved" && (
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          onClick={handleFinish}
+                          className="text-xs text-emerald-500 border-emerald-200 hover:bg-emerald-50"
+                        >
+                          {t('appointments.finish', 'Finalizar')}
+                        </Button>
+                      )}
+                      
                       <Button 
                         variant="outline" 
                         size="sm" 
@@ -1239,6 +1250,7 @@ export function AppointmentDetailsModal({
                     <div className={`p-4 mb-6 rounded-md ${
                       appointment.status === "approved" ? "bg-green-50 text-green-800" : 
                       appointment.status === "rejected" ? "bg-red-50 text-red-800" : 
+                      appointment.status === "finished" ? "bg-emerald-50 text-emerald-800" : 
                       "bg-gray-50 text-gray-800"
                     }`}>
                       <h3 className="font-medium">
@@ -1248,12 +1260,20 @@ export function AppointmentDetailsModal({
                         ? t('appointments.detailsModal.statusRejected')
                         : appointment.status === "cancelled" 
                         ? t('appointments.detailsModal.statusCancelled')
+                        : appointment.status === "finished" 
+                        ? t('appointments.detailsModal.statusFinished', 'Evento Finalizado')
                         : t('appointments.detailsModal.statusPending')}
                       </h3>
                       
                       {appointment.status === "rejected" && appointment.rejectionReason && (
                         <p className="mt-2 text-sm">
                           <span className="font-medium">Reason:</span> {appointment.rejectionReason}
+                        </p>
+                      )}
+                      
+                      {appointment.status === "finished" && appointment.finalRevenue !== undefined && (
+                        <p className="mt-2 text-sm">
+                          <span className="font-medium">{t('appointments.detailsModal.finalRevenue', 'Receita Final')}:</span> €{(appointment.finalRevenue / 100).toFixed(2)}
                         </p>
                       )}
                     </div>
