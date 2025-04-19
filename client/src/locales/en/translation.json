@@ -581,6 +581,17 @@
     "guest": "Guest",
     "adminPlural": "Administrators",
     "directorPlural": "Directors",
-    "guestPlural": "Guests"
+    "guestPlural": "Guests",
+    "admins": "Administrators",
+    "directors": "Directors",
+    "guests": "Guests"
+  },
+  "accessRestricted": {
+    "title": "Access Restricted",
+    "message": "You don't have permission to access this page",
+    "backToHome": "Back to Home Page",
+    "adminRequired": "Only administrators can access this page",
+    "adminOrDirectorRequired": "Only administrators or directors can access this page",
+    "loginRequired": "You need to login to access this page"
   }
 }

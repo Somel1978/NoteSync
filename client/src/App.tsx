@@ -13,6 +13,7 @@ import LandingPage from "@/pages/landing-page";
 import PublicRoomPage from "@/pages/public-room-page";
 import RoomAvailabilityPage from "@/pages/room-availability-page";
 import { ProtectedRoute } from "./lib/protected-route";
+import { RoleRestrictedRoute } from "./lib/role-restricted-route";
 import { AuthProvider, useAuth } from "./hooks/use-auth";
 import { LanguageProvider } from "./hooks/use-language";
 import { useEffect } from "react";

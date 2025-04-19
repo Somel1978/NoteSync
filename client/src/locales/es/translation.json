@@ -491,5 +491,24 @@
     "deleteSuccess": "Ubicación eliminada",
     "deleteSuccessDetail": "La ubicación ha sido eliminada exitosamente",
     "deleteError": "Error al eliminar la ubicación"
+  },
+  "roles": {
+    "admin": "Administrador",
+    "director": "Director",
+    "guest": "Invitado",
+    "adminPlural": "Administradores",
+    "directorPlural": "Directores",
+    "guestPlural": "Invitados",
+    "admins": "Administradores",
+    "directors": "Directores",
+    "guests": "Invitados"
+  },
+  "accessRestricted": {
+    "title": "Acceso Restringido",
+    "message": "No tienes permiso para acceder a esta página",
+    "backToHome": "Volver a la Página de Inicio",
+    "adminRequired": "Solo los administradores pueden acceder a esta página",
+    "adminOrDirectorRequired": "Solo los administradores o directores pueden acceder a esta página",
+    "loginRequired": "Necesitas iniciar sesión para acceder a esta página"
   }
 }
