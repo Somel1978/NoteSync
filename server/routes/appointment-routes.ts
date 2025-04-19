@@ -13,7 +13,9 @@ export function registerAppointmentRoutes(app: Express): void {
         return res.status(400).json({ message: "Invalid room ID" });
       }
       
-      const { startDate, endDate } = req.query;
+      const { startDate, endDate, includeRejected } = req.query;
+      // Por padrão, não inclui agendamentos rejeitados
+      const shouldIncludeRejected = includeRejected === 'true';
       
       let appointments;
       
@@ -30,12 +32,12 @@ export function registerAppointmentRoutes(app: Express): void {
           });
         }
         
-        appointments = await storage.getAppointmentsByDateRange(start, end);
+        appointments = await storage.getAppointmentsByDateRange(start, end, shouldIncludeRejected);
         // Filtre apenas os agendamentos para a sala específica
         appointments = appointments.filter(a => a.roomId === roomId);
       } else {
         // Caso contrário, busque todos os agendamentos para a sala
-        appointments = await storage.getAppointmentsByRoom(roomId);
+        appointments = await storage.getAppointmentsByRoom(roomId, shouldIncludeRejected);
       }
       
       res.json(appointments);

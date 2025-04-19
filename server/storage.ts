@@ -1,5 +1,5 @@
 import { users, rooms, locations, appointments as appointmentsTable, auditLogs, settings, type User, type InsertUser, type Room, type InsertRoom, type Location, type InsertLocation, type Appointment, type InsertAppointment, type AuditLog, type InsertAuditLog, type Setting, type InsertSetting } from "@shared/schema";
-import { eq, and, gte, lte, desc, sql } from "drizzle-orm";
+import { eq, and, gte, lte, desc, sql, ne } from "drizzle-orm";
 import connectPg from "connect-pg-simple";
 import session from "express-session";
 import { pool, db } from "./db";
@@ -51,8 +51,8 @@ export interface IStorage {
   updateAppointment(id: number, updates: Partial<Appointment>): Promise<Appointment | undefined>;
   deleteAppointment(id: number, userId?: number): Promise<boolean>;
   getAppointmentsByUser(userId: number): Promise<Appointment[]>;
-  getAppointmentsByRoom(roomId: number): Promise<Appointment[]>;
-  getAppointmentsByDateRange(startDate: Date, endDate: Date): Promise<Appointment[]>;
+  getAppointmentsByRoom(roomId: number, includeRejected?: boolean): Promise<Appointment[]>;
+  getAppointmentsByDateRange(startDate: Date, endDate: Date, includeRejected?: boolean): Promise<Appointment[]>;
   getAppointmentsByStatus(status: string): Promise<Appointment[]>;
   getAllAppointments(): Promise<Appointment[]>;
   getRecentAppointments(limit: number): Promise<Appointment[]>;
@@ -605,35 +605,49 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getAppointmentsByRoom(roomId: number, includeRejected: boolean = false): Promise<Appointment[]> {
-    let query = eq(appointmentsTable.roomId, roomId);
+    // Criando a query base
+    const baseCondition = eq(appointmentsTable.roomId, roomId);
     
     // Se não incluir rejeitados, adiciona filtro para excluir status 'rejected'
+    let results;
     if (!includeRejected) {
-      query = and(
-        query,
-        ne(appointmentsTable.status as any, 'rejected')
-      );
+      results = await db.select()
+        .from(appointmentsTable)
+        .where(and(
+          baseCondition,
+          ne(appointmentsTable.status as any, 'rejected')
+        ));
+    } else {
+      results = await db.select()
+        .from(appointmentsTable)
+        .where(baseCondition);
     }
     
-    const results = await db.select().from(appointmentsTable).where(query);
     return this.mapAppointmentResults(results);
   }
 
   async getAppointmentsByDateRange(startDate: Date, endDate: Date, includeRejected: boolean = false): Promise<Appointment[]> {
-    let query = and(
+    // Condições de data sempre aplicadas
+    const dateConditions = and(
       gte(appointmentsTable.startTime, startDate),
       lte(appointmentsTable.startTime, endDate)
     );
     
-    // Se não incluir rejeitados, adiciona filtro para excluir status 'rejected'
+    // Se não incluir rejeitados, adiciona filtro adicional
+    let results;
     if (!includeRejected) {
-      query = and(
-        query,
-        ne(appointmentsTable.status as any, 'rejected')
-      );
+      results = await db.select()
+        .from(appointmentsTable)
+        .where(and(
+          dateConditions,
+          ne(appointmentsTable.status as any, 'rejected')
+        ));
+    } else {
+      results = await db.select()
+        .from(appointmentsTable)
+        .where(dateConditions);
     }
     
-    const results = await db.select().from(appointmentsTable).where(query);
     return this.mapAppointmentResults(results);
   }
 
