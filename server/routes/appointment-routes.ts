@@ -630,13 +630,15 @@ export function registerAppointmentRoutes(app: Express): void {
       const statusCounts = {
         approved: 0,
         pending: 0,
-        rejected: 0
+        rejected: 0,
+        finished: 0
       };
       
       allAppointments.forEach(appointment => {
         if (appointment.status === 'approved') statusCounts.approved++;
         else if (appointment.status === 'pending') statusCounts.pending++;
         else if (appointment.status === 'rejected') statusCounts.rejected++;
+        else if (appointment.status === 'finished') statusCounts.finished++;
       });
       
       // Get active bookings (upcoming approved bookings)
@@ -710,22 +712,80 @@ export function registerAppointmentRoutes(app: Express): void {
         let monthlyRevenue = 0;
         let ytdRevenue = 0;
         
-        // For current month revenue
+        // For current month revenue - use final_revenue for 'finished' bookings when available
         currentMonthBookings.forEach(booking => {
-          if (booking.rooms && Array.isArray(booking.rooms)) {
-            const roomEntry = booking.rooms.find((r: any) => r.roomId === room.id);
-            if (roomEntry && roomEntry.cost) {
-              monthlyRevenue += roomEntry.cost;
+          // Verificar se é um agendamento finalizado com receita final registrada
+          if (booking.status === 'finished' && booking.final_revenue !== null && booking.final_revenue !== undefined) {
+            // Para agendamentos finalizados com várias salas, precisamos calcular a proporção da receita
+            // que pertence a esta sala específica com base no custo original
+            let totalOriginalCost = 0;
+            let thisRoomCost = 0;
+            
+            if (booking.rooms && Array.isArray(booking.rooms)) {
+              // Calcular o custo total original e o custo desta sala
+              booking.rooms.forEach((r: any) => {
+                if (r.cost) totalOriginalCost += r.cost;
+                if (r.roomId === room.id && r.cost) thisRoomCost = r.cost;
+              });
+              
+              // Se temos um custo total e um custo para esta sala, podemos calcular a proporção
+              if (totalOriginalCost > 0 && thisRoomCost > 0) {
+                const proportion = thisRoomCost / totalOriginalCost;
+                monthlyRevenue += booking.final_revenue * proportion;
+              } else if (booking.rooms.length === 1) {
+                // Se só tem uma sala, toda a receita vai para ela
+                monthlyRevenue += booking.final_revenue;
+              }
+            } else {
+              // Se não temos informação da sala, mas temos receita final, consideramos tudo
+              monthlyRevenue += booking.final_revenue;
+            }
+          } else {
+            // Para agendamentos não finalizados, usamos o valor original
+            if (booking.rooms && Array.isArray(booking.rooms)) {
+              const roomEntry = booking.rooms.find((r: any) => r.roomId === room.id);
+              if (roomEntry && roomEntry.cost) {
+                monthlyRevenue += roomEntry.cost;
+              }
             }
           }
         });
         
-        // For YTD revenue
+        // For YTD revenue - também usar final_revenue quando disponível
         ytdBookings.forEach(booking => {
-          if (booking.rooms && Array.isArray(booking.rooms)) {
-            const roomEntry = booking.rooms.find((r: any) => r.roomId === room.id);
-            if (roomEntry && roomEntry.cost) {
-              ytdRevenue += roomEntry.cost;
+          // Verificar se é um agendamento finalizado com receita final registrada
+          if (booking.status === 'finished' && booking.final_revenue !== null && booking.final_revenue !== undefined) {
+            // Para agendamentos finalizados com várias salas, precisamos calcular a proporção da receita
+            // que pertence a esta sala específica com base no custo original
+            let totalOriginalCost = 0;
+            let thisRoomCost = 0;
+            
+            if (booking.rooms && Array.isArray(booking.rooms)) {
+              // Calcular o custo total original e o custo desta sala
+              booking.rooms.forEach((r: any) => {
+                if (r.cost) totalOriginalCost += r.cost;
+                if (r.roomId === room.id && r.cost) thisRoomCost = r.cost;
+              });
+              
+              // Se temos um custo total e um custo para esta sala, podemos calcular a proporção
+              if (totalOriginalCost > 0 && thisRoomCost > 0) {
+                const proportion = thisRoomCost / totalOriginalCost;
+                ytdRevenue += booking.final_revenue * proportion;
+              } else if (booking.rooms.length === 1) {
+                // Se só tem uma sala, toda a receita vai para ela
+                ytdRevenue += booking.final_revenue;
+              }
+            } else {
+              // Se não temos informação da sala, mas temos receita final, consideramos tudo
+              ytdRevenue += booking.final_revenue;
+            }
+          } else {
+            // Para agendamentos não finalizados, usamos o valor original
+            if (booking.rooms && Array.isArray(booking.rooms)) {
+              const roomEntry = booking.rooms.find((r: any) => r.roomId === room.id);
+              if (roomEntry && roomEntry.cost) {
+                ytdRevenue += roomEntry.cost;
+              }
             }
           }
         });

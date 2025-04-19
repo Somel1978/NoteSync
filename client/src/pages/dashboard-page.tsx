@@ -31,6 +31,7 @@ interface DashboardStats {
     approved: number;
     pending: number;
     rejected: number;
+    finished: number;
   };
   
   // List metrics
@@ -224,7 +225,7 @@ export default function DashboardPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                   <div className="flex flex-col p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
                     <span className="text-sm text-muted-foreground">{t('appointments.approved', 'Approved')}</span>
                     <span className="text-2xl font-bold text-green-600 dark:text-green-400">{data.statusCounts.approved}</span>
@@ -236,6 +237,10 @@ export default function DashboardPage() {
                   <div className="flex flex-col p-4 bg-red-50 dark:bg-red-900/20 rounded-lg">
                     <span className="text-sm text-muted-foreground">{t('appointments.rejected', 'Rejected')}</span>
                     <span className="text-2xl font-bold text-red-600 dark:text-red-400">{data.statusCounts.rejected}</span>
+                  </div>
+                  <div className="flex flex-col p-4 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg">
+                    <span className="text-sm text-muted-foreground">{t('appointments.finished', 'Finished')}</span>
+                    <span className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{data.statusCounts.finished || 0}</span>
                   </div>
                 </div>
               </CardContent>
