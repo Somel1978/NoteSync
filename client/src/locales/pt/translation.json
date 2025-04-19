@@ -519,14 +519,6 @@
     "userDeleteError": "Falha ao excluir usuário",
     "deletionApprovedSuccess": "Exclusão foi aprovada e conta de usuário removida",
     "noUsers": "Nenhum usuário disponível",
-    "roles": {
-      "admin": "Administrador",
-      "director": "Diretor",
-      "guest": "Convidado",
-      "admins": "Administradores",
-      "directors": "Diretores",
-      "guests": "Convidados"
-    },
     
     "currentPasswordPlaceholder": "Digite sua senha atual",
     "newPasswordPlaceholder": "Digite sua nova senha",
@@ -569,6 +561,8 @@
     "adminPlural": "Administradores",
     "directorPlural": "Diretores",
     "guestPlural": "Convidados",
-    "admins": "Administradores"
+    "admins": "Administradores",
+    "directors": "Diretores",
+    "guests": "Convidados"
   }
 }
