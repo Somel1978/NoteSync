@@ -75,6 +75,8 @@ export function AppointmentDetailsModal({
   const [customPricing, setCustomPricing] = useState(false);
   const [rejectionReason, setRejectionReason] = useState("");
   const [isRejectDialogOpen, setIsRejectDialogOpen] = useState(false);
+  const [isFinishDialogOpen, setIsFinishDialogOpen] = useState(false);
+  const [finalRevenue, setFinalRevenue] = useState(0);
 
   const { toast } = useToast();
   const { t } = useTranslation();
@@ -173,6 +175,40 @@ export function AppointmentDetailsModal({
       console.error("Appointment rejection failed:", error);
       toast({
         title: t('appointments.rejectError', 'Error rejecting appointment'),
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+  
+  // Mutation for finishing appointments
+  const finishMutation = useMutation({
+    mutationFn: async ({ id, finalRevenue }: { id: number; finalRevenue: number }) => {
+      console.log(`Finishing appointment ${id} with final revenue: ${finalRevenue}`);
+      const res = await apiRequest("PUT", `/api/appointments/${id}/finish`, { 
+        finalRevenue: finalRevenue 
+      });
+      if (res.status === 204) {
+        return { id, success: true };
+      }
+      return await res.json();
+    },
+    onSuccess: (data) => {
+      console.log("Appointment finishing successful:", data);
+      toast({ 
+        title: t('appointments.finishSuccess', 'Appointment finished'),
+        description: t('appointments.finishSuccessDetail', 'The appointment has been marked as finished and the revenue recorded.')
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/appointments"] });
+      if (data && data.id) {
+        queryClient.invalidateQueries({ queryKey: [`/api/appointments/${data.id}`] });
+      }
+      onOpenChange(false);
+    },
+    onError: (error: Error) => {
+      console.error("Appointment finishing failed:", error);
+      toast({
+        title: t('appointments.finishError', 'Error finishing appointment'),
         description: error.message,
         variant: "destructive",
       });
