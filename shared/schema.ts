@@ -70,7 +70,7 @@ export const insertRoomSchema = createInsertSchema(rooms).pick({
 });
 
 // Statuses for appointments
-export const appointmentStatusEnum = pgEnum('appointment_status', ['pending', 'approved', 'rejected', 'cancelled']);
+export const appointmentStatusEnum = pgEnum('appointment_status', ['pending', 'approved', 'rejected', 'cancelled', 'finished']);
 
 // Appointments/Bookings
 export const appointments = pgTable("appointments", {
@@ -94,6 +94,7 @@ export const appointments = pgTable("appointments", {
   requestedFacilities: json("requested_facilities").notNull().default([]),
   costType: text("cost_type").notNull(), // flat, hourly, or per_attendee
   agreedCost: integer("agreed_cost").notNull(), // Stored in cents
+  finalRevenue: integer("final_revenue"), // Actual amount received when finished, stored in cents
   costBreakdown: json("cost_breakdown").notNull().default({}),
   customFacilities: json("custom_facilities").default({}), // Custom facilities with their costs
   orderNumber: integer("order_number").notNull(),
@@ -122,6 +123,7 @@ export const insertAppointmentSchema = createInsertSchema(appointments).pick({
   requestedFacilities: true,
   costType: true,
   agreedCost: true,
+  finalRevenue: true,
   costBreakdown: true,
   customFacilities: true,
   orderNumber: true,
