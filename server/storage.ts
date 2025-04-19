@@ -1,9 +1,8 @@
 import { users, rooms, locations, appointments as appointmentsTable, auditLogs, settings, type User, type InsertUser, type Room, type InsertRoom, type Location, type InsertLocation, type Appointment, type InsertAppointment, type AuditLog, type InsertAuditLog, type Setting, type InsertSetting } from "@shared/schema";
-import { db } from "./db";
 import { eq, and, gte, lte, desc, sql } from "drizzle-orm";
 import connectPg from "connect-pg-simple";
 import session from "express-session";
-import { pool } from "./db";
+import { pool, db } from "./db";
 
 // Define the SessionStore type
 declare module 'express-session' {

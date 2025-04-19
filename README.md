@@ -23,6 +23,12 @@ cd acrdsc-reservas
 npm install
 ```
 
+Para executar o projeto localmente, também é necessário instalar o pacote `pg`:
+
+```bash
+npm install pg @types/pg --save
+```
+
 ### 3. Configurar o Banco de Dados
 
 #### Criar banco de dados PostgreSQL
@@ -122,6 +128,20 @@ Se você encontrar erros de conexão com o banco de dados:
 1. Verifique se o PostgreSQL está em execução
 2. Confirme se as credenciais no arquivo `.env` estão corretas
 3. Verifique se o banco de dados foi criado corretamente
+
+#### Configuração para Ambiente Local vs. Neon Serverless
+
+O sistema está configurado para usar o PostgreSQL tanto em ambiente local quanto em produção, através da biblioteca Neon.
+
+- **Desenvolvimento local**: Usa Neon com `NODE_ENV=development` que ajusta logs e configurações para depuração
+- **Produção**: Usa Neon com `NODE_ENV=production` que prioriza desempenho
+
+Para ambientes locais, crie um banco PostgreSQL e configure a variável `DATABASE_URL` conforme o padrão:
+```
+DATABASE_URL=postgres://seu_usuario:sua_senha@localhost:5432/acrdsc_reservas
+```
+
+O código que gerencia essa configuração está em `server/db.ts`.
 
 ### Erros ao Iniciar o Servidor
 
