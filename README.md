@@ -36,29 +36,12 @@ createdb acrdsc_reservas
 O arquivo `schema.sql` contém todas as tabelas e dados iniciais necessários:
 
 ```bash
-# Método 1: Conectar e executar o script
-psql -h localhost -U seu_usuario -d acrdsc_reservas
-\i schema.sql
-
-# Método 2 (alternativo): Importar diretamente
-psql -h localhost -U seu_usuario -d acrdsc_reservas -f schema.sql
+psql -d acrdsc_reservas -f schema.sql
 ```
 
 ### 4. Configurar Variáveis de Ambiente
 
-Para facilitar a configuração inicial, execute o script auxiliar:
-
-```bash
-node setup.js
-```
-
-Este script:
-- Verifica se o Node.js está na versão correta
-- Cria um arquivo `.env` de exemplo se não existir
-- Verifica a instalação do PostgreSQL
-- Fornece instruções detalhadas para configuração e solução de problemas
-
-Em seguida, edite o arquivo `.env` criado com suas informações:
+Crie um arquivo `.env` na raiz do projeto com as seguintes variáveis:
 
 ```env
 # Configuração do Banco de Dados
@@ -132,20 +115,6 @@ O sistema permite personalização da aparência através do painel de administr
 
 ## Solução de Problemas
 
-### Script Especial para Ambiente Local
-
-Se você estiver tendo problemas para executar o projeto localmente, especialmente com a conexão ao banco de dados, utilize o script especial criado para ambiente local:
-
-```bash
-node local-server.js
-```
-
-Este script:
-- Substitui temporariamente o arquivo db.ts com uma versão otimizada para ambiente local
-- Carrega as variáveis de ambiente do arquivo .env de forma mais robusta
-- Fornece mensagens de erro mais claras sobre problemas de configuração
-- Restaura automaticamente os arquivos originais ao encerrar
-
 ### Problemas de Conexão com o Banco de Dados
 
 Se você encontrar erros de conexão com o banco de dados:
@@ -161,23 +130,6 @@ Se o servidor não iniciar corretamente:
 1. Verifique os logs de erro no console
 2. Confirme que todas as dependências foram instaladas
 3. Verifique se as variáveis de ambiente estão configuradas corretamente
-
-#### Erro no vite.config.ts
-
-Se você encontrar erros como `The "paths[0]" argument must be of type string` relacionados ao vite.config.ts:
-
-1. Certifique-se de estar usando Node.js v18+ que suporta `import.meta.url` e ESM
-2. Execute o script de configuração primeiro: `node setup.js`
-3. As variáveis de ambiente devem estar adequadamente configuradas no arquivo .env
-
-#### Problemas com import.meta.dirname
-
-Este projeto foi desenvolvido com Node.js v20.6+ que suporta `import.meta.dirname`. Se você estiver usando uma versão anterior (mas pelo menos v18), execute o script de configuração que criará um ambiente compatível:
-
-```bash
-chmod +x setup.js
-node setup.js
-```
 
 ## Desenvolvimento
 
