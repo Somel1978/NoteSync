@@ -1221,7 +1221,7 @@ export function AppointmentDetailsModal({
                           onClick={handleFinish}
                           className="text-xs text-emerald-500 border-emerald-200 hover:bg-emerald-50"
                         >
-                          {t('appointments.finish', 'Finalizar')}
+                          {t('appointments.finish', 'Mark as Finished')}
                         </Button>
                       )}
                       
