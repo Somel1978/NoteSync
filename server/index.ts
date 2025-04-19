@@ -1,3 +1,77 @@
+// Carrega variáveis de ambiente do arquivo .env
+import { readFileSync } from 'fs';
+import { resolve, dirname } from 'path';
+import { fileURLToPath } from 'url';
+
+// Obtém o equivalente a __dirname em ESM
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+// Função para carregar manualmente as variáveis de ambiente do arquivo .env
+function loadEnvFile() {
+  // Lista de possíveis caminhos para o arquivo .env
+  const possiblePaths = [
+    resolve(process.cwd(), '.env'),
+    resolve(process.cwd(), '../.env'),
+    resolve(process.cwd(), '../../.env'),
+    resolve(__dirname, '../.env'),
+    resolve(__dirname, '../../.env'),
+    resolve(__dirname, '../../../.env')
+  ];
+  
+  let loaded = false;
+  
+  for (const envPath of possiblePaths) {
+    try {
+      console.log(`Tentando carregar variáveis de ambiente de: ${envPath}`);
+      
+      const envContent = readFileSync(envPath, 'utf8');
+      const envVars = envContent.split('\n');
+      
+      envVars.forEach(line => {
+        // Ignora linhas vazias e comentários
+        if (!line || line.trim() === '' || line.startsWith('#')) {
+          return;
+        }
+        
+        const matches = line.match(/^\s*([\w.-]+)\s*=\s*(.*)?\s*$/);
+        if (matches && matches.length > 2) {
+          const key = matches[1];
+          let value = matches[2] || '';
+          
+          // Remove aspas se presentes
+          if (value.length > 0 && value.charAt(0) === '"' && value.charAt(value.length - 1) === '"') {
+            value = value.replace(/^"|"$/g, '');
+          }
+          
+          process.env[key] = value;
+        }
+      });
+      
+      console.log(`Variáveis de ambiente carregadas com sucesso de ${envPath}`);
+      loaded = true;
+      break;
+    } catch (error: any) {
+      console.error(`Falha ao carregar arquivo .env de ${envPath}: ${error.message}`);
+    }
+  }
+  
+  // Se não conseguir carregar o arquivo .env, cria as variáveis com os valores fornecidos no README
+  if (!loaded) {
+    console.warn('Não foi possível carregar variáveis de ambiente de nenhum arquivo .env.');
+    console.warn('Usando variáveis de ambiente fornecidas diretamente no código.');
+    
+    // Valores de ambiente para desenvolvimento local
+    process.env.DATABASE_URL = process.env.DATABASE_URL || 
+      `postgres://${process.env.PGUSER || 'postgres'}:${process.env.PGPASSWORD || 'postgres'}@${process.env.PGHOST || 'localhost'}:${process.env.PGPORT || '5432'}/${process.env.PGDATABASE || 'acrdsc_reservas'}`;
+    
+    process.env.SESSION_SECRET = process.env.SESSION_SECRET || 'chave_secreta_desenvolvimento_local';
+  }
+}
+
+// Carrega as variáveis de ambiente antes de qualquer outra operação
+loadEnvFile();
+
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";

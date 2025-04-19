@@ -69,6 +69,10 @@ MAILJET_API_KEY=sua_api_key_mailjet
 MAILJET_SECRET_KEY=sua_secret_key_mailjet
 ```
 
+> **Importante**: O sistema procura por um arquivo `.env` em vários locais possíveis. Se o arquivo não for encontrado, valores padrão serão usados, mas é altamente recomendável criar o arquivo `.env` com os valores corretos para o seu ambiente.
+
+O sistema também aceita variáveis de ambiente definidas diretamente no sistema operacional, o que é útil para ambientes de produção onde o uso de arquivos `.env` pode não ser recomendado.
+
 ## Scripts Disponíveis
 
 O projeto inclui vários scripts NPM úteis para desenvolvimento e produção:
