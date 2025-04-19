@@ -712,10 +712,10 @@ export function registerAppointmentRoutes(app: Express): void {
         let monthlyRevenue = 0;
         let ytdRevenue = 0;
         
-        // For current month revenue - use final_revenue for 'finished' bookings when available
+        // For current month revenue - use finalRevenue for 'finished' bookings when available
         currentMonthBookings.forEach(booking => {
           // Verificar se é um agendamento finalizado com receita final registrada
-          if (booking.status === 'finished' && booking.final_revenue !== null && booking.final_revenue !== undefined) {
+          if (booking.status === 'finished' && booking.finalRevenue !== null && booking.finalRevenue !== undefined) {
             // Para agendamentos finalizados com várias salas, precisamos calcular a proporção da receita
             // que pertence a esta sala específica com base no custo original
             let totalOriginalCost = 0;
@@ -731,14 +731,14 @@ export function registerAppointmentRoutes(app: Express): void {
               // Se temos um custo total e um custo para esta sala, podemos calcular a proporção
               if (totalOriginalCost > 0 && thisRoomCost > 0) {
                 const proportion = thisRoomCost / totalOriginalCost;
-                monthlyRevenue += booking.final_revenue * proportion;
+                monthlyRevenue += booking.finalRevenue * proportion;
               } else if (booking.rooms.length === 1) {
                 // Se só tem uma sala, toda a receita vai para ela
-                monthlyRevenue += booking.final_revenue;
+                monthlyRevenue += booking.finalRevenue;
               }
             } else {
               // Se não temos informação da sala, mas temos receita final, consideramos tudo
-              monthlyRevenue += booking.final_revenue;
+              monthlyRevenue += booking.finalRevenue;
             }
           } else {
             // Para agendamentos não finalizados, usamos o valor original
@@ -751,10 +751,10 @@ export function registerAppointmentRoutes(app: Express): void {
           }
         });
         
-        // For YTD revenue - também usar final_revenue quando disponível
+        // For YTD revenue - também usar finalRevenue quando disponível
         ytdBookings.forEach(booking => {
           // Verificar se é um agendamento finalizado com receita final registrada
-          if (booking.status === 'finished' && booking.final_revenue !== null && booking.final_revenue !== undefined) {
+          if (booking.status === 'finished' && booking.finalRevenue !== null && booking.finalRevenue !== undefined) {
             // Para agendamentos finalizados com várias salas, precisamos calcular a proporção da receita
             // que pertence a esta sala específica com base no custo original
             let totalOriginalCost = 0;
@@ -770,14 +770,14 @@ export function registerAppointmentRoutes(app: Express): void {
               // Se temos um custo total e um custo para esta sala, podemos calcular a proporção
               if (totalOriginalCost > 0 && thisRoomCost > 0) {
                 const proportion = thisRoomCost / totalOriginalCost;
-                ytdRevenue += booking.final_revenue * proportion;
+                ytdRevenue += booking.finalRevenue * proportion;
               } else if (booking.rooms.length === 1) {
                 // Se só tem uma sala, toda a receita vai para ela
-                ytdRevenue += booking.final_revenue;
+                ytdRevenue += booking.finalRevenue;
               }
             } else {
               // Se não temos informação da sala, mas temos receita final, consideramos tudo
-              ytdRevenue += booking.final_revenue;
+              ytdRevenue += booking.finalRevenue;
             }
           } else {
             // Para agendamentos não finalizados, usamos o valor original
