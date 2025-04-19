@@ -411,6 +411,8 @@ export function AppointmentDetailsModal({
       setEditedAppointment({});
       setCustomPricing(false);
       setIsRejectDialogOpen(false);
+      setIsFinishDialogOpen(false);
+      setFinalRevenue(0);
     }
   }, [open]);
   
@@ -741,6 +743,24 @@ export function AppointmentDetailsModal({
 
   const handleReject = () => {
     setIsRejectDialogOpen(true);
+  };
+
+  const handleFinish = () => {
+    // Inicializa a receita final com o valor acordado do agendamento
+    if (appointment && appointment.agreedCost) {
+      setFinalRevenue(appointment.agreedCost);
+    }
+    setIsFinishDialogOpen(true);
+  };
+
+  const handleConfirmFinish = () => {
+    if (appointmentId) {
+      finishMutation.mutate({ 
+        id: appointmentId, 
+        finalRevenue: finalRevenue 
+      });
+    }
+    setIsFinishDialogOpen(false);
   };
 
   const handleConfirmReject = () => {
@@ -2257,6 +2277,39 @@ export function AppointmentDetailsModal({
             <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
             <AlertDialogAction onClick={handleConfirmReject}>
               {t('appointments.detailsModal.reject.confirm')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Diálogo de finalização de agendamento */}
+      <AlertDialog open={isFinishDialogOpen} onOpenChange={setIsFinishDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t('appointments.finishTitle', 'Finalizar Agendamento')}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t('appointments.finishDescription', 'Confirme a finalização do agendamento e a receita final recebida.')}
+              <div className="mt-4">
+                <label className="text-sm font-medium">{t('appointments.finalRevenue', 'Receita Final (em centavos)')}</label>
+                <Input
+                  type="number"
+                  value={finalRevenue}
+                  onChange={(e) => setFinalRevenue(parseInt(e.target.value, 10))}
+                  className="mt-1"
+                />
+                <p className="text-xs text-muted-foreground mt-2">
+                  {t('appointments.finalRevenueEuros', 'Valor em euros')}: €{(finalRevenue / 100).toFixed(2)}
+                </p>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t('common.cancel', 'Cancelar')}</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleConfirmFinish}
+              className="bg-emerald-600 hover:bg-emerald-700"
+            >
+              {t('appointments.finishConfirm', 'Finalizar')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
