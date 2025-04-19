@@ -604,18 +604,36 @@ export class DatabaseStorage implements IStorage {
     return this.mapAppointmentResults(results);
   }
 
-  async getAppointmentsByRoom(roomId: number): Promise<Appointment[]> {
-    const results = await db.select().from(appointmentsTable).where(eq(appointmentsTable.roomId, roomId));
+  async getAppointmentsByRoom(roomId: number, includeRejected: boolean = false): Promise<Appointment[]> {
+    let query = eq(appointmentsTable.roomId, roomId);
+    
+    // Se não incluir rejeitados, adiciona filtro para excluir status 'rejected'
+    if (!includeRejected) {
+      query = and(
+        query,
+        ne(appointmentsTable.status as any, 'rejected')
+      );
+    }
+    
+    const results = await db.select().from(appointmentsTable).where(query);
     return this.mapAppointmentResults(results);
   }
 
-  async getAppointmentsByDateRange(startDate: Date, endDate: Date): Promise<Appointment[]> {
-    const results = await db.select().from(appointmentsTable).where(
-      and(
-        gte(appointmentsTable.startTime, startDate),
-        lte(appointmentsTable.startTime, endDate)
-      )
+  async getAppointmentsByDateRange(startDate: Date, endDate: Date, includeRejected: boolean = false): Promise<Appointment[]> {
+    let query = and(
+      gte(appointmentsTable.startTime, startDate),
+      lte(appointmentsTable.startTime, endDate)
     );
+    
+    // Se não incluir rejeitados, adiciona filtro para excluir status 'rejected'
+    if (!includeRejected) {
+      query = and(
+        query,
+        ne(appointmentsTable.status as any, 'rejected')
+      );
+    }
+    
+    const results = await db.select().from(appointmentsTable).where(query);
     return this.mapAppointmentResults(results);
   }
 
