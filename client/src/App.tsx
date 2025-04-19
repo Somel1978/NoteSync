@@ -42,11 +42,11 @@ function Router() {
       <Route path="/rooms/availability" component={RoomAvailabilityPage} />
       <Route path="/rooms/availability/:id" component={RoomAvailabilityPage} />
       <Route path="/auth" component={AuthPage} />
-      <ProtectedRoute path="/dashboard" component={DashboardPage} />
-      <ProtectedRoute path="/admin/appointments" component={AppointmentsPage} />
-      <ProtectedRoute path="/admin/rooms" component={RoomListPage} />
+      <RoleRestrictedRoute path="/dashboard" component={DashboardPage} requiredRole="adminOrDirector" />
+      <RoleRestrictedRoute path="/admin/appointments" component={AppointmentsPage} requiredRole="adminOrDirector" />
+      <RoleRestrictedRoute path="/admin/rooms" component={RoomListPage} requiredRole="adminOrDirector" />
       <ProtectedRoute path="/new-booking" component={NewBookingPage} />
-      <ProtectedRoute path="/settings" component={SettingsPage} />
+      <RoleRestrictedRoute path="/settings" component={SettingsPage} requiredRole="admin" />
       <Route component={NotFound} />
     </Switch>
   );

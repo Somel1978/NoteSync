@@ -1,7 +1,7 @@
 import { useAuth } from "@/hooks/use-auth";
 import { Loader2 } from "lucide-react";
 import { Route } from "wouter";
-import { AccessRestricted } from "@/components/access-restricted";
+import { AccessRestricted, AccessRestrictedType } from "@/components/access-restricted";
 
 type UserRole = "admin" | "director" | "guest";
 type AccessLevel = "admin" | "adminOrDirector" | "any";
@@ -57,7 +57,9 @@ export function RoleRestrictedRoute({
   if (!hasPermission()) {
     return (
       <Route path={path}>
-        <AccessRestricted type={requiredRole} />
+        <AccessRestricted 
+          type={requiredRole === "admin" ? "admin" : "adminOrDirector"} 
+        />
       </Route>
     );
   }

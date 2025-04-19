@@ -3,17 +3,26 @@ import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
 
-type AccessRestrictedType = "admin" | "adminOrDirector" | "login";
+export type AccessRestrictedType = "admin" | "adminOrDirector" | "login";
 
 interface AccessRestrictedProps {
   type?: AccessRestrictedType;
+}
+
+// Define a interface de aparência para ajudar com tipagem
+interface AppearanceSettings {
+  logoText?: string;
+  logoUrl?: string;
+  useLogoImage?: boolean;
+  title?: string;
+  subtitle?: string;
 }
 
 export function AccessRestricted({ type = "login" }: AccessRestrictedProps) {
   const { t } = useTranslation();
 
   // Fetch appearance settings to get logo
-  const { data: appearance } = useQuery({
+  const { data: appearance } = useQuery<AppearanceSettings>({
     queryKey: ['/api/settings/appearance'],
     // Retry false to avoid infinite retries on 401 responses
     retry: false,
