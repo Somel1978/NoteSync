@@ -651,7 +651,7 @@ export function registerAppointmentRoutes(app: Express): void {
       
       // Get active bookings (upcoming approved bookings)
       const activeBookings = allAppointments.filter(appointment => 
-        appointment.status === 'approved' && 
+        (appointment.status === 'approved' || appointment.status === 'finished') && 
         new Date(appointment.endTime) >= now
       ).sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime());
       
@@ -664,7 +664,9 @@ export function registerAppointmentRoutes(app: Express): void {
       const roomMetrics = await Promise.all(rooms.map(async room => {
         // Get all bookings for this room
         const roomBookings = await storage.getAppointmentsByRoom(room.id);
-        const approvedBookings = roomBookings.filter(b => b.status === 'approved');
+        // Include both 'approved' and 'finished' bookings for active calculations
+        const approvedBookings = roomBookings.filter(b => b.status === 'approved' || b.status === 'finished');
+        const finishedBookings = roomBookings.filter(b => b.status === 'finished');
         const rejectedBookings = roomBookings.filter(b => b.status === 'rejected');
         
         // Current month utilization in hours - include bookings that overlap with the month
@@ -821,7 +823,8 @@ export function registerAppointmentRoutes(app: Express): void {
           avgRevenuePerBooking,
           utilization,
           totalBookings: roomBookings.length,
-          approvedBookings: approvedBookings.length,
+          approvedBookings: roomBookings.filter(b => b.status === 'approved').length,
+          finishedBookings: finishedBookings.length,
           rejectedBookings: rejectedBookings.length,
           pendingBookings: roomBookings.filter(b => b.status === 'pending').length
         };
@@ -837,6 +840,7 @@ export function registerAppointmentRoutes(app: Express): void {
         const ytdRevenue = locationRooms.reduce((total, room) => total + room.ytdRevenue, 0);
         const totalBookings = locationRooms.reduce((total, room) => total + room.totalBookings, 0);
         const approvedBookings = locationRooms.reduce((total, room) => total + room.approvedBookings, 0);
+        const finishedBookings = locationRooms.reduce((total, room) => total + (room.finishedBookings || 0), 0);
         const rejectedBookings = locationRooms.reduce((total, room) => total + room.rejectedBookings, 0);
         const pendingBookings = locationRooms.reduce((total, room) => total + room.pendingBookings, 0);
         
@@ -865,6 +869,7 @@ export function registerAppointmentRoutes(app: Express): void {
           utilization,
           totalBookings,
           approvedBookings,
+          finishedBookings,
           rejectedBookings,
           pendingBookings
         };
