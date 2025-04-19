@@ -8,15 +8,23 @@ import ws from 'ws';
 const isLocalEnvironment = process.env.NODE_ENV === 'development';
 
 // Configuração do banco de dados
-if (!process.env.DATABASE_URL) {
+let databaseUrl = process.env.DATABASE_URL;
+
+// Se não tiver DATABASE_URL mas tiver as variáveis individuais, construa a URL
+if (!databaseUrl && process.env.PGUSER && process.env.PGPASSWORD && process.env.PGDATABASE) {
+  const host = process.env.PGHOST || 'localhost';
+  const port = process.env.PGPORT || '5432';
+  databaseUrl = `postgres://${process.env.PGUSER}:${process.env.PGPASSWORD}@${host}:${port}/${process.env.PGDATABASE}`;
+  console.log(`Construindo DATABASE_URL a partir de variáveis individuais: ${databaseUrl}`);
+} else if (!databaseUrl) {
   throw new Error(
-    "DATABASE_URL must be set. Configure this in your .env file.",
+    "DATABASE_URL ou as variáveis PGUSER, PGPASSWORD, PGHOST, PGPORT e PGDATABASE devem ser configuradas no arquivo .env",
   );
 }
 
 // Configuração para Neon serverless (usar mesmo em desenvolvimento por simplicidade)
 neonConfig.webSocketConstructor = ws;
-export const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+export const pool = new Pool({ connectionString: databaseUrl });
 export const db = drizzle(pool, { schema });
 
 // Log da configuração

@@ -51,7 +51,10 @@ Crie um arquivo `.env` na raiz do projeto com as seguintes variáveis:
 
 ```env
 # Configuração do Banco de Dados
+# Você pode usar apenas a DATABASE_URL ou as variáveis individuais, o sistema suporta ambos
 DATABASE_URL=postgres://seu_usuario:sua_senha@localhost:5432/acrdsc_reservas
+
+# Ou então use estas variáveis individuais (que serão automaticamente combinadas)
 PGUSER=seu_usuario
 PGPASSWORD=sua_senha
 PGDATABASE=acrdsc_reservas
@@ -143,6 +146,17 @@ DATABASE_URL=postgres://seu_usuario:sua_senha@localhost:5432/acrdsc_reservas
 
 O código que gerencia essa configuração está em `server/db.ts`.
 
+### Execução em Ambiente Local
+
+Para executar o projeto localmente:
+
+1. Execute `npm run dev` para iniciar em modo de desenvolvimento
+2. O servidor estará disponível em `http://localhost:5000`
+3. A página inicial pública não requer login
+4. Para acessar áreas administrativas, use as credenciais:
+   - Usuário: `admin`
+   - Senha: `admin`
+
 ### Erros ao Iniciar o Servidor
 
 Se o servidor não iniciar corretamente:
@@ -150,6 +164,7 @@ Se o servidor não iniciar corretamente:
 1. Verifique os logs de erro no console
 2. Confirme que todas as dependências foram instaladas
 3. Verifique se as variáveis de ambiente estão configuradas corretamente
+4. Se aparecer o erro `DATABASE_URL must be set`, adicione essa variável ao seu `.env` ou verifique se as variáveis PG* estão configuradas corretamente
 
 ## Desenvolvimento
 
