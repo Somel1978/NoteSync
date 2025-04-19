@@ -271,14 +271,33 @@ export function registerSettingsRoutes(app: Express): void {
   // Update appearance settings
   app.post("/api/settings/appearance", isAdmin, async (req: Request, res: Response, next: Function) => {
     try {
+      console.log("API: Received appearance settings update");
+      console.log("Request body:", JSON.stringify(req.body));
+      
+      // Check if we're using a logo image
+      if (req.body.useLogoImage) {
+        console.log("Using logo image. Logo URL length:", req.body.logoUrl ? req.body.logoUrl.length : 0);
+        
+        // Make sure logoUrl is not null or undefined if useLogoImage is true
+        if (!req.body.logoUrl) {
+          console.log("Warning: useLogoImage is true but logoUrl is empty");
+          // Set a default value to prevent errors
+          req.body.logoUrl = null;
+        }
+      }
+      
       const setting = await storage.createOrUpdateSetting('appearance', req.body);
+      console.log("Updated appearance settings:", setting ? "Success" : "Failed");
       
       if (setting && setting.value) {
+        console.log("Returning updated settings with value type:", typeof setting.value);
         res.json(setting.value);
       } else {
+        console.log("Failed to update appearance settings");
         res.status(500).json({ message: "Failed to update appearance settings" });
       }
     } catch (error) {
+      console.error("Error updating appearance settings:", error);
       next(error);
     }
   });

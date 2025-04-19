@@ -84,6 +84,10 @@ export const AppearanceSettingsForm = () => {
   
   // Form submission
   const onSubmit = (data: AppearanceSettingsFormValues) => {
+    console.log("Submitting appearance settings:", data);
+    if (data.useLogoImage) {
+      console.log("Logo URL being submitted:", data.logoUrl);
+    }
     saveAppearanceSettingsMutation.mutate(data);
   };
   

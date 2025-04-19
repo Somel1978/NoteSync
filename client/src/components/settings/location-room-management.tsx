@@ -286,11 +286,7 @@ export const LocationRoomManagement = () => {
         <RoomFormModal
           room={selectedRoom}
           open={roomModalOpen}
-          onClose={() => setRoomModalOpen(false)}
-          onSuccess={() => {
-            setRoomModalOpen(false);
-            queryClient.invalidateQueries({ queryKey: ['/api/rooms'] });
-          }}
+          onOpenChange={setRoomModalOpen}
         />
       )}
       
@@ -298,11 +294,7 @@ export const LocationRoomManagement = () => {
       <LocationFormModal
         location={selectedLocation || undefined}
         open={locationModalOpen}
-        onClose={() => setLocationModalOpen(false)}
-        onSuccess={() => {
-          setLocationModalOpen(false);
-          queryClient.invalidateQueries({ queryKey: ['/api/locations'] });
-        }}
+        onOpenChange={setLocationModalOpen}
       />
     </>
   );
