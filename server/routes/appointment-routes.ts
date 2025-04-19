@@ -539,58 +539,31 @@ export function registerAppointmentRoutes(app: Express): void {
     }
   });
   
-  // Statistics endpoint
+  // Enhanced Statistics endpoint
   app.get("/api/stats", isAdminOrDirector, async (req: Request, res: Response, next: Function) => {
     try {
       // Get basic stats
       const allAppointments = await storage.getAllAppointments();
       const totalAppointments = allAppointments.length;
-      const recentAppointments = (await storage.getRecentAppointments(10)).length;
       const activeRooms = (await storage.getActiveRooms()).length;
       const totalUsers = (await storage.getAllUsers()).length;
       
-      // Get room utilization for the past month
+      // Current date and important dates
       const now = new Date();
-      const startDate = new Date(now);
-      startDate.setMonth(now.getMonth() - 1);
       
-      const roomUtilization = await storage.getOverallUtilization(startDate, now);
-      const utilization = roomUtilization.reduce((total, curr) => total + curr.utilization, 0) / 
-                          (roomUtilization.length || 1);
+      // Start of current month
+      const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+      // End of current month
+      const currentMonthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
       
-      // Get popular rooms (by booking count) and calculate revenue
+      // Start of year
+      const yearStart = new Date(now.getFullYear(), 0, 1);
+      
+      // Get all locations
+      const locations = await storage.getAllLocations();
+      
+      // Get all rooms with their location information
       const rooms = await storage.getAllRooms();
-      const popularRooms = [];
-      
-      for (const room of rooms) {
-        const bookings = await storage.getAppointmentsByRoom(room.id);
-        const roomUtilization = await storage.getRoomUtilization(room.id, startDate, now);
-        
-        // Calculate total revenue for the room
-        let totalRevenue = 0;
-        for (const booking of bookings) {
-          if (booking.rooms && Array.isArray(booking.rooms)) {
-            // Find the cost entry for this specific room
-            const roomEntry = booking.rooms.find((r: any) => r.roomId === room.id);
-            if (roomEntry && roomEntry.cost) {
-              totalRevenue += roomEntry.cost;
-            }
-          }
-        }
-        
-        popularRooms.push({
-          room,
-          bookings: bookings.length,
-          utilization: roomUtilization,
-          revenue: totalRevenue // Revenue in cents
-        });
-      }
-      
-      // Sort by booking count descending
-      popularRooms.sort((a, b) => b.bookings - a.bookings);
-      
-      // Get recent bookings
-      const recentBookingsList = await storage.getRecentAppointments(5);
       
       // Calculate booking status counts
       const statusCounts = {
@@ -607,41 +580,143 @@ export function registerAppointmentRoutes(app: Express): void {
         else if (appointment.status === 'cancelled') statusCounts.cancelled++;
       });
       
-      // Generate monthly utilization data for the past 6 months
-      const monthlyUtilization = [];
-      const monthLabels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      // Get active bookings (upcoming approved bookings)
+      const activeBookings = allAppointments.filter(appointment => 
+        appointment.status === 'approved' && 
+        new Date(appointment.endTime) >= now
+      ).sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime());
       
-      for (let i = 5; i >= 0; i--) {
-        const monthStartDate = new Date(now);
-        monthStartDate.setMonth(now.getMonth() - i);
-        monthStartDate.setDate(1);
-        monthStartDate.setHours(0, 0, 0, 0);
+      // Get bookings pending approval
+      const pendingBookings = allAppointments.filter(appointment => 
+        appointment.status === 'pending'
+      ).sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime());
+      
+      // Metrics by room
+      const roomMetrics = await Promise.all(rooms.map(async room => {
+        // Get all bookings for this room
+        const roomBookings = await storage.getAppointmentsByRoom(room.id);
+        const approvedBookings = roomBookings.filter(b => b.status === 'approved');
+        const rejectedBookings = roomBookings.filter(b => b.status === 'rejected');
         
-        const monthEndDate = new Date(monthStartDate);
-        monthEndDate.setMonth(monthStartDate.getMonth() + 1);
-        monthEndDate.setDate(0);
-        monthEndDate.setHours(23, 59, 59, 999);
+        // Current month utilization in hours
+        const currentMonthBookings = approvedBookings.filter(booking => 
+          new Date(booking.startTime) >= currentMonthStart && 
+          new Date(booking.endTime) <= currentMonthEnd
+        );
         
-        const monthUtilization = await storage.getOverallUtilization(monthStartDate, monthEndDate);
-        const avgUtilization = monthUtilization.reduce((total, curr) => total + curr.utilization, 0) / 
-                              (monthUtilization.length || 1);
+        // Year to date bookings
+        const ytdBookings = approvedBookings.filter(booking => 
+          new Date(booking.startTime) >= yearStart
+        );
         
-        monthlyUtilization.push({
-          month: monthLabels[monthStartDate.getMonth()],
-          utilization: avgUtilization
+        // Calculate utilization in hours
+        let monthlyHours = 0;
+        currentMonthBookings.forEach(booking => {
+          const start = new Date(booking.startTime);
+          const end = new Date(booking.endTime);
+          const durationHours = (end.getTime() - start.getTime()) / (1000 * 60 * 60);
+          monthlyHours += durationHours;
         });
-      }
+        
+        // Calculate revenue 
+        let monthlyRevenue = 0;
+        let ytdRevenue = 0;
+        
+        // For current month revenue
+        currentMonthBookings.forEach(booking => {
+          if (booking.rooms && Array.isArray(booking.rooms)) {
+            const roomEntry = booking.rooms.find((r: any) => r.roomId === room.id);
+            if (roomEntry && roomEntry.cost) {
+              monthlyRevenue += roomEntry.cost;
+            }
+          }
+        });
+        
+        // For YTD revenue
+        ytdBookings.forEach(booking => {
+          if (booking.rooms && Array.isArray(booking.rooms)) {
+            const roomEntry = booking.rooms.find((r: any) => r.roomId === room.id);
+            if (roomEntry && roomEntry.cost) {
+              ytdRevenue += roomEntry.cost;
+            }
+          }
+        });
+        
+        // Average revenue per booking
+        const avgRevenuePerBooking = currentMonthBookings.length > 0 
+          ? monthlyRevenue / currentMonthBookings.length 
+          : 0;
+        
+        return {
+          id: room.id,
+          name: room.name,
+          locationId: room.locationId,
+          locationName: locations.find(l => l.id === room.locationId)?.name || 'Unknown Location',
+          monthlyHours,
+          monthlyRevenue,
+          ytdRevenue,
+          avgRevenuePerBooking,
+          totalBookings: roomBookings.length,
+          approvedBookings: approvedBookings.length,
+          rejectedBookings: rejectedBookings.length,
+          pendingBookings: roomBookings.filter(b => b.status === 'pending').length
+        };
+      }));
+      
+      // Metrics by location
+      const locationMetrics = locations.map(location => {
+        const locationRooms = roomMetrics.filter(r => r.locationId === location.id);
+        
+        // Aggregate metrics
+        const monthlyHours = locationRooms.reduce((total, room) => total + room.monthlyHours, 0);
+        const monthlyRevenue = locationRooms.reduce((total, room) => total + room.monthlyRevenue, 0);
+        const ytdRevenue = locationRooms.reduce((total, room) => total + room.ytdRevenue, 0);
+        const totalBookings = locationRooms.reduce((total, room) => total + room.totalBookings, 0);
+        const approvedBookings = locationRooms.reduce((total, room) => total + room.approvedBookings, 0);
+        const rejectedBookings = locationRooms.reduce((total, room) => total + room.rejectedBookings, 0);
+        const pendingBookings = locationRooms.reduce((total, room) => total + room.pendingBookings, 0);
+        
+        // Average revenue per booking at this location
+        const avgRevenuePerBooking = approvedBookings > 0 
+          ? monthlyRevenue / approvedBookings
+          : 0;
+        
+        return {
+          id: location.id,
+          name: location.name,
+          monthlyHours,
+          monthlyRevenue, 
+          ytdRevenue,
+          avgRevenuePerBooking,
+          totalBookings,
+          approvedBookings,
+          rejectedBookings,
+          pendingBookings
+        };
+      });
+      
+      // Total metrics
+      const totalMonthlyHours = roomMetrics.reduce((total, room) => total + room.monthlyHours, 0);
+      const totalMonthlyRevenue = roomMetrics.reduce((total, room) => total + room.monthlyRevenue, 0);
+      const totalYtdRevenue = roomMetrics.reduce((total, room) => total + room.ytdRevenue, 0);
       
       res.json({
+        // Basic stats
         totalAppointments,
-        recentAppointments,
         activeRooms,
         totalUsers,
-        utilization,
-        popularRooms,
-        recentBookings: recentBookingsList,
         statusCounts,
-        monthlyUtilization
+        
+        // List metrics
+        activeBookings,
+        pendingBookings,
+        roomMetrics,
+        locationMetrics,
+        
+        // Totals
+        totalMonthlyHours,
+        totalMonthlyRevenue,
+        totalYtdRevenue
       });
     } catch (error) {
       next(error);
