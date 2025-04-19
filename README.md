@@ -211,15 +211,19 @@ DATABASE_URL=postgres://seu_usuario:sua_senha@localhost:5432/acrdsc_reservas
 
 #### Configuração para Ambiente Local vs. Neon Serverless
 
-O sistema está configurado para usar o PostgreSQL tanto em ambiente local quanto em produção, através da biblioteca Neon.
+O sistema está configurado para usar o PostgreSQL tanto em ambiente local quanto em produção:
 
-- **Desenvolvimento local**: Usa Neon com `NODE_ENV=development` que ajusta logs e configurações para depuração
-- **Produção**: Usa Neon com `NODE_ENV=production` que prioriza desempenho
+- **Desenvolvimento local**: O sistema detecta automaticamente que está em ambiente de desenvolvimento (`NODE_ENV=development`) e ajusta as configurações para trabalhar com PostgreSQL local:
+  - Desativa recursos específicos do Neon (como pipeline TLS)
+  - Usa valores padrão de conexão se não encontrar configurações explícitas
+  - Fornece mensagens detalhadas para diagnóstico de erros
 
-Para ambientes locais, crie um banco PostgreSQL e configure a variável `DATABASE_URL` conforme o padrão:
-```
-DATABASE_URL=postgres://seu_usuario:sua_senha@localhost:5432/acrdsc_reservas
-```
+- **Produção**: Quando em ambiente de produção (`NODE_ENV=production`), o sistema:
+  - Ativa todos os recursos do Neon Serverless para otimização de conexão
+  - Requer configuração explícita das variáveis de ambiente
+  - Minimiza o log e mensagens de depuração
+
+Para funcionar em ambos os ambientes, o sistema usa o driver Neon (que é compatível com PostgreSQL padrão) com configurações diferentes.
 
 O código que gerencia essa configuração está em `server/db.ts`.
 

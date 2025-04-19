@@ -39,8 +39,19 @@ else if (!databaseUrl) {
   );
 }
 
-// Configuração para Neon serverless (usar mesmo em desenvolvimento por simplicidade)
+// Configura o Neon para funcionar em todos ambientes
 neonConfig.webSocketConstructor = ws;
+
+// Em ambiente de desenvolvimento, adiciona configurações para conexão local
+if (isLocalEnvironment) {
+  // A biblioteca Neon pode trabalhar com conexões diretas também
+  // Configurações adicionais para melhorar performance local
+  neonConfig.pipelineTLS = false;
+  neonConfig.pipelineConnect = false;
+  log('Ajustando configurações do Neon para PostgreSQL local');
+}
+
+// Inicializa a conexão usando o driver do Neon em todos ambientes por simplicidade
 export const pool = new Pool({ connectionString: databaseUrl });
 export const db = drizzle(pool, { schema });
 
