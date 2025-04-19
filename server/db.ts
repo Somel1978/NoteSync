@@ -16,7 +16,24 @@ if (!databaseUrl && process.env.PGUSER && process.env.PGPASSWORD && process.env.
   const port = process.env.PGPORT || '5432';
   databaseUrl = `postgres://${process.env.PGUSER}:${process.env.PGPASSWORD}@${host}:${port}/${process.env.PGDATABASE}`;
   console.log(`Construindo DATABASE_URL a partir de variáveis individuais: ${databaseUrl}`);
-} else if (!databaseUrl) {
+} 
+// Se estiver em ambiente de desenvolvimento, use valores padrão
+else if (!databaseUrl && isLocalEnvironment) {
+  // Valores padrão para ambiente local
+  const pgUser = 'acrdscdb';
+  const pgPassword = 'acrdsc00';
+  const pgHost = 'localhost';
+  const pgPort = '5432';
+  const pgDatabase = 'acrdsc_reservas';
+  
+  databaseUrl = `postgres://${pgUser}:${pgPassword}@${pgHost}:${pgPort}/${pgDatabase}`;
+  
+  console.log('AVISO: DATABASE_URL ou variáveis individuais PG* não encontradas no ambiente.');
+  console.log(`Usando valores padrão para desenvolvimento local: ${databaseUrl}`);
+  console.log('Se quiser usar outros valores, crie um arquivo .env na raiz do projeto.');
+}
+// Caso contrário, exiba o erro
+else if (!databaseUrl) {
   throw new Error(
     "DATABASE_URL ou as variáveis PGUSER, PGPASSWORD, PGHOST, PGPORT e PGDATABASE devem ser configuradas no arquivo .env",
   );

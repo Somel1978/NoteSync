@@ -47,7 +47,15 @@ psql -d acrdsc_reservas -f schema.sql
 
 ### 4. Configurar Variáveis de Ambiente
 
-Crie um arquivo `.env` na raiz do projeto com as seguintes variáveis:
+O sistema tem valores padrão que funcionam em ambiente de desenvolvimento local sem nenhuma configuração adicional:
+
+- **PGUSER**: `acrdscdb`
+- **PGPASSWORD**: `acrdsc00`
+- **PGHOST**: `localhost`
+- **PGPORT**: `5432`
+- **PGDATABASE**: `acrdsc_reservas`
+
+Se você precisar de uma configuração diferente, crie um arquivo `.env` na raiz do projeto:
 
 ```env
 # Configuração do Banco de Dados
@@ -69,9 +77,10 @@ MAILJET_API_KEY=sua_api_key_mailjet
 MAILJET_SECRET_KEY=sua_secret_key_mailjet
 ```
 
-> **Importante**: O sistema procura por um arquivo `.env` em vários locais possíveis. Se o arquivo não for encontrado, valores padrão serão usados, mas é altamente recomendável criar o arquivo `.env` com os valores corretos para o seu ambiente.
-
-O sistema também aceita variáveis de ambiente definidas diretamente no sistema operacional, o que é útil para ambientes de produção onde o uso de arquivos `.env` pode não ser recomendado.
+> **Importante**: O sistema procura por um arquivo `.env` em vários locais possíveis. Se o arquivo não for encontrado, valores padrão serão usados para ambiente de desenvolvimento. A ordem de prioridade é:
+> 1. Variáveis definidas no ambiente do sistema operacional
+> 2. Variáveis definidas no arquivo `.env`
+> 3. Valores padrão codificados para ambiente de desenvolvimento
 
 ## Scripts Disponíveis
 

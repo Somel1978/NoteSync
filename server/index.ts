@@ -63,7 +63,7 @@ function loadEnvFile() {
     
     // Valores de ambiente para desenvolvimento local
     process.env.DATABASE_URL = process.env.DATABASE_URL || 
-      `postgres://${process.env.PGUSER || 'postgres'}:${process.env.PGPASSWORD || 'postgres'}@${process.env.PGHOST || 'localhost'}:${process.env.PGPORT || '5432'}/${process.env.PGDATABASE || 'acrdsc_reservas'}`;
+      `postgres://${process.env.PGUSER || 'acrdscdb'}:${process.env.PGPASSWORD || 'acrdsc00'}@${process.env.PGHOST || 'localhost'}:${process.env.PGPORT || '5432'}/${process.env.PGDATABASE || 'acrdsc_reservas'}`;
     
     process.env.SESSION_SECRET = process.env.SESSION_SECRET || 'chave_secreta_desenvolvimento_local';
   }
