@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { AppLayout } from "@/components/layout/app-layout";
@@ -13,13 +13,27 @@ import { Eye, Filter, Clock, CheckCircle2, XCircle } from "lucide-react";
 import { Appointment } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
+import { useLocation, useParams } from "wouter";
 
 export default function AppointmentsPage() {
   const { t } = useTranslation();
+  const params = useParams<{ id: string }>();
   const [selectedAppointmentId, setSelectedAppointmentId] = useState<number | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
   const { toast } = useToast();
+  
+  // Efeito para abrir automaticamente o modal quando acessado via URL direta
+  useEffect(() => {
+    // A rota /admin/appointments/details/:id irá fornecer params.id
+    if (params && params.id) {
+      const appointmentId = parseInt(params.id);
+      if (!isNaN(appointmentId)) {
+        setSelectedAppointmentId(appointmentId);
+        setModalOpen(true);
+      }
+    }
+  }, [params]);
 
   const { data: appointments, isLoading } = useQuery<Appointment[]>({
     queryKey: ["/api/appointments", statusFilter],
