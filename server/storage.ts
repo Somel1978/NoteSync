@@ -487,9 +487,12 @@ export class DatabaseStorage implements IStorage {
       console.log("StorageDebug: Resultado bruto do update:", JSON.stringify(updatedAppointment, null, 2));
       
       // Importante: mapear o campo snake_case para camelCase no resultado
-      if (updatedAppointment && updatedAppointment.rejection_reason !== undefined) {
-        console.log("StorageDebug: Mapeando rejection_reason para rejectionReason:", updatedAppointment.rejection_reason);
-        (updatedAppointment as any).rejectionReason = updatedAppointment.rejection_reason;
+      // Precisamos usar 'as any' aqui devido a um problema de tipagem entre camelCase e snake_case nas chaves
+      if (updatedAppointment && (updatedAppointment as any).rejection_reason !== undefined) {
+        console.log("StorageDebug: Mapeando rejection_reason para rejectionReason:", (updatedAppointment as any).rejection_reason);
+        updatedAppointment.rejectionReason = (updatedAppointment as any).rejection_reason;
+        // Remover a propriedade snake_case após copiar o valor
+        delete (updatedAppointment as any).rejection_reason;
       }
       
       // Log do appointment atualizado após mapping
@@ -586,8 +589,10 @@ export class DatabaseStorage implements IStorage {
     if (appointmentList?.length > 0) {
       appointmentList.forEach(appointment => {
         const rawResult = appointment as any;
+        // Verificar e mapear rejection_reason -> rejectionReason
         if (rawResult.rejection_reason !== undefined && appointment.rejectionReason === undefined) {
-          (appointment as any).rejectionReason = rawResult.rejection_reason;
+          appointment.rejectionReason = rawResult.rejection_reason;
+          delete rawResult.rejection_reason;
         }
       });
     }
