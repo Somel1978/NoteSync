@@ -30,6 +30,7 @@
     "requesting": "Solicitando...",
     "loggingIn": "Entrando...",
     "active": "Ativo",
+    "inactive": "Inativo",
     "create": "Criar",
     "remove": "Remover",
     "success": "Operação concluída com sucesso",
@@ -334,6 +335,7 @@
     "inactive": "Inativo",
     "flatRate": "Taxa Fixa",
     "hourlyRate": "Taxa por Hora",
+    "attendeeRate": "Taxa por Participante", 
     "location": "Localização",
     "name": "Nome",
     "namePlaceholder": "Nome da sala",
@@ -546,6 +548,7 @@
     "coordinates": "Coordenadas GPS",
     "addLocation": "Adicionar Localização",
     "editLocation": "Editar Localização",
+    "title": "Localizações",
     "namePlaceholder": "Digite o nome da localização",
     "descriptionPlaceholder": "Digite a descrição da localização",
     "addressPlaceholder": "Digite o endereço da localização",
@@ -565,6 +568,7 @@
     "guest": "Convidado",
     "adminPlural": "Administradores",
     "directorPlural": "Diretores",
-    "guestPlural": "Convidados"
+    "guestPlural": "Convidados",
+    "admins": "Administradores"
   }
 }
