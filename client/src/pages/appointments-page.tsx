@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ColumnDef } from "@tanstack/react-table";
 import { format } from "date-fns";
-import { Eye, Filter, Clock, CheckCircle2, XCircle } from "lucide-react";
+import { Eye, Filter, Clock, CheckCircle2, XCircle, CheckSquare } from "lucide-react";
 import { Appointment } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
@@ -170,16 +170,22 @@ export default function AppointmentsPage() {
           status === "approved" ? "success" :
           status === "rejected" ? "destructive" :
           status === "cancelled" ? "outline" :
+          status === "finished" ? "default" :
           "secondary";
         
         return (
-          <Badge variant={variant} className="whitespace-nowrap">
+          <Badge 
+            variant={variant} 
+            className={`whitespace-nowrap ${status === "finished" ? "bg-emerald-600 hover:bg-emerald-700 text-white" : ""}`}
+          >
             {status === "approved" 
               ? t('appointments.approved')
               : status === "rejected" 
               ? t('appointments.rejected')
               : status === "cancelled" 
               ? t('appointments.cancelled')
+              : status === "finished"
+              ? t('appointments.finished', 'Finished')
               : t('appointments.pending')
             }
           </Badge>
@@ -259,6 +265,15 @@ export default function AppointmentsPage() {
               >
                 <XCircle className="h-4 w-4 mr-1 sm:mr-2" />
                 <span>{t('appointments.rejected', 'Rejected')}</span>
+              </Button>
+              <Button 
+                variant={statusFilter === "finished" ? "default" : "outline"}
+                size="sm"
+                onClick={() => setStatusFilter("finished")}
+                className="flex items-center"
+              >
+                <CheckSquare className="h-4 w-4 mr-1 sm:mr-2" />
+                <span>{t('appointments.finished', 'Finished')}</span>
               </Button>
             </div>
           </div>
